@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Valorant Tracker Personal",
-  description: "Dashboard personal de VALORANT con Riot RSO, analytics derivadas y modo demo.",
+  title: "Clutchboard",
+  description: "Personal VALORANT performance analytics with Riot RSO, explainable insights, and demo mode.",
 };
 
 export default function RootLayout({

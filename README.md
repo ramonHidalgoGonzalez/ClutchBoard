@@ -1,31 +1,31 @@
-# Valorant Tracker Personal
+# Clutchboard
 
-Aplicación web full-stack estilo "Valorant Tracker" centrada en una cuenta concreta, preparada para Riot RSO, API oficial de VALORANT y modo demo/mock mientras llega la aprobación final de producción.
+Clutchboard is a full-stack personal VALORANT analytics app built around a single player account, prepared for Riot RSO, official VALORANT APIs, and a realistic demo/mock mode while production approval is pending.
 
 ## Stack
 
 - Next.js 16 App Router + TypeScript
 - Tailwind CSS v4 + shadcn/ui
 - PostgreSQL + Prisma
-- Redis / Upstash para cache y rate limiting
+- Redis / Upstash for caching and rate limiting
 - TanStack Query
 - Recharts
 - Zod
 - Vitest + Playwright
 
-## Estructura
+## Structure
 
 ```text
 src/
-  app/                 Rutas App Router y endpoints API
-  components/          Shell, charts y UI reutilizable
-  features/            Módulos de dominio orientados a producto
+  app/                 App Router routes and API endpoints
+  components/          Shell, charts, and reusable UI
+  features/            Product-facing domain modules
   lib/                 Env, logger, redis, rate-limit, providers
-  server/              Auth, repositorios, servicios y helpers API
-  integrations/riot/   Cliente Riot, DTOs, validación y adapters mock/real
-  analytics/           Fórmulas derivadas y engine de mejora
-  database/            Cliente Prisma lazy
-  types/               Tipos de dominio y Riot
+  server/              Auth, repositories, services, and API helpers
+  integrations/riot/   Riot client, DTOs, validation, and mock/real adapters
+  analytics/           Derived formulas and improvement engine
+  database/            Lazy Prisma client
+  types/               Domain and Riot types
 tests/
   unit/
   integration/
@@ -34,29 +34,29 @@ prisma/
   schema.prisma
 ```
 
-## Requisitos
+## Requirements
 
 - Node.js 20+
 - npm 10+
-- PostgreSQL si quieres persistencia real
-- Redis/Upstash opcional para cache distribuida y rate limit compartido
-- Credenciales Riot de producción si quieres RSO real
+- PostgreSQL if you want real persistence
+- Redis/Upstash optionally for distributed cache and shared rate limiting
+- Riot production credentials if you want real RSO mode
 
-## Variables de entorno
+## Environment variables
 
-Usa `.env.example` como base.
+Use `.env.example` as your template.
 
-Claves principales:
+Main keys:
 
-- `ENABLE_MOCK_RIOT=true`: activa modo demo con dataset coherente
-- `APP_SESSION_SECRET`: secreto para firmar la sesión
-- `DATABASE_URL`: conexión PostgreSQL
-- `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`: cache/rate limit
-- `RIOT_API_KEY`: clave oficial Riot
+- `ENABLE_MOCK_RIOT=true`: enables demo mode with a coherent fake dataset
+- `APP_SESSION_SECRET`: secret used to sign the app session
+- `DATABASE_URL`: PostgreSQL connection string
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`: cache and rate limit
+- `RIOT_API_KEY`: official Riot API key
 - `RIOT_RSO_CLIENT_ID`, `RIOT_RSO_CLIENT_SECRET`, `RIOT_RSO_REDIRECT_URI`: RSO
-- `RIOT_REGION`, `RIOT_PLATFORM`: routing Riot
+- `RIOT_REGION`, `RIOT_PLATFORM`: Riot routing
 
-## Setup local
+## Local setup
 
 ```bash
 npm install
@@ -64,45 +64,45 @@ npm run prisma:generate
 npm run dev
 ```
 
-Con PostgreSQL:
+With PostgreSQL:
 
 ```bash
 npm run db:push
 ```
 
-## Flujo de autenticación Riot
+## Riot authentication flow
 
-### Modo real
+### Real mode
 
-1. El usuario pulsa "Iniciar sesión con Riot".
-2. `/api/auth/riot/login` genera `state` y redirige a `https://auth.riotgames.com/authorize`.
-3. Riot vuelve a `/api/auth/riot/callback`.
-4. Se valida `state`.
-5. Se intercambia `code` por tokens.
-6. Se llama a `/riot/account/v1/accounts/me` con `Bearer access_token`.
-7. Se crea sesión propia firmada y se guarda opcionalmente en DB.
+1. The user clicks "Iniciar sesion con Riot".
+2. `/api/auth/riot/login` generates `state` and redirects to `https://auth.riotgames.com/authorize`.
+3. Riot returns to `/api/auth/riot/callback`.
+4. The app validates `state`.
+5. The app exchanges `code` for tokens.
+6. The app calls `/riot/account/v1/accounts/me` with `Bearer access_token`.
+7. The app creates its own signed session and optionally stores it in the database.
 
-### Modo mock
+### Mock mode
 
-1. El usuario entra por `/api/auth/riot/login`.
-2. Se usa el adapter mock.
-3. Se crea sesión local segura.
-4. La app carga dataset demo y métricas derivadas.
+1. The user enters through `/api/auth/riot/login`.
+2. The app uses the mock adapter.
+3. The app creates a secure local session.
+4. The app loads the demo dataset and derived analytics.
 
-## Cómo activar modo mock
+## How to enable mock mode
 
 ```env
 ENABLE_MOCK_RIOT=true
 APP_SESSION_SECRET=dev-secret
 ```
 
-Opcional para tests o demos automáticas:
+Optional for auto-demo flows:
 
 ```env
 DEMO_AUTO_LOGIN=true
 ```
 
-## Scripts útiles
+## Useful scripts
 
 ```bash
 npm run dev
@@ -118,11 +118,11 @@ npm run db:push
 
 ### Vercel
 
-- Configura todas las variables de entorno.
-- Añade PostgreSQL y Redis gestionados.
-- Asegura que el redirect URI de Riot apunte al dominio final.
+- Configure all required environment variables.
+- Add managed PostgreSQL and Redis if needed.
+- Make sure the Riot redirect URI points to your final domain.
 
-Pasos rápidos:
+Quick start:
 
 ```bash
 npm i -g vercel
@@ -130,19 +130,19 @@ vercel login
 vercel
 ```
 
-Para producción:
+Production deploy:
 
 ```bash
 vercel --prod
 ```
 
-Variables mínimas para publicar una demo online:
+Minimum variables for an online demo:
 
 - `NEXT_PUBLIC_APP_URL`
 - `APP_SESSION_SECRET`
 - `ENABLE_MOCK_RIOT=true`
 
-Variables mínimas para publicar en modo Riot real:
+Minimum variables for real Riot mode:
 
 - `NEXT_PUBLIC_APP_URL`
 - `APP_SESSION_SECRET`
@@ -158,82 +158,82 @@ Healthcheck:
 
 ### Docker
 
-- Usa `npm run build` seguido de `npm run start`.
-- Inyecta secretos por variables de entorno.
-- Mantén Prisma y Redis fuera del contenedor si quieres persistencia estable.
+- Use `npm run build` followed by `npm run start`.
+- Inject secrets through environment variables.
+- Keep Prisma and Redis outside the container if you want stable persistence.
 
-Build y run:
+Build and run:
 
 ```bash
-docker build -t valorant-tracker-personal .
-docker run -p 3000:3000 --env-file .env.local valorant-tracker-personal
+docker build -t clutchboard .
+docker run -p 3000:3000 --env-file .env.local clutchboard
 ```
 
-## Limitaciones actuales
+## Current limitations
 
-- El modo real requiere `Production API Key` y aprobación RSO por parte de Riot.
-- El refresh token no está rotado todavía con un job dedicado; la base está preparada pero falta el worker específico.
-- El detalle persistido de match todavía no hace un ETL completo a todas las tablas Prisma; hoy el modo demo es el camino más robusto para UI y analytics.
-- Algunas métricas avanzadas dependen de `roundResults` y no siempre permiten reconstrucción perfecta de contexto táctico.
+- Real mode requires a Riot `Production API Key` and RSO approval.
+- Refresh token rotation is not implemented yet as a dedicated worker.
+- Match persistence is not yet a complete ETL into every Prisma table; demo mode is still the most robust path for UI and analytics.
+- Some advanced metrics depend on `roundResults` and do not always allow perfect tactical reconstruction.
 
-## Próximos pasos recomendados
+## Recommended next steps
 
-- Añadir cola real para sincronización incremental por PUUID.
-- Persistir snapshots y cached responses después de cada sync.
-- Implementar refresh de tokens RSO y expiración coordinada.
-- Añadir filtros avanzados por fecha, mapa, agente y cola.
-- Completar observabilidad con tracing y métricas Prometheus/OpenTelemetry.
+- Add a real incremental sync queue by PUUID.
+- Persist snapshots and cached responses after each sync.
+- Implement RSO token refresh and coordinated expiration.
+- Add advanced filters by date, map, agent, and queue.
+- Complete observability with tracing and OpenTelemetry.
 
-## LIMITACIONES REALES DE LA API Y DECISIONES DE PRODUCTO
+## REAL API LIMITATIONS AND PRODUCT DECISIONS
 
-### Qué datos son oficiales
+### What data is official
 
-- `RSO/OAuth`: autenticación del jugador vía Riot Sign On.
-- `/riot/account/v1/accounts/me`: identidad oficial del usuario autenticado.
-- `VAL-CONTENT-V1`: contenido oficial de agentes, mapas, actos y metadatos.
-- `VAL-MATCH-V1`: matchlist por `puuid` y detalle de cada partida.
-- `VAL-RANKED-V1`: leaderboard por acto.
-- `VAL-STATUS-V1`: estado de plataforma.
+- `RSO/OAuth`: player authentication through Riot Sign On
+- `/riot/account/v1/accounts/me`: official authenticated account identity
+- `VAL-CONTENT-V1`: official agents, maps, acts, and metadata
+- `VAL-MATCH-V1`: matchlist by `puuid` and match detail
+- `VAL-RANKED-V1`: leaderboard by act
+- `VAL-STATUS-V1`: platform status
 
-### Qué datos son derivados
+### What data is derived
 
-- `ACS estimado`
+- `ACS estimate`
 - `headshot %`
 - `clutches`
 - `comfort picks`
 - `consistency score`
 - `impact score`
 - `momentum`
-- `delta reciente vs baseline`
+- `recent delta vs baseline`
 - `fatigue score`
 - `agent pool concentration`
 - `stability score`
 - `improvement score`
-- Todos los insights de la sección "Mejora"
+- every insight in the "Mejora" section
 
-Cada una de estas métricas se calcula a partir de partidas reales normalizadas y está documentada en `src/analytics/formulas.ts`.
+Each derived metric is calculated from normalized match data and documented in `src/analytics/formulas.ts`.
 
-### Qué depende de aprobación RSO/producción
+### What depends on RSO and production approval
 
-- Login real con Riot.
-- Acceso real a datos personales de VALORANT del jugador autenticado.
-- Uso de client ID / client secret RSO.
-- Operación pública del producto para otros usuarios.
+- Real Riot login
+- Real access to personal VALORANT player data
+- Use of RSO client ID and client secret
+- Public launch for real player accounts
 
-Riot documenta que las apps de VALORANT con datos personales deben usar `RSO` y que este acceso solo está disponible con `Production Level API Keys` y aprobación del cliente RSO oficial.
+Riot documents that VALORANT apps working with personal player data must use `RSO`, and that this access requires `Production Level API Keys` and official RSO client approval.
 
-### Qué no puede saberse con precisión
+### What cannot be known precisely
 
-- "Impacto" real absoluto del jugador en el resultado.
-- Calidad táctica exacta de utility, spacing, timings o trade discipline.
-- Tilt psicológico real; solo se puede inferir degradación progresiva de rendimiento.
-- Clutches completos o first-death perfectos si la granularidad del payload no deja reconstrucción total en todos los casos.
-- ACS oficial exacto si el endpoint no lo expone directamente; por eso aquí se etiqueta como `estimado`.
+- A player's true absolute impact on the match result
+- Exact tactical quality of utility usage, spacing, timing, or trade discipline
+- Real psychological tilt; the app can only infer progressive performance degradation
+- Perfect clutch or first-death reconstruction when the official payload is incomplete
+- Exact official ACS if the endpoint does not expose it directly; in Clutchboard it is labeled as `estimated`
 
-### Qué habría que mejorar en una segunda fase
+### What should improve in a second phase
 
-- Persistencia completa de ETL match-by-match en todas las tablas Prisma.
-- Worker de sincronización incremental y recalculo de snapshots.
-- Refresh token RSO y sesiones revocables multi-dispositivo.
-- Segmentación más rica por lado atacante/defensor si el payload oficial disponible lo permite.
-- Modelos de coaching más finos basados en sesiones, cambios de agente y ventanas competitivas.
+- Full ETL persistence for every match across all Prisma tables
+- Incremental sync workers and snapshot recalculation
+- RSO token refresh and revocable multi-device sessions
+- Richer attacker/defender-side segmentation if official payloads support it
+- Finer coaching models built around sessions, agent changes, and competitive windows

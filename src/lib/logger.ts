@@ -8,8 +8,8 @@ export function getLogger() {
   if (!logger) {
     logger = pino({
       level: env.logLevel,
-      base: {
-        service: "valorant-tracker-personal",
+        base: {
+        service: "clutchboard",
         env: env.nodeEnv,
       },
     })

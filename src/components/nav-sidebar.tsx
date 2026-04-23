@@ -22,7 +22,7 @@ export function NavSidebar({ pathname }: { pathname: string }) {
           Riot-compliant tracker
         </Badge>
         <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-zinc-500">Valorant Tracker</p>
+          <p className="text-xs uppercase tracking-[0.35em] text-zinc-500">Clutchboard</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">Personal Command Center</h2>
         </div>
       </div>

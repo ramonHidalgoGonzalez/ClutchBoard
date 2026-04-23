@@ -12,7 +12,7 @@ export async function enforceRateLimit(key: string, limit = 30, windowMs = 60_00
       redis,
       limiter: Ratelimit.slidingWindow(limit, `${Math.ceil(windowMs / 1000)} s`),
       analytics: true,
-      prefix: "valorant-tracker",
+      prefix: "clutchboard",
     })
 
     return ratelimit.limit(key)
