@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SyncStatus {
+  pending
+  running
+  success
+  failed
+}
+
+enum MatchOutcome {
+  win
+  loss
+  draw
+}
+
+enum DataSource {
+  riot
+  derived
+  mock
+}
+
+model User {
+  id                 String                    @id @default(cuid())
+  email              String?                   @unique
+  displayName        String
+  avatarUrl          String?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  riotAccounts       RiotAccount[]
+  sessions           Session[]
+  improvementInsights ImprovementInsight[]
+  syncJobs           SyncJob[]
+  preferences        Json?
+
+  @@index([createdAt])
+}
+
+model RiotAccount {
+  id                 String                    @id @default(cuid())
+  userId             String
+  puuid              String                    @unique
+  gameName           String?
+  tagLine            String?
+  region             String
+  platform           String
+  scopes             String[]
+  accessToken        String?
+  refreshToken       String?
+  tokenExpiresAt     DateTime?
+  lastSyncedAt       DateTime?
+  officialProfile    Json?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  user               User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshots          PlayerStatsSnapshot[]
+  agentSnapshots     AgentPerformanceSnapshot[]
+  mapSnapshots       MapPerformanceSnapshot[]
+  matches            MatchParticipant[]
+  cachedResponses    CachedApiResponse[]
+
+  @@index([userId])
+  @@index([region, platform])
+}
+
+model Session {
+  id                 String                    @id @default(cuid())
+  userId             String
+  sessionTokenHash   String                    @unique
+  expiresAt          DateTime
+  ipAddress          String?
+  userAgent          String?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  user               User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model Match {
+  id                 String                    @id
+  mapId              String
+  mapName            String
+  queueId            String
+  queueName          String
+  gameMode           String
+  startedAt          DateTime
+  durationSeconds    Int
+  roundsPlayed       Int
+  seasonId           String?
+  patchVersion       String?
+  platform           String
+  region             String
+  rawPayload         Json?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  participants       MatchParticipant[]
+  teams              MatchTeam[]
+
+  @@index([startedAt(sort: Desc)])
+  @@index([mapName, startedAt(sort: Desc)])
+  @@index([queueName, startedAt(sort: Desc)])
+}
+
+model MatchParticipant {
+  id                 String                    @id @default(cuid())
+  matchId            String
+  riotAccountId      String
+  puuid              String
+  teamId             String
+  agentId            String?
+  agentName          String
+  characterRole      String?
+  outcome            MatchOutcome
+  kills              Int
+  deaths             Int
+  assists            Int
+  score              Int?
+  damage             Int?
+  headshots          Int?
+  bodyshots          Int?
+  legshots           Int?
+  firstBloods        Int?
+  firstDeaths        Int?
+  plants             Int?
+  defuses            Int?
+  economyRating      Int?
+  combatScoreEstimate Float?
+  headshotPct        Float?
+  derivedMetrics     Json?
+  isPrimaryUser      Boolean                   @default(false)
+  rawPayload         Json?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  match              Match                     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  riotAccount        RiotAccount               @relation(fields: [riotAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, puuid])
+  @@index([riotAccountId, isPrimaryUser, matchId])
+  @@index([agentName, outcome])
+  @@index([puuid])
+}
+
+model MatchTeam {
+  id                 String                    @id @default(cuid())
+  matchId            String
+  teamId             String
+  won                Boolean
+  roundsWon          Int
+  roundsLost         Int
+  rawPayload         Json?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  match              Match                     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, teamId])
+}
+
+model PlayerStatsSnapshot {
+  id                 String                    @id @default(cuid())
+  riotAccountId      String
+  windowDays         Int
+  capturedAt         DateTime                  @default(now())
+  matchesAnalyzed    Int
+  wins               Int
+  losses             Int
+  drawCount          Int                       @default(0)
+  winRate            Float
+  kda                Float
+  kdRatio            Float
+  avgKills           Float
+  avgDeaths          Float
+  avgAssists         Float
+  avgDamage          Float?
+  avgHeadshotPct     Float?
+  momentumScore      Float?
+  stabilityScore     Float?
+  improvementScore   Float?
+  metrics            Json
+  dataSource         DataSource                @default(derived)
+  riotAccount        RiotAccount               @relation(fields: [riotAccountId], references: [id], onDelete: Cascade)
+
+  @@index([riotAccountId, capturedAt(sort: Desc)])
+  @@index([windowDays, capturedAt(sort: Desc)])
+}
+
+model AgentPerformanceSnapshot {
+  id                 String                    @id @default(cuid())
+  riotAccountId      String
+  capturedAt         DateTime                  @default(now())
+  windowDays         Int
+  agentName          String
+  matchesPlayed      Int
+  winRate            Float
+  kda                Float
+  avgDamage          Float?
+  consistencyScore   Float?
+  impactScore        Float?
+  metrics            Json
+  dataSource         DataSource                @default(derived)
+  riotAccount        RiotAccount               @relation(fields: [riotAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([riotAccountId, capturedAt, windowDays, agentName])
+  @@index([agentName, matchesPlayed])
+}
+
+model MapPerformanceSnapshot {
+  id                 String                    @id @default(cuid())
+  riotAccountId      String
+  capturedAt         DateTime                  @default(now())
+  windowDays         Int
+  mapName            String
+  matchesPlayed      Int
+  winRate            Float
+  kda                Float
+  avgDamage          Float?
+  consistencyScore   Float?
+  metrics            Json
+  dataSource         DataSource                @default(derived)
+  riotAccount        RiotAccount               @relation(fields: [riotAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([riotAccountId, capturedAt, windowDays, mapName])
+  @@index([mapName, matchesPlayed])
+}
+
+model ImprovementInsight {
+  id                 String                    @id @default(cuid())
+  userId             String
+  riotAccountPuuid   String
+  title              String
+  description        String
+  priority           String
+  confidence         Float
+  metricKey          String
+  evidence           Json
+  recommendation     String
+  referencedMatchIds String[]
+  status             String                    @default("active")
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  user               User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([riotAccountPuuid, metricKey])
+}
+
+model SyncJob {
+  id                 String                    @id @default(cuid())
+  userId             String
+  riotAccountPuuid   String
+  status             SyncStatus                @default(pending)
+  trigger            String
+  startedAt          DateTime?
+  completedAt        DateTime?
+  errorMessage       String?
+  stats              Json?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  user               User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([riotAccountPuuid, status])
+}
+
+model CachedApiResponse {
+  id                 String                    @id @default(cuid())
+  riotAccountId      String?
+  cacheKey           String                    @unique
+  endpoint           String
+  region             String
+  platform           String?
+  response           Json
+  expiresAt          DateTime
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  riotAccount        RiotAccount?              @relation(fields: [riotAccountId], references: [id], onDelete: SetNull)
+
+  @@index([riotAccountId, endpoint])
+  @@index([expiresAt])
+}
