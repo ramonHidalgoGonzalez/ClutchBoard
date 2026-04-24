@@ -1,3 +1,4 @@
+import { MOCK_AGENT_CATALOG, MOCK_MAP_CATALOG } from "@/integrations/riot/catalog"
 import { createMockMatches, mockAccountProfile } from "@/integrations/riot/mock-data"
 import type { RiotContentDto, RiotLeaderboardDto, RiotPlatformStatusDto } from "@/types/riot"
 
@@ -26,18 +27,8 @@ export async function getMatchById(matchId: string) {
 export async function getContent(): Promise<RiotContentDto> {
   return {
     version: "mock-1.0",
-    characters: [
-      { id: "jett", name: "Jett" },
-      { id: "sova", name: "Sova" },
-      { id: "omen", name: "Omen" },
-      { id: "killjoy", name: "Killjoy" },
-    ],
-    maps: [
-      { id: "ascent", name: "Ascent" },
-      { id: "bind", name: "Bind" },
-      { id: "haven", name: "Haven" },
-      { id: "sunset", name: "Sunset" },
-    ],
+    characters: MOCK_AGENT_CATALOG,
+    maps: MOCK_MAP_CATALOG,
     acts: [{ id: "act-1", name: "Act 1", type: "act", isActive: true }],
   }
 }

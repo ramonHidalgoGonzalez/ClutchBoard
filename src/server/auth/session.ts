@@ -4,7 +4,7 @@ import { SignJWT, jwtVerify } from "jose"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { getSessionSecret } from "@/lib/env"
+import { env, getSessionSecret } from "@/lib/env"
 import { createSessionRecord, findSessionRecord, revokeSessionRecord } from "@/server/repositories/session-repository"
 
 const COOKIE_NAME = "valorant_tracker_session"
@@ -69,16 +69,24 @@ export async function getCurrentSession() {
   try {
     const verified = await jwtVerify(token, getSecretKey())
     const payload = verified.payload as unknown as SessionPayload & { rawToken: string }
+
+    // In local demo mode without PostgreSQL, the signed JWT is the only reliable session source.
+    if (!env.databaseUrl) {
+      return payload
+    }
+
     const session = await findSessionRecord(hashToken(payload.rawToken))
 
-    if (session && new Date(session.expiresAt).getTime() < Date.now()) {
-      cookieStore.delete(COOKIE_NAME)
+    if (!session) {
+      return null
+    }
+
+    if (new Date(session.expiresAt).getTime() < Date.now()) {
       return null
     }
 
     return payload
   } catch {
-    cookieStore.delete(COOKIE_NAME)
     return null
   }
 }

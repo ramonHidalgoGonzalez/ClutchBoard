@@ -89,6 +89,33 @@ export function buildAgentBreakdown(matches: MatchPerformance[]): AgentBreakdown
     .sort((left, right) => right.matches - left.matches)
 }
 
+export function buildCompleteAgentBreakdown(
+  matches: MatchPerformance[],
+  catalog: Array<{ name: string }>,
+): AgentBreakdown[] {
+  const played = buildAgentBreakdown(matches)
+  const byName = new Map(played.map((agent) => [agent.agentName, agent]))
+
+  return catalog
+    .map((entry) => {
+      return (
+        byName.get(entry.name) ?? {
+          agentName: entry.name,
+          matches: 0,
+          winRate: 0,
+          kda: 0,
+          avgAcs: 0,
+          avgDamage: 0,
+          consistencyScore: 0,
+          impactScore: 0,
+          comfortPick: false,
+          source: "derived-app" as const,
+        }
+      )
+    })
+    .sort((left, right) => right.matches - left.matches || left.agentName.localeCompare(right.agentName))
+}
+
 export function buildMapBreakdown(matches: MatchPerformance[]): MapBreakdown[] {
   const byMap = matches.reduce<Map<string, MatchPerformance[]>>((acc, match) => {
     const bucket = acc.get(match.mapName) ?? []
@@ -113,6 +140,32 @@ export function buildMapBreakdown(matches: MatchPerformance[]): MapBreakdown[] {
       source: "derived-app" as const,
     }))
     .sort((left, right) => right.matches - left.matches)
+}
+
+export function buildCompleteMapBreakdown(
+  matches: MatchPerformance[],
+  catalog: Array<{ name: string }>,
+): MapBreakdown[] {
+  const played = buildMapBreakdown(matches)
+  const byName = new Map(played.map((map) => [map.mapName, map]))
+
+  return catalog
+    .map((entry) => {
+      return (
+        byName.get(entry.name) ?? {
+          mapName: entry.name,
+          matches: 0,
+          winRate: 0,
+          kda: 0,
+          avgAcs: 0,
+          avgDamage: 0,
+          consistencyScore: 0,
+          sampleLabel: "small" as const,
+          source: "derived-app" as const,
+        }
+      )
+    })
+    .sort((left, right) => right.matches - left.matches || left.mapName.localeCompare(right.mapName))
 }
 
 export function buildTrendPoints(matches: MatchPerformance[], windowDays = 30): TrendPoint[] {
