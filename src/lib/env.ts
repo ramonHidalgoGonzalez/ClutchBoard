@@ -16,7 +16,7 @@ export const env = {
   riotRsoRedirectUri:
     process.env.RIOT_RSO_REDIRECT_URI ?? "http://localhost:3000/api/auth/riot/callback",
   riotRsoScopes: process.env.RIOT_RSO_SCOPES ?? "openid offline_access",
-  riotRegion: process.env.RIOT_REGION ?? "eu",
+  riotRegion: process.env.RIOT_REGION ?? "europe",
   riotPlatform: process.env.RIOT_PLATFORM ?? "eu",
 }
 
