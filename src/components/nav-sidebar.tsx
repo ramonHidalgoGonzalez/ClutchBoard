@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 
 import { Activity, Bot, Compass, LayoutDashboard, Map, Settings, Shield } from "lucide-react"
 
@@ -21,9 +22,19 @@ export function NavSidebar({ pathname }: { pathname: string }) {
         <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-200">
           Riot-compliant tracker
         </Badge>
-        <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-zinc-500">Clutchboard</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Personal Command Center</h2>
+        <div className="flex items-start gap-3">
+          <Image
+            src="/brand/clutchboard-mark.svg"
+            alt="Clutchboard logo"
+            width={40}
+            height={40}
+            className="rounded-xl"
+            priority
+          />
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-zinc-500">Clutchboard</p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Personal Command Center</h2>
+          </div>
         </div>
       </div>
 

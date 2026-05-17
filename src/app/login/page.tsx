@@ -1,3 +1,5 @@
+import Link from "next/link"
+import Image from "next/image"
 import { redirect } from "next/navigation"
 
 import { LoginButton } from "@/features/auth/login-button"
@@ -19,6 +21,17 @@ export default async function LoginPage() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,70,85,0.2),transparent_28%),linear-gradient(180deg,#09090b_0%,#111827_55%,#050816_100%)] px-6 py-10 text-white">
       <div className="mx-auto flex max-w-5xl flex-col gap-8 rounded-[2rem] border border-white/10 bg-white/5 p-8 backdrop-blur">
         <div>
+          <div className="mb-4 inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
+            <Image
+              src="/brand/clutchboard-mark.svg"
+              alt="Clutchboard logo"
+              width={28}
+              height={28}
+              className="rounded-md"
+              priority
+            />
+            <span className="text-sm tracking-wide text-zinc-200">Clutchboard</span>
+          </div>
           <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">Acceso seguro</p>
           <h1 className="mt-3 text-4xl font-semibold">Iniciar sesion con Riot</h1>
           <p className="mt-4 max-w-2xl text-zinc-300">
@@ -29,6 +42,24 @@ export default async function LoginPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <LoginButton />
+        </div>
+        <div className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+          <p className="font-medium">Politica de opt-in de jugadores</p>
+          <p className="mt-2 text-amber-50/90">
+            Clutchboard solo muestra datos y estadisticas de jugadores que se registraron y aceptaron
+            expresamente compartir su informacion. Las cuentas sin alta previa no se publican.
+          </p>
+          <p className="mt-3 text-amber-50/90">
+            Al usar esta plataforma aceptas nuestra{" "}
+            <Link href="/privacy" className="underline underline-offset-2 hover:text-white">
+              Politica de Privacidad
+            </Link>{" "}
+            y nuestros{" "}
+            <Link href="/terms" className="underline underline-offset-2 hover:text-white">
+              Terminos de Servicio
+            </Link>
+            .
+          </p>
         </div>
       </div>
     </main>
