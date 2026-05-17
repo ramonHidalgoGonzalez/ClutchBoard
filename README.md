@@ -60,7 +60,7 @@ Main keys:
 
 Use your own app domain for legal pages and callbacks (never auth.riotgames.com URLs):
 
-- Privacy Policy URL: `https://clutchboard-alpha-ten.vercel.app/privacy`
+- Privacy Policy URL: `https://clutchboard-alpha-ten.vercel.app/privacidad`
 - Terms of Service URL: `https://clutchboard-alpha-ten.vercel.app/terms`
 - Redirect URI: `https://clutchboard-alpha-ten.vercel.app/api/auth/riot/callback`
 - Post-logout redirect URI: `https://clutchboard-alpha-ten.vercel.app/login`
@@ -72,7 +72,7 @@ Local development URIs (optional extra entries in Riot console):
 
 Checklist before requesting/finishing RSO approval:
 
-- Pages `/privacy` and `/terms` are publicly reachable.
+- Pages `/privacidad` and `/terms` are publicly reachable.
 - Login page shows a visible opt-in policy notice.
 - `ENABLE_MOCK_RIOT=false` in real mode.
 - `RIOT_RSO_REDIRECT_URI` exactly matches a registered callback.

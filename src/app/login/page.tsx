@@ -51,7 +51,7 @@ export default async function LoginPage() {
           </p>
           <p className="mt-3 text-amber-50/90">
             Al usar esta plataforma aceptas nuestra{" "}
-            <Link href="/privacy" className="underline underline-offset-2 hover:text-white">
+            <Link href="/privacidad" className="underline underline-offset-2 hover:text-white">
               Politica de Privacidad
             </Link>{" "}
             y nuestros{" "}

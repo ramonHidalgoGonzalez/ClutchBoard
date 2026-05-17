@@ -4,7 +4,7 @@ Status: pre-approval pending
 
 ## Riot portal submission fields
 
-- Privacy Policy URL: https://clutchboard-alpha-ten.vercel.app/privacy
+- Privacy Policy URL: https://clutchboard-alpha-ten.vercel.app/privacidad
 - Terms of Service URL: https://clutchboard-alpha-ten.vercel.app/terms
 - Redirect URI: https://clutchboard-alpha-ten.vercel.app/api/auth/riot/callback
 - Post-logout Redirect URI: https://clutchboard-alpha-ten.vercel.app/login
