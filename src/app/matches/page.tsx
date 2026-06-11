@@ -5,8 +5,8 @@ import { requireSession } from "@/server/auth/session"
 import { getMatchesData } from "@/server/services/match-service"
 
 export default async function MatchesPage() {
-  await requireSession()
-  const { matches } = await getMatchesData()
+  const session = await requireSession()
+  const { matches } = await getMatchesData(session.puuid)
 
   return (
     <AppShell title="Matches" subtitle="Historial, filtros y comparativas">

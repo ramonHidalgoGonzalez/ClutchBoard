@@ -10,7 +10,9 @@ export function MatchTable({ matches }: { matches: MatchPerformance[] }) {
       <Table>
         <TableHeader>
           <TableRow className="border-white/10 hover:bg-transparent">
+            <TableHead>Match</TableHead>
             <TableHead>Fecha</TableHead>
+            <TableHead>Queue</TableHead>
             <TableHead>Mapa</TableHead>
             <TableHead>Agente</TableHead>
             <TableHead>Resultado</TableHead>
@@ -23,7 +25,11 @@ export function MatchTable({ matches }: { matches: MatchPerformance[] }) {
         <TableBody>
           {matches.map((match) => (
             <TableRow key={match.matchId} className="border-white/10 hover:bg-white/5">
+              <TableCell className="font-mono text-xs text-zinc-300">
+                {match.matchId.length > 10 ? `...${match.matchId.slice(-8)}` : match.matchId}
+              </TableCell>
               <TableCell>{new Date(match.startedAt).toLocaleDateString()}</TableCell>
+              <TableCell>{match.queueName}</TableCell>
               <TableCell>{match.mapName}</TableCell>
               <TableCell>{match.agentName}</TableCell>
               <TableCell>

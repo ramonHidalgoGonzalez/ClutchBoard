@@ -10,9 +10,9 @@ export default async function MatchDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  await requireSession()
+  const session = await requireSession()
   const { id } = await params
-  const { match, baseline } = await getMatchById(id)
+  const { match, baseline } = await getMatchById(id, session.puuid)
 
   if (!match) {
     notFound()

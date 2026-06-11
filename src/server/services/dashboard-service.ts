@@ -2,7 +2,6 @@ import { generateImprovementInsights } from "@/analytics/improvement-engine"
 import { buildAgentBreakdown, buildComparisons, buildKpis, buildMapBreakdown, buildTrendPoints } from "@/analytics/metrics"
 import { riotAdapter } from "@/integrations/riot"
 import { env } from "@/lib/env"
-import { listStoredMatches } from "@/server/repositories/match-repository"
 import type { DashboardPayload } from "@/types/domain"
 
 type DashboardIdentity = {
@@ -13,8 +12,9 @@ type DashboardIdentity = {
 
 export async function getDashboardPayload(identity?: DashboardIdentity): Promise<DashboardPayload> {
   const puuid = identity?.puuid
-  const matches =
-    env.enableMockRiot || !puuid ? await riotAdapter.getNormalizedMatches() : await listStoredMatches(puuid)
+  const matches = env.enableMockRiot
+    ? await riotAdapter.getNormalizedMatches()
+    : await riotAdapter.getNormalizedMatches(puuid)
   const status = await riotAdapter.getPlatformStatus()
   const profile = env.enableMockRiot
     ? await riotAdapter.getCurrentAccount()

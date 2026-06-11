@@ -5,7 +5,7 @@ import { MapPerformanceChart } from "@/components/charts/map-performance-chart"
 import { PerformanceTrendChart } from "@/components/charts/performance-trend-chart"
 import { StatCard } from "@/components/stat-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MatchTable } from "@/features/matches/match-table"
+import { RecentMatchesPanel } from "@/features/matches/recent-matches-panel"
 import { env } from "@/lib/env"
 import { headers } from "next/headers"
 import { requireSession } from "@/server/auth/session"
@@ -101,7 +101,7 @@ export default async function DashboardPage() {
             <CardTitle>Ultimas partidas</CardTitle>
           </CardHeader>
           <CardContent>
-            <MatchTable matches={payload.recentMatches} />
+            <RecentMatchesPanel />
           </CardContent>
         </Card>
       </div>

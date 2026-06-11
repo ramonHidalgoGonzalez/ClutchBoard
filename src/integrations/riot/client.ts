@@ -7,6 +7,7 @@ type FetchOptions = {
   body?: URLSearchParams | string
   headers?: HeadersInit
   retries?: number
+  timeoutMs?: number
 }
 
 const REGION_HOSTS = {
@@ -33,8 +34,25 @@ export class RiotApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    public code = "riot_request_failed",
   ) {
     super(message)
+  }
+}
+
+export function normalizeRiotApiError(error: unknown) {
+  if (error instanceof RiotApiError) {
+    return {
+      status: error.status,
+      code: error.code,
+      message: error.message,
+    }
+  }
+
+  return {
+    status: 500,
+    code: "riot_unknown_error",
+    message: error instanceof Error ? error.message : "Unknown Riot API error",
   }
 }
 
@@ -67,14 +85,34 @@ export class RiotHttpClient {
     }
 
     const retries = options.retries ?? 2
+    const timeoutMs = options.timeoutMs ?? 10_000
 
     for (let attempt = 0; attempt <= retries; attempt += 1) {
-      const response = await fetch(url, {
-        method: options.method ?? "GET",
-        headers,
-        body: options.body,
-        cache: "no-store",
-      })
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), timeoutMs)
+      let response: Response
+
+      try {
+        response = await fetch(url, {
+          method: options.method ?? "GET",
+          headers,
+          body: options.body,
+          cache: "no-store",
+          signal: controller.signal,
+        })
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          throw new RiotApiError(`Riot request timeout for ${url}`, 504, "riot_timeout")
+        }
+
+        throw new RiotApiError(
+          `Riot request transport failure for ${url}: ${error instanceof Error ? error.message : "unknown"}`,
+          502,
+          "riot_transport_error",
+        )
+      } finally {
+        clearTimeout(timeout)
+      }
 
       if (response.ok) {
         return response.json() as Promise<T>
@@ -91,12 +129,14 @@ export class RiotHttpClient {
       }
 
       const errorBody = await response.text()
+      const code = response.status === 429 ? "riot_rate_limited" : "riot_request_failed"
       throw new RiotApiError(
         `Riot request failed (${response.status}) for ${url}: ${errorBody}`,
         response.status,
+        code,
       )
     }
 
-    throw new RiotApiError(`Unexpected Riot request failure for ${url}`, 500)
+    throw new RiotApiError(`Unexpected Riot request failure for ${url}`, 500, "riot_unexpected")
   }
 }
