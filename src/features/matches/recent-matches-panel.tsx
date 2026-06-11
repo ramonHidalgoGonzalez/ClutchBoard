@@ -15,6 +15,12 @@ type MatchesResponse = {
   matches: MatchPerformance[]
 }
 
+type MatchesApiError = {
+  error?: string
+  status?: number
+  message?: string
+}
+
 async function fetchRecentMatches() {
   const response = await fetch("/api/valorant/matches?limit=10", {
     method: "GET",
@@ -22,7 +28,13 @@ async function fetchRecentMatches() {
   })
 
   if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as { message?: string } | null
+    const body = (await response.json().catch(() => null)) as MatchesApiError | null
+    if (body?.error === "riot_match_fetch_failed") {
+      throw new Error(
+        "No se pudieron cargar las partidas. Riot devolvio un error al consultar VAL-MATCH-V1. Tu cuenta esta conectada correctamente.",
+      )
+    }
+
     throw new Error(body?.message ?? "No se pudieron cargar las partidas")
   }
 

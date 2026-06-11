@@ -32,8 +32,9 @@ export async function GET(request: NextRequest) {
     const normalized = normalizeRiotApiError(error)
     return NextResponse.json(
       {
-        error: normalized.code,
-        message: normalized.status === 429 ? "Riot rate limit reached. Retry shortly." : "Failed to fetch Riot matches.",
+        error: "riot_match_fetch_failed",
+        status: normalized.status,
+        message: "Could not load Valorant matches from Riot API.",
       },
       { status: normalized.status },
     )

@@ -86,7 +86,11 @@ describe("/api/valorant/matches", () => {
     const body = await response.json()
 
     expect(response.status).toBe(429)
-    expect(body.error).toBe("riot_rate_limited")
+    expect(body).toEqual({
+      error: "riot_match_fetch_failed",
+      status: 429,
+      message: "Could not load Valorant matches from Riot API.",
+    })
   })
 
   it("keeps mock mode working", async () => {

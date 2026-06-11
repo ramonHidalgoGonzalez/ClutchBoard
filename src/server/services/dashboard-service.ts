@@ -2,6 +2,7 @@ import { generateImprovementInsights } from "@/analytics/improvement-engine"
 import { buildAgentBreakdown, buildComparisons, buildKpis, buildMapBreakdown, buildTrendPoints } from "@/analytics/metrics"
 import { riotAdapter } from "@/integrations/riot"
 import { env } from "@/lib/env"
+import { getLogger } from "@/lib/logger"
 import type { DashboardPayload } from "@/types/domain"
 
 type DashboardIdentity = {
@@ -11,10 +12,29 @@ type DashboardIdentity = {
 }
 
 export async function getDashboardPayload(identity?: DashboardIdentity): Promise<DashboardPayload> {
+  const logger = getLogger()
   const puuid = identity?.puuid
-  const matches = env.enableMockRiot
-    ? await riotAdapter.getNormalizedMatches()
-    : await riotAdapter.getNormalizedMatches(puuid)
+  let matches = [] as Awaited<ReturnType<typeof riotAdapter.getNormalizedMatches>>
+  let matchesFetchFailed = false
+  let matchesFetchMessage: string | undefined
+
+  try {
+    matches = env.enableMockRiot
+      ? await riotAdapter.getNormalizedMatches()
+      : await riotAdapter.getNormalizedMatches(puuid)
+  } catch (error) {
+    matchesFetchFailed = true
+    matchesFetchMessage = "Riot devolvio un error al consultar VAL-MATCH-V1."
+    logger.warn(
+      {
+        scope: "dashboard-service",
+        stage: "getNormalizedMatches",
+        message: error instanceof Error ? error.message : "unknown",
+      },
+      "Falling back to empty matches dataset",
+    )
+  }
+
   const status = await riotAdapter.getPlatformStatus()
   const profile = env.enableMockRiot
     ? await riotAdapter.getCurrentAccount()
@@ -47,6 +67,8 @@ export async function getDashboardPayload(identity?: DashboardIdentity): Promise
     metadata: {
       mode: env.enableMockRiot ? "mock" : "riot",
       lastSyncedAt: profile.lastSyncedAt,
+      matchesFetchFailed,
+      matchesFetchMessage,
       officialDataNotes: [
         "Profile account, content, matchlist, match detail and platform status come from official Riot APIs when RSO and production credentials are configured.",
         "Rate-limited Riot access is handled server-side only.",

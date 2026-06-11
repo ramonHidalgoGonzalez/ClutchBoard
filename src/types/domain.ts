@@ -133,6 +133,8 @@ export type DashboardPayload = {
   metadata: {
     mode: "mock" | "riot"
     lastSyncedAt: string
+    matchesFetchFailed?: boolean
+    matchesFetchMessage?: string
     officialDataNotes: string[]
     derivedDataNotes: string[]
   }
