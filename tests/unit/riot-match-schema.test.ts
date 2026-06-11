@@ -37,4 +37,40 @@ describe("riotMatchSchema", () => {
     expect(parsed.players[0]?.characterId).toBe("agent-uuid-1")
     expect(parsed.players[0]?.characterName).toBeUndefined()
   })
+
+  it("accepts teams without roundsLost", () => {
+    const parsed = riotMatchSchema.parse({
+      matchInfo: {
+        matchId: "match-2",
+        mapId: "bind",
+        gameStartMillis: Date.now(),
+        gameLengthMillis: 1800000,
+        queueId: "competitive",
+        gameMode: "Bomb",
+        region: "eu",
+      },
+      players: [
+        {
+          puuid: "p-1",
+          teamId: "Blue",
+          characterId: "agent-uuid-1",
+          stats: {
+            kills: 12,
+            deaths: 10,
+            assists: 3,
+          },
+        },
+      ],
+      teams: [
+        {
+          teamId: "Blue",
+          roundsWon: 13,
+          roundsPlayed: 22,
+        },
+      ],
+    })
+
+    expect(parsed.teams[0]?.roundsLost).toBeUndefined()
+    expect(parsed.teams[0]?.roundsPlayed).toBe(22)
+  })
 })

@@ -7,6 +7,55 @@ type RiotMapperOptions = {
   resolveQueueName?: (queueId: string) => string | undefined
 }
 
+function toFiniteNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
+function deriveRoundsLost(team: RiotMatchDto["teams"][number], opponent?: RiotMatchDto["teams"][number]) {
+  const explicit = toFiniteNumber(team.roundsLost)
+  if (explicit !== null) {
+    return Math.max(0, explicit)
+  }
+
+  const roundsPlayed = toFiniteNumber(team.roundsPlayed)
+  const roundsWon = toFiniteNumber(team.roundsWon)
+  if (roundsPlayed !== null && roundsWon !== null) {
+    return Math.max(0, roundsPlayed - roundsWon)
+  }
+
+  const opponentRoundsWon = toFiniteNumber(opponent?.roundsWon)
+  if (opponentRoundsWon !== null) {
+    return Math.max(0, opponentRoundsWon)
+  }
+
+  return 0
+}
+
+function deriveOutcome(team: RiotMatchDto["teams"][number], opponent?: RiotMatchDto["teams"][number]) {
+  if (team.won === true) {
+    return "win" as const
+  }
+
+  if (team.won === false) {
+    return "loss" as const
+  }
+
+  const teamRoundsWon = toFiniteNumber(team.roundsWon)
+  const opponentRoundsWon = toFiniteNumber(opponent?.roundsWon)
+
+  if (teamRoundsWon !== null && opponentRoundsWon !== null) {
+    if (teamRoundsWon > opponentRoundsWon) {
+      return "win" as const
+    }
+    if (teamRoundsWon < opponentRoundsWon) {
+      return "loss" as const
+    }
+    return "draw" as const
+  }
+
+  return "unknown" as const
+}
+
 function sanitizeFallbackLabel(value: string) {
   const candidate = value.split("/").pop() ?? value
   return candidate.trim() || "Unknown"
@@ -40,6 +89,7 @@ export function mapRiotMatchToPerformance(
 ): MatchPerformance | null {
   const player = match.players.find((candidate) => candidate.puuid === puuid)
   const team = player ? match.teams.find((candidate) => candidate.teamId === player.teamId) : null
+  const opponent = team ? match.teams.find((candidate) => candidate.teamId !== team.teamId) : undefined
 
   if (!player || !team) {
     return null
@@ -66,7 +116,9 @@ export function mapRiotMatchToPerformance(
   )
 
   const firstBloods = roundStats.filter((entry) => (entry.kills?.length ?? 0) > 0).length
-  const acsEstimate = Math.round(damage / Math.max(1, player.stats.roundsPlayed ?? team.roundsWon + team.roundsLost))
+  const roundsWon = Math.max(0, toFiniteNumber(team.roundsWon) ?? 0)
+  const roundsLost = deriveRoundsLost(team, opponent)
+  const acsEstimate = Math.round(damage / Math.max(1, player.stats.roundsPlayed ?? roundsWon + roundsLost))
   const queueId = match.matchInfo.queueId ?? "unknown-queue"
   const mapId = match.matchInfo.mapId ?? "unknown-map"
   const safeAgentId = player.characterId ?? "unknown-agent"
@@ -85,9 +137,9 @@ export function mapRiotMatchToPerformance(
     mapName,
     agentId: safeAgentId,
     agentName,
-    outcome: team.won ? "win" : "loss",
-    roundsWon: team.roundsWon,
-    roundsLost: team.roundsLost,
+    outcome: deriveOutcome(team, opponent),
+    roundsWon,
+    roundsLost,
     kills: player.stats.kills ?? 0,
     deaths: player.stats.deaths ?? 0,
     assists: player.stats.assists ?? 0,

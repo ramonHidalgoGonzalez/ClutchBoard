@@ -32,6 +32,12 @@ function buildMatch(playerOverrides: Partial<RiotMatchDto["players"][number]> = 
         roundsWon: 13,
         roundsLost: 7,
       },
+      {
+        teamId: "Red",
+        won: false,
+        roundsWon: 7,
+        roundsLost: 13,
+      },
     ],
   }
 }
@@ -57,5 +63,63 @@ describe("mapRiotMatchToPerformance", () => {
     expect(mapped).not.toBeNull()
     expect(mapped?.agentName).toBe("Jett")
     expect(mapped?.mapName).toBe("Ascent")
+  })
+
+  it("derives roundsLost from roundsPlayed - roundsWon", () => {
+    const match = buildMatch()
+    match.teams = [
+      {
+        teamId: "Blue",
+        roundsPlayed: 22,
+        roundsWon: 13,
+      },
+      {
+        teamId: "Red",
+        roundsWon: 9,
+      },
+    ]
+
+    const mapped = mapRiotMatchToPerformance(match, "session-puuid")
+
+    expect(mapped).not.toBeNull()
+    expect(mapped?.roundsWon).toBe(13)
+    expect(mapped?.roundsLost).toBe(9)
+  })
+
+  it("derives roundsLost from opponent roundsWon when roundsPlayed is missing", () => {
+    const match = buildMatch()
+    match.teams = [
+      {
+        teamId: "Blue",
+        roundsWon: 11,
+      },
+      {
+        teamId: "Red",
+        roundsWon: 13,
+      },
+    ]
+
+    const mapped = mapRiotMatchToPerformance(match, "session-puuid")
+
+    expect(mapped).not.toBeNull()
+    expect(mapped?.roundsLost).toBe(13)
+    expect(mapped?.outcome).toBe("loss")
+  })
+
+  it("uses unknown outcome when winner cannot be derived", () => {
+    const match = buildMatch()
+    match.teams = [
+      {
+        teamId: "Blue",
+      },
+      {
+        teamId: "Red",
+      },
+    ]
+
+    const mapped = mapRiotMatchToPerformance(match, "session-puuid")
+
+    expect(mapped).not.toBeNull()
+    expect(mapped?.outcome).toBe("unknown")
   })
 })

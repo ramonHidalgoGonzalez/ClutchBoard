@@ -37,7 +37,9 @@ export function MatchTable({ matches }: { matches: MatchPerformance[] }) {
                   className={
                     match.outcome === "win"
                       ? "bg-emerald-500/15 text-emerald-200"
-                      : "bg-rose-500/15 text-rose-200"
+                      : match.outcome === "loss"
+                        ? "bg-rose-500/15 text-rose-200"
+                        : "bg-zinc-500/20 text-zinc-200"
                   }
                 >
                   {match.outcome}

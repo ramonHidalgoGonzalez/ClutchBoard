@@ -63,9 +63,11 @@ export const riotMatchSchema = z.object({
   teams: z.array(
     z.object({
       teamId: z.string(),
-      won: z.boolean(),
-      roundsWon: z.number(),
-      roundsLost: z.number(),
+      won: z.boolean().nullable().optional(),
+      roundsPlayed: z.number().nullable().optional(),
+      roundsWon: z.number().nullable().optional(),
+      numPoints: z.number().nullable().optional(),
+      roundsLost: z.number().nullable().optional(),
     }),
   ),
   roundResults: z

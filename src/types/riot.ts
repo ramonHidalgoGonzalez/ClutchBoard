@@ -74,9 +74,11 @@ export type RiotMatchDto = {
   }>
   teams: Array<{
     teamId: string
-    won: boolean
-    roundsWon: number
-    roundsLost: number
+    won?: boolean | null
+    roundsPlayed?: number | null
+    roundsWon?: number | null
+    numPoints?: number | null
+    roundsLost?: number | null
   }>
   roundResults?: Array<{
     roundNum: number

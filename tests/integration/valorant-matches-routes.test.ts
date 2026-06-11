@@ -186,9 +186,12 @@ describe("/api/valorant/matches/[matchId]", () => {
           teams: [
             {
               teamId: "Blue",
-              won: true,
+              roundsPlayed: 21,
               roundsWon: 13,
-              roundsLost: 8,
+            },
+            {
+              teamId: "Red",
+              roundsWon: 8,
             },
           ],
         })),
@@ -202,5 +205,6 @@ describe("/api/valorant/matches/[matchId]", () => {
 
     expect(response.status).toBe(200)
     expect(body.match.agentName).toBe("123e4567-agent")
+    expect(body.match.roundsLost).toBe(8)
   })
 })

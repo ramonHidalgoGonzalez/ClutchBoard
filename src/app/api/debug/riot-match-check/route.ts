@@ -66,6 +66,15 @@ export async function GET() {
       tagLine: string | null
       puuidPrefix: string | null
     } | null,
+    firstTeam: null as {
+      keys: string[]
+      teamId: string | null
+      won: boolean | null
+      roundsPlayed: number | null
+      roundsWon: number | null
+      numPoints: number | null
+      roundsLost: number | null
+    } | null,
   }
 
   try {
@@ -129,11 +138,21 @@ export async function GET() {
               puuid?: string
               [key: string]: unknown
             }>
+            teams?: Array<{
+              teamId?: string | null
+              won?: boolean | null
+              roundsPlayed?: number | null
+              roundsWon?: number | null
+              numPoints?: number | null
+              roundsLost?: number | null
+              [key: string]: unknown
+            }>
             status?: { message?: string }
           }
         | null
 
       const firstPlayer = Array.isArray(detailBody?.players) ? detailBody.players[0] : null
+      const firstTeam = Array.isArray(detailBody?.teams) ? detailBody.teams[0] : null
       matchDetailShape = {
         ok: detail.ok,
         status: detail.status,
@@ -146,6 +165,17 @@ export async function GET() {
               gameName: firstPlayer.gameName ?? null,
               tagLine: firstPlayer.tagLine ?? null,
               puuidPrefix: firstPlayer.puuid ? firstPlayer.puuid.slice(0, 8) : null,
+            }
+          : null,
+        firstTeam: firstTeam
+          ? {
+              keys: Object.keys(firstTeam),
+              teamId: firstTeam.teamId ?? null,
+              won: typeof firstTeam.won === "boolean" ? firstTeam.won : null,
+              roundsPlayed: typeof firstTeam.roundsPlayed === "number" ? firstTeam.roundsPlayed : null,
+              roundsWon: typeof firstTeam.roundsWon === "number" ? firstTeam.roundsWon : null,
+              numPoints: typeof firstTeam.numPoints === "number" ? firstTeam.numPoints : null,
+              roundsLost: typeof firstTeam.roundsLost === "number" ? firstTeam.roundsLost : null,
             }
           : null,
       }

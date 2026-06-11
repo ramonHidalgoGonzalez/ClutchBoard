@@ -24,7 +24,7 @@ export type MatchPerformance = {
   mapName: string
   agentId: string
   agentName: string
-  outcome: "win" | "loss" | "draw"
+  outcome: "win" | "loss" | "draw" | "unknown"
   roundsWon: number
   roundsLost: number
   kills: number
