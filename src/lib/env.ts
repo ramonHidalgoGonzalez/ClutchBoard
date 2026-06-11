@@ -1,12 +1,16 @@
 const isProduction = process.env.NODE_ENV === "production"
 
+function parseBooleanFlag(value: string | undefined) {
+  return value === "true"
+}
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   isProduction,
   appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   logLevel: process.env.LOG_LEVEL ?? "info",
-  enableMockRiot: process.env.ENABLE_MOCK_RIOT !== "false",
-  demoAutoLogin: process.env.DEMO_AUTO_LOGIN === "true",
+  enableMockRiot: parseBooleanFlag(process.env.ENABLE_MOCK_RIOT),
+  demoAutoLogin: parseBooleanFlag(process.env.DEMO_AUTO_LOGIN),
   databaseUrl: process.env.DATABASE_URL,
   upstashUrl: process.env.UPSTASH_REDIS_REST_URL,
   upstashToken: process.env.UPSTASH_REDIS_REST_TOKEN,
