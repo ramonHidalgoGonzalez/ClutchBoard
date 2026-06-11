@@ -19,6 +19,7 @@ const ERROR_MESSAGES: Record<string, string> = {
     "RSO real pendiente de aprobacion/configuracion. Usa modo demo o completa RIOT_RSO_CLIENT_ID y RIOT_RSO_CLIENT_SECRET.",
   rso_unavailable: "No se pudo iniciar Riot Sign On en este momento.",
   rso_exchange: "No se pudo completar el intercambio de codigo con Riot.",
+  rso_account: "Riot inicio sesion, pero no se pudo recuperar tu cuenta en /accounts/me.",
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {

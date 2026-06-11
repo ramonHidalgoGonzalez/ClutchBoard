@@ -5,16 +5,23 @@ import { env } from "@/lib/env"
 import { listStoredMatches } from "@/server/repositories/match-repository"
 import type { DashboardPayload } from "@/types/domain"
 
-export async function getDashboardPayload(puuid?: string): Promise<DashboardPayload> {
+type DashboardIdentity = {
+  puuid: string
+  gameName: string
+  tagLine: string
+}
+
+export async function getDashboardPayload(identity?: DashboardIdentity): Promise<DashboardPayload> {
+  const puuid = identity?.puuid
   const matches =
     env.enableMockRiot || !puuid ? await riotAdapter.getNormalizedMatches() : await listStoredMatches(puuid)
   const status = await riotAdapter.getPlatformStatus()
   const profile = env.enableMockRiot
     ? await riotAdapter.getCurrentAccount()
     : {
-        puuid: puuid ?? "unknown-puuid",
-        gameName: "Linked",
-        tagLine: "RSO",
+        puuid: identity?.puuid ?? "unknown-puuid",
+        gameName: identity?.gameName ?? "Linked",
+        tagLine: identity?.tagLine ?? "RSO",
         region: env.riotRegion,
         platform: env.riotPlatform,
         linkedAt: new Date().toISOString(),

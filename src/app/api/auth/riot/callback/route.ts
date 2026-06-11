@@ -4,11 +4,14 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { riotAdapter } from "@/integrations/riot"
 import { env, hasRsoClientCredentials } from "@/lib/env"
+import { getLogger } from "@/lib/logger"
 import { createAppSession } from "@/server/auth/session"
 import { verifyRiotState } from "@/server/auth/rso"
 import { findOrCreateUserFromRiotAccount } from "@/server/repositories/user-repository"
 
 export async function GET(request: NextRequest) {
+  const logger = getLogger()
+
   if (env.enableMockRiot) {
     return NextResponse.redirect(new URL("/dashboard", env.appUrl))
   }
@@ -30,7 +33,22 @@ export async function GET(request: NextRequest) {
 
   try {
     const tokens = await riotAdapter.exchangeCodeForTokens(code)
-    const account = await riotAdapter.getCurrentAccount(tokens.access_token)
+
+    let account
+    try {
+      account = await riotAdapter.getCurrentAccount(tokens.access_token)
+    } catch (error) {
+      logger.warn(
+        {
+          flow: "rso-callback",
+          stage: "accounts-me",
+          error: error instanceof Error ? error.message : "unknown",
+        },
+        "Riot accounts/me request failed",
+      )
+      return NextResponse.redirect(new URL("/login?error=rso_account", env.appUrl))
+    }
+
     const { user } = await findOrCreateUserFromRiotAccount(account)
 
     await createAppSession({
@@ -40,7 +58,15 @@ export async function GET(request: NextRequest) {
       gameName: account.gameName,
       tagLine: account.tagLine,
     })
-  } catch {
+  } catch (error) {
+    logger.warn(
+      {
+        flow: "rso-callback",
+        stage: "token-exchange",
+        error: error instanceof Error ? error.message : "unknown",
+      },
+      "Riot token exchange failed",
+    )
     return NextResponse.redirect(new URL("/login?error=rso_exchange", env.appUrl))
   }
 
