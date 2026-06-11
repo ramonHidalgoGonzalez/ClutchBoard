@@ -24,7 +24,6 @@ export const env = {
   riotRsoScopes: process.env.RIOT_RSO_SCOPES ?? "openid offline_access",
   riotRegion: process.env.RIOT_REGION ?? "europe",
   riotPlatform: process.env.RIOT_PLATFORM ?? "eu",
-  riotDebugMatchCheck: parseBooleanFlag(process.env.RIOT_DEBUG_MATCH_CHECK),
 }
 
 export function getSessionSecret() {

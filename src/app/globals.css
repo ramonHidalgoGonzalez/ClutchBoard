@@ -123,8 +123,24 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at 14% 10%, color-mix(in oklch, var(--primary) 30%, transparent) 0%, transparent 28%),
+      radial-gradient(circle at 88% 0%, color-mix(in oklch, var(--accent) 35%, transparent) 0%, transparent 24%),
+      linear-gradient(180deg, #06070b 0%, #090d1a 55%, #05070f 100%);
+    background-attachment: fixed;
   }
   html {
     @apply font-sans;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 48%, transparent);
+    color: white;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply border border-white/10 bg-white/[0.04] backdrop-blur-md;
   }
 }

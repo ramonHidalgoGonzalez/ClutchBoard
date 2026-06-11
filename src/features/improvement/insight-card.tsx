@@ -3,16 +3,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ImprovementInsight } from "@/types/domain"
 
 export function InsightCard({ insight }: { insight: ImprovementInsight }) {
+  const priorityClass =
+    insight.priority === "high"
+      ? "border-rose-300/35 bg-rose-500/15 text-rose-100"
+      : insight.priority === "medium"
+        ? "border-amber-300/35 bg-amber-500/15 text-amber-100"
+        : "border-emerald-300/35 bg-emerald-500/15 text-emerald-100"
+
   return (
-    <Card className="border-white/10 bg-white/5 text-white">
+    <Card className="glass-panel text-white">
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-lg">{insight.title}</CardTitle>
-          <Badge className="bg-white/10 text-zinc-100">{insight.priority}</Badge>
+          <Badge className={priorityClass}>{insight.priority}</Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-zinc-300">{insight.description}</p>
+        <p className="text-xs text-zinc-400">Confianza: {(insight.confidence * 100).toFixed(0)}%</p>
         <div className="flex flex-wrap gap-2">
           {insight.evidence.map((evidence) => (
             <Badge key={evidence.label} variant="outline" className="border-white/10 bg-black/20 text-zinc-200">

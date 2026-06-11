@@ -15,9 +15,14 @@ const items = [
   { href: "/settings", label: "Settings", icon: Settings },
 ]
 
-export function NavSidebar({ pathname }: { pathname: string }) {
+export function NavSidebar({ pathname, mobile = false }: { pathname: string; mobile?: boolean }) {
   return (
-    <aside className="hidden w-72 border-r border-white/10 bg-black/30 px-5 py-6 backdrop-blur xl:block">
+    <aside
+      className={cn(
+        "w-72 border-r border-white/10 bg-black/30 px-5 py-6 backdrop-blur",
+        mobile ? "block h-full" : "hidden xl:block",
+      )}
+    >
       <div className="mb-8 space-y-3">
         <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-200">
           Riot-compliant tracker

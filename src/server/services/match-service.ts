@@ -1,6 +1,33 @@
 import { buildAgentBreakdown, buildMapBreakdown } from "@/analytics/metrics"
 import { riotAdapter } from "@/integrations/riot"
 import { env } from "@/lib/env"
+import type { RiotMatchDto } from "@/types/riot"
+
+type MatchPlayerRow = {
+  name: string
+  teamId: string
+  agentName: string
+  kills: number
+  deaths: number
+  assists: number
+  score: number
+}
+
+function isRiotMatchDto(value: unknown): value is RiotMatchDto {
+  return Boolean(value && typeof value === "object" && "matchInfo" in value && "players" in value)
+}
+
+function resolvePlayerName(player: RiotMatchDto["players"][number]) {
+  if (player.gameName && player.tagLine) {
+    return `${player.gameName}#${player.tagLine}`
+  }
+
+  if (player.gameName) {
+    return player.gameName
+  }
+
+  return `Player ${player.puuid.slice(0, 8)}`
+}
 
 export async function getMatchesData(puuid?: string) {
   const matches = env.enableMockRiot
@@ -25,8 +52,26 @@ export async function getMatchById(matchId: string, puuid?: string) {
       Math.max(1, matches.length),
   }
 
+  let playerRows: MatchPlayerRow[] = []
+
+  if (!env.enableMockRiot && match && puuid) {
+    const rawMatch = await riotAdapter.getMatchById(matchId).catch(() => null)
+    if (isRiotMatchDto(rawMatch)) {
+      playerRows = rawMatch.players.map((player) => ({
+        name: resolvePlayerName(player),
+        teamId: player.teamId,
+        agentName: player.characterName || player.characterId || "Unknown Agent",
+        kills: player.stats.kills ?? 0,
+        deaths: player.stats.deaths ?? 0,
+        assists: player.stats.assists ?? 0,
+        score: player.stats.score ?? 0,
+      }))
+    }
+  }
+
   return {
     match,
     baseline,
+    playerRows,
   }
 }

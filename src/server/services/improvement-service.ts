@@ -9,8 +9,8 @@ import {
 import { filterStandardMaps } from "@/integrations/riot/catalog"
 import { riotAdapter } from "@/integrations/riot"
 
-export async function getImprovementData() {
-  const matches = await riotAdapter.getNormalizedMatches()
+export async function getImprovementData(puuid?: string) {
+  const matches = await riotAdapter.getNormalizedMatches(puuid)
   const content = await riotAdapter.getContent().catch(() => null)
 
   return {
