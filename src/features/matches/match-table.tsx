@@ -29,9 +29,9 @@ export function MatchTable({ matches }: { matches: MatchPerformance[] }) {
                 {match.matchId.length > 10 ? `...${match.matchId.slice(-8)}` : match.matchId}
               </TableCell>
               <TableCell>{new Date(match.startedAt).toLocaleDateString()}</TableCell>
-              <TableCell>{match.queueName}</TableCell>
-              <TableCell>{match.mapName}</TableCell>
-              <TableCell>{match.agentName}</TableCell>
+              <TableCell>{match.queueName ?? match.queueId ?? "Unknown Queue"}</TableCell>
+              <TableCell>{match.mapName ?? match.mapId ?? "Unknown Map"}</TableCell>
+              <TableCell>{match.agentName ?? "Unknown Agent"}</TableCell>
               <TableCell>
                 <Badge
                   className={

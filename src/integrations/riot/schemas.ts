@@ -37,14 +37,16 @@ export const riotMatchSchema = z.object({
     z.object({
       puuid: z.string(),
       teamId: z.string(),
-      characterId: z.string(),
-      characterName: z.string(),
+      characterId: z.string().nullable().optional(),
+      characterName: z.string().nullable().optional(),
+      gameName: z.string().nullable().optional(),
+      tagLine: z.string().nullable().optional(),
       stats: z.object({
         score: z.number().optional(),
         roundsPlayed: z.number().optional(),
-        kills: z.number(),
-        deaths: z.number(),
-        assists: z.number(),
+        kills: z.number().optional(),
+        deaths: z.number().optional(),
+        assists: z.number().optional(),
       }),
       economy: z.object({ spent: z.number().optional() }).nullable().optional(),
       behaviorFactors: z

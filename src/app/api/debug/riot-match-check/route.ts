@@ -51,6 +51,21 @@ export async function GET() {
     status: 0,
     bodyStatusCode: null as number | null,
     bodyMessage: "not-executed",
+    firstMatchId: null as string | null,
+  }
+
+  let matchDetailShape = {
+    ok: false,
+    status: 0,
+    message: "not-executed",
+    firstPlayer: null as {
+      keys: string[]
+      characterId: string | null
+      characterName: string | null
+      gameName: string | null
+      tagLine: string | null
+      puuidPrefix: string | null
+    } | null,
   }
 
   try {
@@ -66,10 +81,24 @@ export async function GET() {
     let bodyMessage = ""
 
     const parsed = await response.json().catch(() => null)
+    let firstMatchId: string | null = null
     if (parsed && typeof parsed === "object") {
       const statusObj = (parsed as { status?: { status_code?: number; message?: string } }).status
       bodyStatusCode = statusObj?.status_code ?? null
       bodyMessage = sanitizeMessage(statusObj?.message ?? "")
+
+      const history = (parsed as { history?: unknown[] }).history
+      const firstEntry = Array.isArray(history) ? history[0] : null
+      if (typeof firstEntry === "string") {
+        firstMatchId = firstEntry
+      } else if (
+        firstEntry &&
+        typeof firstEntry === "object" &&
+        "matchId" in firstEntry &&
+        typeof (firstEntry as { matchId?: unknown }).matchId === "string"
+      ) {
+        firstMatchId = (firstEntry as { matchId: string }).matchId
+      }
     }
 
     directFetch = {
@@ -77,6 +106,49 @@ export async function GET() {
       status: response.status,
       bodyStatusCode,
       bodyMessage,
+      firstMatchId,
+    }
+
+    if (response.ok && firstMatchId) {
+      const detailUrl = `${PLATFORM_HOSTS[platform]}/val/match/v1/matches/${firstMatchId}`
+      const detail = await fetch(detailUrl, {
+        method: "GET",
+        headers: {
+          "X-Riot-Token": env.riotApiKey ?? "",
+        },
+        cache: "no-store",
+      })
+
+      const detailBody = (await detail.json().catch(() => null)) as
+        | {
+            players?: Array<{
+              characterId?: string | null
+              characterName?: string | null
+              gameName?: string | null
+              tagLine?: string | null
+              puuid?: string
+              [key: string]: unknown
+            }>
+            status?: { message?: string }
+          }
+        | null
+
+      const firstPlayer = Array.isArray(detailBody?.players) ? detailBody.players[0] : null
+      matchDetailShape = {
+        ok: detail.ok,
+        status: detail.status,
+        message: detail.ok ? "detail fetch ok" : sanitizeMessage(detailBody?.status?.message ?? "detail fetch failed"),
+        firstPlayer: firstPlayer
+          ? {
+              keys: Object.keys(firstPlayer),
+              characterId: firstPlayer.characterId ?? null,
+              characterName: firstPlayer.characterName ?? null,
+              gameName: firstPlayer.gameName ?? null,
+              tagLine: firstPlayer.tagLine ?? null,
+              puuidPrefix: firstPlayer.puuid ? firstPlayer.puuid.slice(0, 8) : null,
+            }
+          : null,
+      }
     }
   } catch (error) {
     directFetch = {
@@ -84,6 +156,7 @@ export async function GET() {
       status: 0,
       bodyStatusCode: null,
       bodyMessage: sanitizeMessage(error),
+      firstMatchId: null,
     }
   }
 
@@ -135,6 +208,7 @@ export async function GET() {
     apiKeyLength,
     apiKeyPrefix,
     directFetch,
+    matchDetailShape,
     adapter,
   })
 }

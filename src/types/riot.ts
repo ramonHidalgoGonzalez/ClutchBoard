@@ -49,14 +49,16 @@ export type RiotMatchDto = {
   players: Array<{
     puuid: string
     teamId: string
-    characterId: string
-    characterName: string
+    characterId?: string | null
+    characterName?: string | null
+    gameName?: string | null
+    tagLine?: string | null
     stats: {
       score?: number
       roundsPlayed?: number
-      kills: number
-      deaths: number
-      assists: number
+      kills?: number
+      deaths?: number
+      assists?: number
       playtimeMillis?: number
       abilityCasts?: Record<string, number> | null
     }

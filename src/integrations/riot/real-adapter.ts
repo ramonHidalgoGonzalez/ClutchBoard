@@ -1,4 +1,5 @@
 import { env } from "@/lib/env"
+import { getLogger } from "@/lib/logger"
 import { RiotHttpClient } from "@/integrations/riot/client"
 import { mapRiotMatchToPerformance } from "@/integrations/riot/mapper"
 import { riotAccountSchema, riotMatchListSchema, riotMatchSchema } from "@/integrations/riot/schemas"
@@ -7,11 +8,92 @@ import type {
   RiotAccountDto,
   RiotContentDto,
   RiotLeaderboardDto,
+  RiotMatchDto,
   RiotMatchListDto,
   RiotPlatformStatusDto,
 } from "@/types/riot"
 
 const client = new RiotHttpClient()
+const logger = getLogger()
+const CONTENT_CACHE_TTL_MS = 5 * 60 * 1000
+
+type ContentLookups = {
+  agentById: Map<string, string>
+  mapById: Map<string, string>
+}
+
+let contentCache: { expiresAt: number; lookups: ContentLookups } | null = null
+
+function normalizeLookupKey(value: string) {
+  return value.trim().toLowerCase()
+}
+
+function buildContentLookups(content: RiotContentDto): ContentLookups {
+  const agentById = new Map<string, string>()
+  const mapById = new Map<string, string>()
+
+  for (const character of content.characters) {
+    if (!character.id || !character.name) {
+      continue
+    }
+
+    agentById.set(normalizeLookupKey(character.id), character.name)
+  }
+
+  for (const map of content.maps) {
+    if (!map.id || !map.name) {
+      continue
+    }
+
+    mapById.set(normalizeLookupKey(map.id), map.name)
+  }
+
+  return { agentById, mapById }
+}
+
+async function getCachedContentLookups(): Promise<ContentLookups> {
+  const now = Date.now()
+  if (contentCache && contentCache.expiresAt > now) {
+    return contentCache.lookups
+  }
+
+  try {
+    const content = await getContent("en-US")
+    const lookups = buildContentLookups(content)
+    contentCache = {
+      expiresAt: now + CONTENT_CACHE_TTL_MS,
+      lookups,
+    }
+    return lookups
+  } catch (error) {
+    logger.warn(
+      {
+        scope: "real-adapter",
+        stage: "content-lookup",
+        message: error instanceof Error ? error.message : "unknown",
+      },
+      "Unable to refresh Riot content lookup cache",
+    )
+
+    return contentCache?.lookups ?? { agentById: new Map(), mapById: new Map() }
+  }
+}
+
+function getPlayerSafeShape(match: RiotMatchDto) {
+  const first = match.players.at(0)
+  if (!first) {
+    return null
+  }
+
+  return {
+    keys: Object.keys(first),
+    characterId: first.characterId ?? null,
+    characterName: first.characterName ?? null,
+    gameName: first.gameName ?? null,
+    tagLine: first.tagLine ?? null,
+    puuidPrefix: first.puuid ? first.puuid.slice(0, 8) : null,
+  }
+}
 
 function resolveRegion() {
   if (env.riotRegion === "americas" || env.riotRegion === "asia" || env.riotRegion === "europe") {
@@ -77,14 +159,25 @@ export async function getNormalizedMatches(puuid?: string, maxMatches = 20): Pro
   const matchList = await getMatchListByPuuid(puuid)
   const ids = matchList.history.map(extractMatchId).slice(0, maxMatches)
   const matches = await Promise.all(ids.map((id) => getMatchById(id)))
+  const contentLookups = await getCachedContentLookups()
 
   return matches
-    .map((match) => mapRiotMatchToPerformance(match, puuid))
+    .map((match) =>
+      mapRiotMatchToPerformance(match, puuid, {
+        resolveAgentName: (characterId) => contentLookups.agentById.get(normalizeLookupKey(characterId)),
+        resolveMapName: (mapId) => contentLookups.mapById.get(normalizeLookupKey(mapId)),
+      }),
+    )
     .filter((match): match is MatchPerformance => Boolean(match))
     .map((match, index) => ({
       ...match,
       sessionIndex: Math.floor(index / 4) + 1,
     }))
+}
+
+export async function getSafeMatchDetailShape(matchId: string) {
+  const match = await getMatchById(matchId)
+  return getPlayerSafeShape(match)
 }
 
 export async function getContent(locale = "en-US") {

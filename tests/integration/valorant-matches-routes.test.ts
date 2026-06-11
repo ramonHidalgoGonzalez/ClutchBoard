@@ -142,4 +142,65 @@ describe("/api/valorant/matches/[matchId]", () => {
 
     expect(response.status).toBe(401)
   })
+
+  it("returns match with fallback agent when Riot player has characterId but no characterName", async () => {
+    vi.doMock("@/server/auth/session", () => ({
+      getCurrentSession: vi.fn(async () => ({
+        userId: "user-1",
+        puuid: "session-puuid",
+        gameName: "RRumu",
+        tagLine: "6969",
+      })),
+    }))
+
+    vi.doMock("@/lib/env", () => ({
+      env: {
+        enableMockRiot: false,
+      },
+    }))
+
+    vi.doMock("@/integrations/riot", () => ({
+      riotAdapter: {
+        getMatchById: vi.fn(async () => ({
+          matchInfo: {
+            matchId: "match-1",
+            mapId: "ascent",
+            gameStartMillis: Date.now(),
+            gameLengthMillis: 1800000,
+            queueId: "competitive",
+            gameMode: "Bomb",
+            region: "eu",
+          },
+          players: [
+            {
+              puuid: "session-puuid",
+              teamId: "Blue",
+              characterId: "123e4567-agent",
+              stats: {
+                kills: 18,
+                deaths: 12,
+                assists: 6,
+              },
+            },
+          ],
+          teams: [
+            {
+              teamId: "Blue",
+              won: true,
+              roundsWon: 13,
+              roundsLost: 8,
+            },
+          ],
+        })),
+      },
+    }))
+
+    const route = await import("@/app/api/valorant/matches/[matchId]/route")
+    const request = new NextRequest("http://localhost:3000/api/valorant/matches/match-1")
+    const response = await route.GET(request, { params: Promise.resolve({ matchId: "match-1" }) })
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.match.agentName).toBe("123e4567-agent")
+  })
 })
