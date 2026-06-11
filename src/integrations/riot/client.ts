@@ -73,6 +73,10 @@ export class RiotHttpClient {
 
   private async request<T>(url: string, options: FetchOptions = {}): Promise<T> {
     const headers = new Headers(options.headers)
+    const usesBearerAuth = Boolean(options.accessToken)
+    const apiKeyConfigured = Boolean(env.riotApiKey)
+    const apiKeyLength = env.riotApiKey?.length ?? 0
+    const apiKeyPrefix = env.riotApiKey ? env.riotApiKey.slice(0, 6) : ""
 
     if (options.accessToken) {
       headers.set("Authorization", `Bearer ${options.accessToken}`)
@@ -86,6 +90,20 @@ export class RiotHttpClient {
 
     const retries = options.retries ?? 2
     const timeoutMs = options.timeoutMs ?? 10_000
+
+    if (env.riotDebugMatchCheck && url.includes("/val/match/v1/")) {
+      this.logger.info(
+        {
+          apiKeyConfigured,
+          apiKeyLength,
+          apiKeyPrefix,
+          riotPlatform: env.riotPlatform,
+          requestUrl: url,
+          authMode: usesBearerAuth ? "bearer" : "x-riot-token",
+        },
+        "Riot match request diagnostics",
+      )
+    }
 
     for (let attempt = 0; attempt <= retries; attempt += 1) {
       const controller = new AbortController()
