@@ -7,6 +7,7 @@ import type {
   RiotAccountDto,
   RiotContentDto,
   RiotLeaderboardDto,
+  RiotMatchListDto,
   RiotPlatformStatusDto,
 } from "@/types/riot"
 
@@ -59,6 +60,10 @@ export async function getMatchListByPuuid(puuid: string) {
   )
 }
 
+function extractMatchId(entry: RiotMatchListDto["history"][number]) {
+  return typeof entry === "string" ? entry : entry.matchId
+}
+
 export async function getMatchById(matchId: string) {
   const platform = resolvePlatform()
   return riotMatchSchema.parse(await client.platformRequest(platform, `/val/match/v1/matches/${matchId}`))
@@ -70,7 +75,7 @@ export async function getNormalizedMatches(puuid?: string, maxMatches = 20): Pro
   }
 
   const matchList = await getMatchListByPuuid(puuid)
-  const ids = matchList.history.slice(0, maxMatches)
+  const ids = matchList.history.map(extractMatchId).slice(0, maxMatches)
   const matches = await Promise.all(ids.map((id) => getMatchById(id)))
 
   return matches

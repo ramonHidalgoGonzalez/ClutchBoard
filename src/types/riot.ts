@@ -23,7 +23,14 @@ export type RiotContentDto = {
 
 export type RiotMatchListDto = {
   puuid: string
-  history: string[]
+  history: Array<
+    | string
+    | {
+        matchId: string
+        gameStartTimeMillis?: number
+        queueId?: string
+      }
+  >
 }
 
 export type RiotMatchDto = {

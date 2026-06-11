@@ -8,7 +8,16 @@ export const riotAccountSchema = z.object({
 
 export const riotMatchListSchema = z.object({
   puuid: z.string(),
-  history: z.array(z.string()),
+  history: z.array(
+    z.union([
+      z.string(),
+      z.object({
+        matchId: z.string(),
+        gameStartTimeMillis: z.number().optional(),
+        queueId: z.string().optional(),
+      }),
+    ]),
+  ),
 })
 
 export const riotMatchSchema = z.object({
