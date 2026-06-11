@@ -3,11 +3,29 @@ import Image from "next/image"
 import { redirect } from "next/navigation"
 
 import { LoginButton } from "@/features/auth/login-button"
-import { env } from "@/lib/env"
+import { env, hasRsoClientCredentials } from "@/lib/env"
 import { getCurrentSession } from "@/server/auth/session"
 
-export default async function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{
+    error?: string
+  }>
+}
+
+const ERROR_MESSAGES: Record<string, string> = {
+  state: "No se pudo validar la solicitud de Riot. Intentalo otra vez.",
+  code: "Riot no devolvio el codigo de autorizacion. Intentalo de nuevo.",
+  rso_not_configured:
+    "RSO real pendiente de aprobacion/configuracion. Usa modo demo o completa RIOT_RSO_CLIENT_ID y RIOT_RSO_CLIENT_SECRET.",
+  rso_unavailable: "No se pudo iniciar Riot Sign On en este momento.",
+  rso_exchange: "No se pudo completar el intercambio de codigo con Riot.",
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await getCurrentSession()
+  const params = await searchParams
+  const error = params.error
+  const isRsoPending = !env.enableMockRiot && !hasRsoClientCredentials()
 
   if (session) {
     redirect("/dashboard")
@@ -41,8 +59,19 @@ export default async function LoginPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <LoginButton />
+          <LoginButton disabled={isRsoPending} />
         </div>
+        {isRsoPending ? (
+          <p className="text-sm text-zinc-300">
+            Login real de Riot pendiente de aprobacion de RSO Client. Mientras tanto, habilita modo demo
+            (`ENABLE_MOCK_RIOT=true`) para validar UX y flujo interno.
+          </p>
+        ) : null}
+        {error && ERROR_MESSAGES[error] ? (
+          <div className="rounded-xl border border-rose-300/35 bg-rose-500/10 p-3 text-sm text-rose-100">
+            {ERROR_MESSAGES[error]}
+          </div>
+        ) : null}
         <div className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-4 text-sm text-amber-100">
           <p className="font-medium">Politica de opt-in de jugadores</p>
           <p className="mt-2 text-amber-50/90">

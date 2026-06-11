@@ -15,6 +15,8 @@ export const env = {
   riotRsoClientSecret: process.env.RIOT_RSO_CLIENT_SECRET,
   riotRsoRedirectUri:
     process.env.RIOT_RSO_REDIRECT_URI ?? "http://localhost:3000/api/auth/riot/callback",
+  riotRsoPostLogoutRedirectUri:
+    process.env.RIOT_RSO_POST_LOGOUT_REDIRECT_URI ?? "http://localhost:3000/login",
   riotRsoScopes: process.env.RIOT_RSO_SCOPES ?? "openid offline_access",
   riotRegion: process.env.RIOT_REGION ?? "europe",
   riotPlatform: process.env.RIOT_PLATFORM ?? "eu",
@@ -34,10 +36,9 @@ export function getSessionSecret() {
 }
 
 export function hasRealRiotCredentials() {
-  return Boolean(
-    env.riotApiKey &&
-      env.riotRsoClientId &&
-      env.riotRsoClientSecret &&
-      env.riotRsoRedirectUri,
-  )
+  return Boolean(env.riotApiKey && hasRsoClientCredentials())
+}
+
+export function hasRsoClientCredentials() {
+  return Boolean(env.riotRsoClientId && env.riotRsoClientSecret && env.riotRsoRedirectUri)
 }

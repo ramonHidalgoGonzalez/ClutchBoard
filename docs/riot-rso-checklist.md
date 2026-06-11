@@ -24,6 +24,7 @@ Status: pre-approval pending
 - RIOT_RSO_CLIENT_ID=<pending approval>
 - RIOT_RSO_CLIENT_SECRET=<pending approval>
 - RIOT_RSO_REDIRECT_URI=https://clutchboard-alpha-ten.vercel.app/api/auth/riot/callback
+- RIOT_RSO_POST_LOGOUT_REDIRECT_URI=https://clutchboard-alpha-ten.vercel.app/login
 - RIOT_REGION=europe
 - RIOT_PLATFORM=eu
 
@@ -37,4 +38,4 @@ Status: pre-approval pending
 ## Security reminders
 
 - Never commit real keys/secrets.
-- Rotate any key that was exposed in terminal logs.
+- Rotate any key that was exposed in terminal logs (mandatory).

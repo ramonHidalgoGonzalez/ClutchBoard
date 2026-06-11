@@ -54,7 +54,14 @@ Main keys:
 - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`: cache and rate limit
 - `RIOT_API_KEY`: official Riot API key
 - `RIOT_RSO_CLIENT_ID`, `RIOT_RSO_CLIENT_SECRET`, `RIOT_RSO_REDIRECT_URI`: RSO
+- `RIOT_RSO_POST_LOGOUT_REDIRECT_URI`: where users return after logout
 - `RIOT_REGION`, `RIOT_PLATFORM`: Riot routing
+
+Security notes:
+
+- Never commit `.env`, `.env.local`, API keys, client secrets, or tokens.
+- If a key was exposed in terminal logs, rotate it immediately in Riot Developer Portal.
+- Use `.env.example` as a placeholder-only template.
 
 ## Riot RSO submission URLs
 
@@ -76,6 +83,13 @@ Checklist before requesting/finishing RSO approval:
 - Login page shows a visible opt-in policy notice.
 - `ENABLE_MOCK_RIOT=false` in real mode.
 - `RIOT_RSO_REDIRECT_URI` exactly matches a registered callback.
+
+Behavior while RSO Client is pending approval:
+
+- App loads normally.
+- Login page remains accessible.
+- Mock mode works with `ENABLE_MOCK_RIOT=true`.
+- Real login path degrades with a clear `rso_not_configured` message when missing `RIOT_RSO_CLIENT_ID` or `RIOT_RSO_CLIENT_SECRET`.
 
 ## Local setup
 
@@ -240,6 +254,22 @@ Each derived metric is calculated from normalized match data and documented in `
 - Real access to personal VALORANT player data
 - Use of RSO client ID and client secret
 - Public launch for real player accounts
+
+### Riot policy boundaries in this product
+
+Allowed:
+
+- Personal player analytics.
+- Own-match history and post-match insights.
+- Coaching recommendations between matches.
+- Data visibility only for opted-in/registered users.
+
+Not allowed:
+
+- Pre-match opponent scouting.
+- Real-time overlays that give in-game advantage.
+- Live tactical assistance during matches.
+- Private player data exposure without consent.
 
 Riot documents that VALORANT apps working with personal player data must use `RSO`, and that this access requires `Production Level API Keys` and official RSO client approval.
 

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto"
 import { NextResponse } from "next/server"
 
 import { riotAdapter } from "@/integrations/riot"
-import { env } from "@/lib/env"
+import { env, hasRsoClientCredentials } from "@/lib/env"
 import { createAppSession } from "@/server/auth/session"
 import { createRiotAuthorizationUrl } from "@/server/auth/rso"
 import { findOrCreateUserFromRiotAccount } from "@/server/repositories/user-repository"
@@ -24,6 +24,14 @@ export async function GET() {
     return NextResponse.redirect(new URL("/dashboard", env.appUrl))
   }
 
-  const authorizationUrl = await createRiotAuthorizationUrl()
-  return NextResponse.redirect(authorizationUrl)
+  if (!hasRsoClientCredentials()) {
+    return NextResponse.redirect(new URL("/login?error=rso_not_configured", env.appUrl))
+  }
+
+  try {
+    const authorizationUrl = await createRiotAuthorizationUrl()
+    return NextResponse.redirect(authorizationUrl)
+  } catch {
+    return NextResponse.redirect(new URL("/login?error=rso_unavailable", env.appUrl))
+  }
 }
