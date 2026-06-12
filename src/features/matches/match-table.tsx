@@ -6,6 +6,7 @@ import { MapBadge } from "@/components/dashboard/map-badge"
 import { MatchResultBadge } from "@/components/dashboard/match-result-badge"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { cleanMapName } from "@/lib/valorant-content"
 import type { MatchPerformance } from "@/types/domain"
 
 function formatDate(value: string) {
@@ -32,6 +33,14 @@ function formatDuration(seconds?: number) {
 
   const minutes = Math.round(seconds / 60)
   return `${minutes} min`
+}
+
+function getMapLabel(match: MatchPerformance) {
+  return cleanMapName(match.mapName || match.mapId || "Unknown Map")
+}
+
+function getAgentLabel(match: MatchPerformance) {
+  return match.agentName || "Unknown Agent"
 }
 
 export function MatchTable({ matches }: { matches: MatchPerformance[] }) {
@@ -65,18 +74,10 @@ export function MatchTable({ matches }: { matches: MatchPerformance[] }) {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <MapBadge
-                    name={match.mapName || match.mapId || "Unknown Map"}
-                    imageUrl={match.mapImageUrl}
-                    iconUrl={match.mapIconUrl}
-                  />
+                  <MapBadge name={getMapLabel(match)} imageUrl={match.mapImageUrl} iconUrl={match.mapIconUrl} />
                 </TableCell>
                 <TableCell>
-                  <AgentBadge
-                    name={match.agentName || "Unknown Agent"}
-                    imageUrl={match.agentImageUrl}
-                    iconUrl={match.agentIconUrl}
-                  />
+                  <AgentBadge name={getAgentLabel(match)} imageUrl={match.agentImageUrl} iconUrl={match.agentIconUrl} />
                 </TableCell>
                 <TableCell>
                   <MatchResultBadge outcome={match.outcome || "unknown"} />
@@ -99,58 +100,68 @@ export function MatchTable({ matches }: { matches: MatchPerformance[] }) {
       </div>
 
       <div className="space-y-3 lg:hidden">
-        {matches.map((match) => (
-          <article key={match.matchId} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="font-mono text-xs text-zinc-400">{shortMatchId(match.matchId)}</p>
-                <p className="text-sm text-zinc-200">{formatDate(match.startedAt)}</p>
-              </div>
-              <MatchResultBadge outcome={match.outcome || "unknown"} />
-            </div>
+        {matches.map((match) => {
+          const mapLabel = getMapLabel(match)
+          const agentLabel = getAgentLabel(match)
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Badge variant="outline" className="border-white/15 bg-white/10 text-zinc-100">
-                {match.queueName || match.queueId || "Unknown Queue"}
-              </Badge>
-              <MapBadge
-                name={match.mapName || match.mapId || "Unknown Map"}
-                imageUrl={match.mapImageUrl}
-                iconUrl={match.mapIconUrl}
+          return (
+            <article key={match.matchId} className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div
+                className="absolute inset-0 bg-cover bg-center opacity-20"
+                style={match.mapImageUrl ? { backgroundImage: `url(${match.mapImageUrl})` } : undefined}
+                aria-hidden="true"
               />
-              <AgentBadge
-                name={match.agentName || "Unknown Agent"}
-                imageUrl={match.agentImageUrl}
-                iconUrl={match.agentIconUrl}
-              />
-            </div>
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,9,11,0.12),rgba(9,9,11,0.88))]" aria-hidden="true" />
 
-            <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-zinc-300">
-              <div>
-                <p className="text-xs text-zinc-500">KDA</p>
-                <KdaBadge kills={match.kills} deaths={match.deaths} assists={match.assists} />
+              <div className="relative flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-mono text-xs text-zinc-400">{shortMatchId(match.matchId)}</p>
+                  <p className="text-sm text-zinc-200">{formatDate(match.startedAt)}</p>
+                </div>
+                <MatchResultBadge outcome={match.outcome || "unknown"} />
               </div>
-              <div>
-                <p className="text-xs text-zinc-500">ACS</p>
-                <p>{Number.isFinite(match.acsEstimate) ? match.acsEstimate : "--"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-zinc-500">HS%</p>
-                <p>{Number.isFinite(match.headshotPct) ? `${match.headshotPct.toFixed(1)}%` : "--"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-zinc-500">Duracion</p>
-                <p>{formatDuration(match.durationSeconds)}</p>
-              </div>
-            </div>
 
-            <div className="mt-3 text-right">
-              <Link href={`/matches/${match.matchId}`} className="text-sm text-rose-300 hover:text-rose-200">
-                Ver detalle
-              </Link>
-            </div>
-          </article>
-        ))}
+              <div className="relative mt-4 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-200/70">Mapa</p>
+                  <p className="truncate text-base font-semibold text-white">{mapLabel}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Badge variant="outline" className="border-white/15 bg-white/10 text-zinc-100">
+                      {match.queueName || match.queueId || "Unknown Queue"}
+                    </Badge>
+                    <AgentBadge name={agentLabel} imageUrl={match.agentImageUrl} iconUrl={match.agentIconUrl} />
+                  </div>
+                </div>
+                <MapBadge name={mapLabel} imageUrl={match.mapImageUrl} iconUrl={match.mapIconUrl} />
+              </div>
+
+              <div className="relative mt-3 grid grid-cols-2 gap-2 text-sm text-zinc-300">
+                <div>
+                  <p className="text-xs text-zinc-500">KDA</p>
+                  <KdaBadge kills={match.kills} deaths={match.deaths} assists={match.assists} />
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">ACS</p>
+                  <p>{Number.isFinite(match.acsEstimate) ? match.acsEstimate : "--"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">HS%</p>
+                  <p>{Number.isFinite(match.headshotPct) ? `${match.headshotPct.toFixed(1)}%` : "--"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Duracion</p>
+                  <p>{formatDuration(match.durationSeconds)}</p>
+                </div>
+              </div>
+
+              <div className="relative mt-3 text-right">
+                <Link href={`/matches/${match.matchId}`} className="text-sm text-rose-300 hover:text-rose-200">
+                  Ver detalle
+                </Link>
+              </div>
+            </article>
+          )
+        })}
       </div>
     </div>
   )

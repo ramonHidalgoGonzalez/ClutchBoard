@@ -11,35 +11,61 @@ type MapThumbnailProps = {
   name?: string
   imageUrl?: string | null
   iconUrl?: string | null
+  size?: "sm" | "md" | "lg"
   className?: string
 }
 
-export function MapThumbnail({ name, imageUrl, iconUrl, className }: MapThumbnailProps) {
+const SIZE_CLASS = {
+  sm: "h-7 w-10",
+  md: "h-10 w-16",
+  lg: "h-14 w-24",
+}
+
+const SIZE_HINT = {
+  sm: "40px",
+  md: "64px",
+  lg: "96px",
+}
+
+function shortLabel(name?: string) {
+  if (!name) {
+    return "MAP"
+  }
+
+  return name.slice(0, 3).toUpperCase()
+}
+
+export function MapThumbnail({ name, imageUrl, iconUrl, size = "md", className }: MapThumbnailProps) {
   const [failed, setFailed] = useState(false)
   const src = !failed ? imageUrl || iconUrl : null
+  const label = name || "Unknown Map"
 
   return (
     <div
       className={cn(
-        "relative h-10 w-16 overflow-hidden rounded-lg border border-white/15 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20",
+        "relative overflow-hidden rounded-xl border border-white/15 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.38),transparent_40%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(59,130,246,0.35))] shadow-[0_10px_28px_rgba(8,47,73,0.28)]",
+        SIZE_CLASS[size],
         className,
       )}
-      aria-label={name || "Unknown Map"}
+      aria-label={label}
     >
       {src ? (
         <Image
           src={src}
-          alt={name || "Unknown Map"}
+          alt={label}
           fill
-          sizes="96px"
+          loading="lazy"
+          sizes={SIZE_HINT[size]}
           className="object-cover"
           onError={() => setFailed(true)}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center text-[10px] text-white">
+        <div className="flex h-full w-full items-center justify-center gap-1 bg-black/10 px-2 text-[10px] font-semibold tracking-[0.24em] text-white/90">
           <MapPinned className="size-3.5" />
+          <span>{shortLabel(name)}</span>
         </div>
       )}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-white/10" />
     </div>
   )
 }

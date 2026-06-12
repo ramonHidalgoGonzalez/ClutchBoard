@@ -1,5 +1,6 @@
 import { env } from "@/lib/env"
 import { getLogger } from "@/lib/logger"
+import { buildMapLookupKeys, cleanMapName, normalizeContentKey } from "@/lib/valorant-content"
 import { RiotHttpClient } from "@/integrations/riot/client"
 import { mapRiotMatchToPerformance } from "@/integrations/riot/mapper"
 import { riotAccountSchema, riotMatchListSchema, riotMatchSchema } from "@/integrations/riot/schemas"
@@ -24,10 +25,6 @@ type ContentLookups = {
 
 let contentCache: { expiresAt: number; lookups: ContentLookups } | null = null
 
-function normalizeLookupKey(value: string) {
-  return value.trim().toLowerCase()
-}
-
 function buildContentLookups(content: RiotContentDto): ContentLookups {
   const agentById = new Map<string, { name: string; imageUrl: string | null; iconUrl: string | null }>()
   const mapById = new Map<string, { name: string; imageUrl: string | null; iconUrl: string | null }>()
@@ -37,7 +34,7 @@ function buildContentLookups(content: RiotContentDto): ContentLookups {
       continue
     }
 
-    agentById.set(normalizeLookupKey(character.id), {
+    agentById.set(normalizeContentKey(character.id), {
       name: character.displayName ?? character.name,
       imageUrl: character.fullPortraitV2 ?? character.fullPortrait ?? character.assetPath ?? null,
       iconUrl: character.displayIcon ?? character.assetPath ?? null,
@@ -49,11 +46,15 @@ function buildContentLookups(content: RiotContentDto): ContentLookups {
       continue
     }
 
-    mapById.set(normalizeLookupKey(map.id), {
-      name: map.displayName ?? map.name,
+    const record = {
+      name: map.displayName ?? cleanMapName(map.mapUrl ?? map.name),
       imageUrl: map.splash ?? map.assetPath ?? null,
       iconUrl: map.listViewIcon ?? map.assetPath ?? null,
-    })
+    }
+
+    for (const key of buildMapLookupKeys(map.id, map.name, map.displayName, map.mapUrl)) {
+      mapById.set(key, record)
+    }
   }
 
   return { agentById, mapById }
@@ -172,12 +173,12 @@ export async function getNormalizedMatches(puuid?: string, maxMatches = 20): Pro
   return matches
     .map((match) =>
       mapRiotMatchToPerformance(match, puuid, {
-        resolveAgentName: (characterId) => contentLookups.agentById.get(normalizeLookupKey(characterId))?.name,
-        resolveMapName: (mapId) => contentLookups.mapById.get(normalizeLookupKey(mapId))?.name,
-        resolveAgentImageUrl: (characterId) => contentLookups.agentById.get(normalizeLookupKey(characterId))?.imageUrl,
-        resolveAgentIconUrl: (characterId) => contentLookups.agentById.get(normalizeLookupKey(characterId))?.iconUrl,
-        resolveMapImageUrl: (mapId) => contentLookups.mapById.get(normalizeLookupKey(mapId))?.imageUrl,
-        resolveMapIconUrl: (mapId) => contentLookups.mapById.get(normalizeLookupKey(mapId))?.iconUrl,
+        resolveAgentName: (characterId) => contentLookups.agentById.get(normalizeContentKey(characterId))?.name,
+        resolveMapName: (mapId) => contentLookups.mapById.get(normalizeContentKey(mapId))?.name,
+        resolveAgentImageUrl: (characterId) => contentLookups.agentById.get(normalizeContentKey(characterId))?.imageUrl,
+        resolveAgentIconUrl: (characterId) => contentLookups.agentById.get(normalizeContentKey(characterId))?.iconUrl,
+        resolveMapImageUrl: (mapId) => contentLookups.mapById.get(normalizeContentKey(mapId))?.imageUrl,
+        resolveMapIconUrl: (mapId) => contentLookups.mapById.get(normalizeContentKey(mapId))?.iconUrl,
       }),
     )
     .filter((match): match is MatchPerformance => Boolean(match))

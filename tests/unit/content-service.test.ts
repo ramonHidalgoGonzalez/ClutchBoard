@@ -6,7 +6,7 @@ describe("content-service", () => {
     vi.resetModules()
   })
 
-  it("maps agentId and mapId to visual content", async () => {
+  it("maps agent ids and internal map paths to visual content", async () => {
     vi.doMock("@/integrations/riot", () => ({
       riotAdapter: {
         getContent: vi.fn(async () => ({
@@ -23,10 +23,11 @@ describe("content-service", () => {
           maps: [
             {
               id: "map-id-1",
-              name: "Ascent",
-              displayName: "Ascent",
-              splash: "https://media.valorant-api.com/maps/ascent/splash.png",
-              listViewIcon: "https://media.valorant-api.com/maps/ascent/icon.png",
+              name: "Foxtrot",
+              displayName: "Foxtrot",
+              mapUrl: "/Game/Maps/Foxtrot/Foxtrot",
+              splash: "https://media.valorant-api.com/maps/foxtrot/splash.png",
+              listViewIcon: "https://media.valorant-api.com/maps/foxtrot/icon.png",
             },
           ],
           acts: [],
@@ -38,11 +39,11 @@ describe("content-service", () => {
     const catalog = await getContentCatalog(true)
 
     const agent = resolveAgentContent(catalog, "agent-id-1")
-    const map = resolveMapContent(catalog, "map-id-1")
+    const map = resolveMapContent(catalog, "/Game/Maps/Foxtrot/Foxtrot")
 
     expect(agent?.displayName).toBe("Jett")
     expect(agent?.fullPortraitUrl).toContain("portrait")
-    expect(map?.displayName).toBe("Ascent")
+    expect(map?.displayName).toBe("Foxtrot")
     expect(map?.splashUrl).toContain("splash")
   })
 

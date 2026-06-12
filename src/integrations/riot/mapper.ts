@@ -1,3 +1,4 @@
+import { cleanMapName } from "@/lib/valorant-content"
 import type { MatchPerformance } from "@/types/domain"
 import type { RiotMatchDto } from "@/types/riot"
 
@@ -127,7 +128,7 @@ export function mapRiotMatchToPerformance(
   const mapId = match.matchInfo.mapId ?? "unknown-map"
   const safeAgentId = player.characterId ?? "unknown-agent"
   const queueName = options?.resolveQueueName?.(queueId) ?? queueId
-  const mapName = options?.resolveMapName?.(mapId) ?? mapId
+  const mapName = options?.resolveMapName?.(mapId) ?? cleanMapName(mapId)
   const agentName = resolveAgentLabel(player.characterName, player.characterId, options)
   const agentImageUrl =
     player.characterId && options?.resolveAgentImageUrl

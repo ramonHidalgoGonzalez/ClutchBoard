@@ -1,5 +1,6 @@
 import { riotAdapter } from "@/integrations/riot"
 import { getLogger } from "@/lib/logger"
+import { buildMapLookupKeys, cleanMapName, normalizeContentKey } from "@/lib/valorant-content"
 import type { AgentContent, ContentCatalog, MapContent } from "@/types/domain"
 
 const logger = getLogger()
@@ -9,10 +10,6 @@ const AGENT_FALLBACKS = ["#ff6b6b", "#4ecdc4", "#f7b267", "#5f27cd", "#54a0ff", 
 const MAP_FALLBACKS = ["#ff9f43", "#48dbfb", "#1dd1a1", "#f368e0", "#576574", "#c8d6e5"]
 
 let cache: { expiresAt: number; value: ContentCatalog } | null = null
-
-function normalizeKey(value: string) {
-  return value.trim().toLowerCase()
-}
 
 function fallbackImage(kind: "agent" | "map", name: string) {
   return `/api/media/${kind}/${encodeURIComponent(name)}`
@@ -52,7 +49,7 @@ function toMapContent(index: number, entry: {
   mapUrl?: string | null
   coordinates?: string | null
 }): MapContent {
-  const displayName = entry.displayName || entry.name || "Unknown Map"
+  const displayName = entry.displayName || cleanMapName(entry.mapUrl || entry.name) || "Unknown Map"
 
   return {
     id: entry.id,
@@ -64,7 +61,11 @@ function toMapContent(index: number, entry: {
   }
 }
 
-function buildLookups(agents: AgentContent[], maps: MapContent[]) {
+function buildLookups(
+  agents: AgentContent[],
+  maps: MapContent[],
+  rawMaps?: Array<{ id: string; name: string; displayName?: string | null; mapUrl?: string | null }>,
+) {
   const agentById = new Map<string, AgentContent>()
   const agentByName = new Map<string, AgentContent>()
   const mapById = new Map<string, MapContent>()
@@ -72,15 +73,17 @@ function buildLookups(agents: AgentContent[], maps: MapContent[]) {
   const mapByPath = new Map<string, MapContent>()
 
   for (const agent of agents) {
-    agentById.set(normalizeKey(agent.id), agent)
-    agentByName.set(normalizeKey(agent.displayName), agent)
+    agentById.set(normalizeContentKey(agent.id), agent)
+    agentByName.set(normalizeContentKey(agent.displayName), agent)
   }
 
-  for (const map of maps) {
-    const key = normalizeKey(map.id)
-    mapById.set(key, map)
-    mapByName.set(normalizeKey(map.displayName), map)
-    mapByPath.set(key, map)
+  for (const [index, map] of maps.entries()) {
+    const rawMap = rawMaps?.[index]
+    for (const key of buildMapLookupKeys(map.id, map.displayName, rawMap?.name, rawMap?.mapUrl, rawMap?.displayName)) {
+      mapById.set(key, map)
+      mapByPath.set(key, map)
+    }
+    mapByName.set(normalizeContentKey(map.displayName), map)
   }
 
   return {
@@ -119,7 +122,7 @@ export async function getContentCatalog(forceRefresh = false): Promise<ContentCa
       version: content.version,
       agents,
       maps,
-      lookups: buildLookups(agents, maps),
+      lookups: buildLookups(agents, maps, content.maps),
     }
 
     cache = {
@@ -149,14 +152,14 @@ export async function getContentCatalog(forceRefresh = false): Promise<ContentCa
 
 export function resolveAgentContent(catalog: ContentCatalog, candidateId?: string, candidateName?: string) {
   if (candidateId) {
-    const byId = catalog.lookups.agentById.get(normalizeKey(candidateId))
+    const byId = catalog.lookups.agentById.get(normalizeContentKey(candidateId))
     if (byId) {
       return byId
     }
   }
 
   if (candidateName) {
-    const byName = catalog.lookups.agentByName.get(normalizeKey(candidateName))
+    const byName = catalog.lookups.agentByName.get(normalizeContentKey(candidateName))
     if (byName) {
       return byName
     }
@@ -167,16 +170,28 @@ export function resolveAgentContent(catalog: ContentCatalog, candidateId?: strin
 
 export function resolveMapContent(catalog: ContentCatalog, candidateId?: string, candidateName?: string) {
   if (candidateId) {
-    const byId = catalog.lookups.mapById.get(normalizeKey(candidateId))
+    const normalizedId = normalizeContentKey(candidateId)
+    const byId = catalog.lookups.mapById.get(normalizedId)
     if (byId) {
       return byId
+    }
+
+    const byPath = catalog.lookups.mapByPath.get(normalizedId)
+    if (byPath) {
+      return byPath
     }
   }
 
   if (candidateName) {
-    const byName = catalog.lookups.mapByName.get(normalizeKey(candidateName))
+    const normalizedName = normalizeContentKey(candidateName)
+    const byName = catalog.lookups.mapByName.get(normalizedName)
     if (byName) {
       return byName
+    }
+
+    const byPath = catalog.lookups.mapByPath.get(normalizedName)
+    if (byPath) {
+      return byPath
     }
   }
 
