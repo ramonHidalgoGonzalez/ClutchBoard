@@ -4,6 +4,10 @@ import type { RiotMatchDto } from "@/types/riot"
 type RiotMapperOptions = {
   resolveAgentName?: (characterId: string) => string | undefined
   resolveMapName?: (mapId: string) => string | undefined
+  resolveAgentImageUrl?: (characterId: string, resolvedName: string) => string | null | undefined
+  resolveAgentIconUrl?: (characterId: string, resolvedName: string) => string | null | undefined
+  resolveMapImageUrl?: (mapId: string, resolvedName: string) => string | null | undefined
+  resolveMapIconUrl?: (mapId: string, resolvedName: string) => string | null | undefined
   resolveQueueName?: (queueId: string) => string | undefined
 }
 
@@ -125,6 +129,16 @@ export function mapRiotMatchToPerformance(
   const queueName = options?.resolveQueueName?.(queueId) ?? queueId
   const mapName = options?.resolveMapName?.(mapId) ?? mapId
   const agentName = resolveAgentLabel(player.characterName, player.characterId, options)
+  const agentImageUrl =
+    player.characterId && options?.resolveAgentImageUrl
+      ? options.resolveAgentImageUrl(player.characterId, agentName) ?? null
+      : null
+  const agentIconUrl =
+    player.characterId && options?.resolveAgentIconUrl
+      ? options.resolveAgentIconUrl(player.characterId, agentName) ?? null
+      : null
+  const mapImageUrl = options?.resolveMapImageUrl ? options.resolveMapImageUrl(mapId, mapName) ?? null : null
+  const mapIconUrl = options?.resolveMapIconUrl ? options.resolveMapIconUrl(mapId, mapName) ?? null : null
 
   return {
     matchId: match.matchInfo.matchId,
@@ -135,8 +149,12 @@ export function mapRiotMatchToPerformance(
     gameMode: match.matchInfo.gameMode,
     mapId,
     mapName,
+    mapImageUrl,
+    mapIconUrl,
     agentId: safeAgentId,
     agentName,
+    agentImageUrl,
+    agentIconUrl,
     outcome: deriveOutcome(team, opponent),
     roundsWon,
     roundsLost,

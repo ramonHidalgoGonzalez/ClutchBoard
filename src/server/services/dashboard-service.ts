@@ -1,8 +1,9 @@
-import { generateImprovementInsights } from "@/analytics/improvement-engine"
-import { buildAgentBreakdown, buildComparisons, buildKpis, buildMapBreakdown, buildTrendPoints } from "@/analytics/metrics"
+import { buildComparisons, buildKpis } from "@/analytics/metrics"
 import { riotAdapter } from "@/integrations/riot"
 import { env } from "@/lib/env"
 import { getLogger } from "@/lib/logger"
+import { getAnalyticsPayload } from "@/server/services/analytics-service"
+import { getCoachInsights } from "@/server/services/coach-service"
 import type { DashboardPayload } from "@/types/domain"
 
 type DashboardIdentity = {
@@ -14,14 +15,36 @@ type DashboardIdentity = {
 export async function getDashboardPayload(identity?: DashboardIdentity): Promise<DashboardPayload> {
   const logger = getLogger()
   const puuid = identity?.puuid
-  let matches = [] as Awaited<ReturnType<typeof riotAdapter.getNormalizedMatches>>
+  let analytics = {
+    summary: {
+      totalMatches: 0,
+      winRate: 0,
+      averageKda: 0,
+      averageKills: 0,
+      averageDeaths: 0,
+      averageAssists: 0,
+      averageAcs: 0,
+      averageHsPercent: 0,
+    },
+    filteredMatches: [],
+    trend: [],
+    mapStats: [],
+    agentStats: [],
+    recentVsPrevious: {
+      available: false,
+      recentMatches: 0,
+      previousMatches: 0,
+      winRateDelta: 0,
+      kdaDelta: 0,
+      acsDelta: 0,
+    },
+    smallSampleWarnings: [],
+  }
   let matchesFetchFailed = false
   let matchesFetchMessage: string | undefined
 
   try {
-    matches = env.enableMockRiot
-      ? await riotAdapter.getNormalizedMatches()
-      : await riotAdapter.getNormalizedMatches(puuid)
+    analytics = await getAnalyticsPayload(env.enableMockRiot ? undefined : puuid)
   } catch (error) {
     matchesFetchFailed = true
     matchesFetchMessage = "Riot devolvio un error al consultar VAL-MATCH-V1."
@@ -34,6 +57,9 @@ export async function getDashboardPayload(identity?: DashboardIdentity): Promise
       "Falling back to empty matches dataset",
     )
   }
+
+  const matches = analytics.filteredMatches
+  const insights = await getCoachInsights(env.enableMockRiot ? undefined : puuid).catch(() => [])
 
   const status = await riotAdapter.getPlatformStatus()
   const profile = env.enableMockRiot
@@ -53,10 +79,10 @@ export async function getDashboardPayload(identity?: DashboardIdentity): Promise
     profile,
     kpis: buildKpis(matches),
     recentMatches: matches.slice(0, 10),
-    trends: buildTrendPoints(matches, 60),
-    agentBreakdown: buildAgentBreakdown(matches),
-    mapBreakdown: buildMapBreakdown(matches),
-    improvementInsights: generateImprovementInsights(matches),
+    trends: analytics.trend,
+    agentBreakdown: analytics.agentStats,
+    mapBreakdown: analytics.mapStats,
+    improvementInsights: insights,
     comparisons: buildComparisons(matches),
     platformStatus: {
       label: status.name,

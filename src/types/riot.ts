@@ -16,8 +16,26 @@ export type RiotAccountDto = {
 
 export type RiotContentDto = {
   version: string
-  characters: Array<{ id: string; name: string; assetPath?: string | null }>
-  maps: Array<{ id: string; name: string; assetPath?: string | null }>
+  characters: Array<{
+    id: string
+    name: string
+    assetPath?: string | null
+    displayName?: string | null
+    displayIcon?: string | null
+    fullPortrait?: string | null
+    fullPortraitV2?: string | null
+    role?: { displayName?: string | null } | null
+  }>
+  maps: Array<{
+    id: string
+    name: string
+    assetPath?: string | null
+    displayName?: string | null
+    splash?: string | null
+    listViewIcon?: string | null
+    mapUrl?: string | null
+    coordinates?: string | null
+  }>
   acts: Array<{ id: string; name: string; type: string; isActive: boolean }>
 }
 

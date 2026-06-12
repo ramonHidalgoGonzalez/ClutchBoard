@@ -22,8 +22,12 @@ export type MatchPerformance = {
   gameMode: string
   mapId: string
   mapName: string
+  mapImageUrl?: string | null
+  mapIconUrl?: string | null
   agentId: string
   agentName: string
+  agentImageUrl?: string | null
+  agentIconUrl?: string | null
   outcome: "win" | "loss" | "draw" | "unknown"
   roundsWon: number
   roundsLost: number
@@ -57,7 +61,10 @@ export type KpiMetric = {
 }
 
 export type AgentBreakdown = {
+  agentId?: string
   agentName: string
+  agentImageUrl?: string | null
+  agentIconUrl?: string | null
   matches: number
   winRate: number
   kda: number
@@ -66,11 +73,17 @@ export type AgentBreakdown = {
   consistencyScore: number
   impactScore: number
   comfortPick: boolean
+  needsWork?: boolean
+  sampleSize?: number
+  confidence?: number
   source: DataOrigin
 }
 
 export type MapBreakdown = {
+  mapId?: string
   mapName: string
+  mapImageUrl?: string | null
+  mapIconUrl?: string | null
   matches: number
   winRate: number
   kda: number
@@ -78,6 +91,8 @@ export type MapBreakdown = {
   avgDamage: number
   consistencyScore: number
   sampleLabel: "small" | "medium" | "good"
+  sampleSize?: number
+  confidence?: number
   source: DataOrigin
 }
 
@@ -109,10 +124,79 @@ export type ImprovementInsight = {
   description: string
   confidence: number
   priority: InsightPriority
+  category: "map" | "agent" | "consistency" | "trend" | "sample_size" | "fatigue"
   evidence: Array<{ label: string; value: string; source: DataOrigin }>
   recommendation: string
   referenceMatchIds: string[]
   metricKey: string
+  imageUrl?: string | null
+  entityName?: string
+}
+
+export type AgentContent = {
+  id: string
+  displayName: string
+  displayIconUrl: string | null
+  fullPortraitUrl: string | null
+  role: string | null
+  fallbackColor: string
+}
+
+export type MapContent = {
+  id: string
+  displayName: string
+  splashUrl: string | null
+  listViewIconUrl: string | null
+  coordinates: string | null
+  fallbackColor: string
+}
+
+export type ContentCatalog = {
+  version: string
+  agents: AgentContent[]
+  maps: MapContent[]
+  lookups: {
+    agentById: Map<string, AgentContent>
+    agentByName: Map<string, AgentContent>
+    mapById: Map<string, MapContent>
+    mapByName: Map<string, MapContent>
+    mapByPath: Map<string, MapContent>
+  }
+}
+
+export type MatchFilter = {
+  periodDays?: number
+  queue?: string
+}
+
+export type RecentComparison = {
+  available: boolean
+  recentMatches: number
+  previousMatches: number
+  winRateDelta: number
+  kdaDelta: number
+  acsDelta: number
+}
+
+export type AnalyticsSummary = {
+  totalMatches: number
+  winRate: number
+  averageKda: number
+  averageKills: number
+  averageDeaths: number
+  averageAssists: number
+  averageAcs: number
+  averageHsPercent: number
+}
+
+export type AnalyticsPayload = {
+  summary: AnalyticsSummary
+  filteredMatches: MatchPerformance[]
+  trend: TrendPoint[]
+  mapStats: MapBreakdown[]
+  agentStats: AgentBreakdown[]
+  recentVsPrevious: RecentComparison
+  smallSampleWarnings: string[]
 }
 
 export type DashboardPayload = {

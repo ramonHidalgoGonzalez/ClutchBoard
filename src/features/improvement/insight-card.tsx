@@ -20,7 +20,10 @@ export function InsightCard({ insight }: { insight: ImprovementInsight }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-zinc-300">{insight.description}</p>
-        <p className="text-xs text-zinc-400">Confianza: {(insight.confidence * 100).toFixed(0)}%</p>
+        <div className="flex flex-wrap gap-2 text-xs text-zinc-400">
+          <span>Categoria: {insight.category}</span>
+          <span>Confianza: {insight.confidence.toFixed(0)}%</span>
+        </div>
         <div className="flex flex-wrap gap-2">
           {insight.evidence.map((evidence) => (
             <Badge key={evidence.label} variant="outline" className="border-white/10 bg-black/20 text-zinc-200">

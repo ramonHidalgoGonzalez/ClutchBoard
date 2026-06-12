@@ -1,24 +1,33 @@
-import { generateImprovementInsights } from "@/analytics/improvement-engine"
 import {
-  buildAgentBreakdown,
   buildCompleteAgentBreakdown,
   buildCompleteMapBreakdown,
-  buildMapBreakdown,
   buildSummaryStats,
 } from "@/analytics/metrics"
 import { filterStandardMaps } from "@/integrations/riot/catalog"
-import { riotAdapter } from "@/integrations/riot"
+import { getAnalyticsPayload } from "@/server/services/analytics-service"
+import { getCoachInsights } from "@/server/services/coach-service"
+import { getContentCatalog } from "@/server/services/content-service"
 
 export async function getImprovementData(puuid?: string) {
-  const matches = await riotAdapter.getNormalizedMatches(puuid)
-  const content = await riotAdapter.getContent().catch(() => null)
+  const analytics = await getAnalyticsPayload(puuid)
+  const insights = await getCoachInsights(puuid)
+  const content = await getContentCatalog().catch(() => null)
+  const matches = analytics.filteredMatches
 
   return {
-    insights: generateImprovementInsights(matches),
+    insights,
     summary: buildSummaryStats(matches),
-    agents: content ? buildCompleteAgentBreakdown(matches, content.characters) : buildAgentBreakdown(matches),
-    maps: content ? buildCompleteMapBreakdown(matches, filterStandardMaps(content.maps)) : buildMapBreakdown(matches),
+    agents: content
+      ? buildCompleteAgentBreakdown(
+          matches,
+          content.agents.map((item) => ({ name: item.displayName })),
+        )
+      : analytics.agentStats,
+    maps: content
+      ? buildCompleteMapBreakdown(matches, filterStandardMaps(content.maps.map((item) => ({ name: item.displayName }))))
+      : analytics.mapStats,
     matches,
     content,
+    analytics,
   }
 }

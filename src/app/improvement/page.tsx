@@ -2,6 +2,8 @@ import { AppShell } from "@/components/app-shell"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { SectionHeader } from "@/components/dashboard/section-header"
+import { MapThumbnail } from "@/components/dashboard/map-thumbnail"
+import { AgentAvatar } from "@/components/dashboard/agent-avatar"
 import { InsightCard } from "@/features/improvement/insight-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireSession } from "@/server/auth/session"
@@ -47,7 +49,14 @@ export default async function ImprovementPage() {
         ) : (
           <div className="grid gap-4 xl:grid-cols-2">
             {insights.map((insight) => (
-              <InsightCard key={insight.id} insight={insight} />
+              <div key={insight.id} className="space-y-2">
+                {insight.category === "map" ? (
+                  <MapThumbnail name={insight.entityName} imageUrl={insight.imageUrl} className="h-14 w-28" />
+                ) : insight.category === "agent" ? (
+                  <AgentAvatar name={insight.entityName} imageUrl={insight.imageUrl} size="lg" />
+                ) : null}
+                <InsightCard insight={insight} />
+              </div>
             ))}
           </div>
         )}

@@ -32,6 +32,7 @@ export function generateImprovementInsights(matches: MatchPerformance[]): Improv
           description: `Tu impacto relativo con ${weakestAgent.agentName} cae por debajo de tu pool principal en win rate, ACS y consistencia.`,
           confidence: Math.min(0.94, weakestAgent.matches / 10),
           priority: "high",
+          category: "agent",
           metricKey: "agent_low_impact",
           evidence: [
             { label: "Partidas", value: String(weakestAgent.matches), source: "derived-app" },
@@ -60,6 +61,7 @@ export function generateImprovementInsights(matches: MatchPerformance[]): Improv
           description: "La muestra es suficiente para tratarlo como patrón y no como ruido puntual.",
           confidence: weakestMap.sampleLabel === "good" ? 0.88 : 0.7,
           priority: "high",
+          category: "map",
           metricKey: "map_problematic",
           evidence: [
             { label: "Win rate", value: `${weakestMap.winRate.toFixed(1)}%`, source: "derived-app" },
@@ -87,6 +89,7 @@ export function generateImprovementInsights(matches: MatchPerformance[]): Improv
             "Tu rendimiento cae de forma progresiva a medida que avanzan sesiones de 4+ partidas, una señal compatible con tilt o fatiga cognitiva.",
           confidence: Math.min(0.9, summary.fatigueScore / 30),
           priority: "medium",
+          category: "fatigue",
           metricKey: "session_fatigue",
           evidence: [
             { label: "Fatigue score", value: summary.fatigueScore.toFixed(1), source: "derived-app" },
@@ -111,6 +114,7 @@ export function generateImprovementInsights(matches: MatchPerformance[]): Improv
             "Cuando sales de tus comfort picks, la calidad del rendimiento baja demasiado. Eso te deja expuesto a drafts o mapas menos favorables.",
           confidence: Math.min(0.87, summary.concentrationScore / 60),
           priority: "medium",
+          category: "consistency",
           metricKey: "agent_pool_concentration",
           evidence: [
             { label: "Concentracion", value: summary.concentrationScore.toFixed(1), source: "derived-app" },
@@ -135,6 +139,7 @@ export function generateImprovementInsights(matches: MatchPerformance[]): Improv
             "Tus ultimas 10 partidas están claramente por debajo de tu nivel habitual, así que conviene revisar cambios de rutina, agentes o mapas recientes.",
           confidence: 0.78,
           priority: "medium",
+          category: "trend",
           metricKey: "recent_under_baseline",
           evidence: [
             { label: "ACS reciente", value: recentAcs.toFixed(1), source: "derived-app" },

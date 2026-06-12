@@ -1,5 +1,7 @@
 import { AppShell } from "@/components/app-shell"
 import { EmptyState } from "@/components/dashboard/empty-state"
+import { AgentAvatar } from "@/components/dashboard/agent-avatar"
+import { MapThumbnail } from "@/components/dashboard/map-thumbnail"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { SectionHeader } from "@/components/dashboard/section-header"
 import { AgentDistributionChart } from "@/components/charts/agent-distribution-chart"
@@ -54,7 +56,7 @@ export default async function DashboardPage() {
       title="Dashboard"
       subtitle={`${session.gameName}#${session.tagLine}`}
       connected
-      lastSyncedAt={payload.metadata.lastSyncedAt}
+      lastSyncedAt={payload.profile.lastSyncedAt}
     >
       <div className="space-y-6">
         {payload.metadata.matchesFetchFailed ? (
@@ -144,19 +146,33 @@ export default async function DashboardPage() {
             <CardContent className="space-y-3 text-sm text-zinc-300">
               <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
                 <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Mejor mapa</p>
-                <p className="mt-1 text-zinc-100">{bestMap ? `${bestMap.mapName} (${bestMap.winRate.toFixed(1)}%)` : "Datos insuficientes"}</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <MapThumbnail name={bestMap?.mapName} imageUrl={bestMap?.mapImageUrl} iconUrl={bestMap?.mapIconUrl} />
+                  <p className="text-zinc-100">{bestMap ? `${bestMap.mapName} (${bestMap.winRate.toFixed(1)}%)` : "Datos insuficientes"}</p>
+                </div>
               </div>
               <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
                 <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Peor mapa</p>
-                <p className="mt-1 text-zinc-100">{worstMap ? `${worstMap.mapName} (${worstMap.winRate.toFixed(1)}%)` : "Datos insuficientes"}</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <MapThumbnail name={worstMap?.mapName} imageUrl={worstMap?.mapImageUrl} iconUrl={worstMap?.mapIconUrl} />
+                  <p className="text-zinc-100">{worstMap ? `${worstMap.mapName} (${worstMap.winRate.toFixed(1)}%)` : "Datos insuficientes"}</p>
+                </div>
               </div>
               <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
                 <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Agente mas consistente</p>
-                <p className="mt-1 text-zinc-100">
-                  {mostConsistentAgent
-                    ? `${mostConsistentAgent.agentName} (${mostConsistentAgent.consistencyScore.toFixed(0)}/100)`
-                    : "Datos insuficientes"}
-                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <AgentAvatar
+                    name={mostConsistentAgent?.agentName}
+                    imageUrl={mostConsistentAgent?.agentImageUrl}
+                    iconUrl={mostConsistentAgent?.agentIconUrl}
+                    size="sm"
+                  />
+                  <p className="text-zinc-100">
+                    {mostConsistentAgent
+                      ? `${mostConsistentAgent.agentName} (${mostConsistentAgent.consistencyScore.toFixed(0)}/100)`
+                      : "Datos insuficientes"}
+                  </p>
+                </div>
               </div>
               {lowSample ? (
                 <div className="rounded-2xl border border-amber-300/25 bg-amber-500/10 p-3 text-amber-100">

@@ -6,9 +6,20 @@ import { MatchTable } from "@/features/matches/match-table"
 import { requireSession } from "@/server/auth/session"
 import { getMatchesData } from "@/server/services/match-service"
 
-export default async function MatchesPage() {
+export default async function MatchesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ periodDays?: string; queue?: string }>
+}) {
   const session = await requireSession()
-  const { matches } = await getMatchesData(session.puuid)
+  const params = await searchParams
+  const periodDays = Number(params.periodDays ?? "60")
+  const queue = params.queue
+  const { matches } = await getMatchesData(
+    session.puuid,
+    Number.isFinite(periodDays) ? Math.max(7, Math.min(periodDays, 180)) : 60,
+    queue,
+  )
 
   return (
     <AppShell title="Matches" subtitle="Historial, filtros y comparativas" connected lastSyncedAt={new Date().toISOString()}>

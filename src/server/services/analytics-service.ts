@@ -1,0 +1,235 @@
+import {
+  calculateAverageAcs,
+  calculateAverageDamage,
+  calculateKda,
+  calculateWinRate,
+} from "@/analytics/formulas"
+import { buildTrendPoints } from "@/analytics/metrics"
+import { riotAdapter } from "@/integrations/riot"
+import { env } from "@/lib/env"
+import type {
+  AgentBreakdown,
+  AnalyticsPayload,
+  AnalyticsSummary,
+  MapBreakdown,
+  MatchFilter,
+  MatchPerformance,
+  RecentComparison,
+} from "@/types/domain"
+import { getContentCatalog, resolveAgentContent, resolveMapContent } from "@/server/services/content-service"
+
+function applyMatchFilters(matches: MatchPerformance[], filter?: MatchFilter) {
+  const periodDays = filter?.periodDays ?? 60
+  const threshold = Date.now() - periodDays * 24 * 60 * 60 * 1000
+
+  return matches.filter((match) => {
+    const timestamp = new Date(match.startedAt).getTime()
+    const inPeriod = Number.isFinite(timestamp) ? timestamp >= threshold : true
+    const inQueue = filter?.queue ? match.queueName.toLowerCase() === filter.queue.toLowerCase() : true
+    return inPeriod && inQueue
+  })
+}
+
+function average(values: number[]) {
+  if (!values.length) {
+    return 0
+  }
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+function buildSummary(matches: MatchPerformance[]): AnalyticsSummary {
+  return {
+    totalMatches: matches.length,
+    winRate: calculateWinRate(matches),
+    averageKda: calculateKda(matches),
+    averageKills: average(matches.map((match) => match.kills)),
+    averageDeaths: average(matches.map((match) => match.deaths)),
+    averageAssists: average(matches.map((match) => match.assists)),
+    averageAcs: calculateAverageAcs(matches),
+    averageHsPercent: average(matches.map((match) => match.headshotPct)),
+  }
+}
+
+function getSampleConfidence(sampleSize: number) {
+  if (sampleSize >= 20) {
+    return 1
+  }
+  if (sampleSize >= 10) {
+    return 0.75
+  }
+  if (sampleSize >= 5) {
+    return 0.5
+  }
+  return 0.25
+}
+
+function getSampleLabel(sampleSize: number) {
+  if (sampleSize >= 8) {
+    return "good" as const
+  }
+  if (sampleSize >= 4) {
+    return "medium" as const
+  }
+  return "small" as const
+}
+
+function buildAgentStats(matches: MatchPerformance[]): AgentBreakdown[] {
+  const buckets = new Map<string, MatchPerformance[]>()
+
+  for (const match of matches) {
+    const key = match.agentId || match.agentName || "unknown-agent"
+    const list = buckets.get(key) ?? []
+    list.push(match)
+    buckets.set(key, list)
+  }
+
+  return Array.from(buckets.entries())
+    .map(([agentId, bucket]) => {
+      const sampleSize = bucket.length
+      const confidence = getSampleConfidence(sampleSize)
+      const kda = calculateKda(bucket)
+      const avgAcs = calculateAverageAcs(bucket)
+      const avgDamage = calculateAverageDamage(bucket)
+      const consistencyScore = Math.max(0, Math.min(100, 100 - Math.abs(avgAcs - calculateAverageAcs(matches)) / 2))
+      const comfortPick = sampleSize >= Math.max(6, matches.length * 0.18)
+      const needsWork = sampleSize >= 4 && calculateWinRate(bucket) + 5 < calculateWinRate(matches)
+
+      return {
+        agentId,
+        agentName: bucket[0]?.agentName || "Unknown Agent",
+        agentImageUrl: bucket[0]?.agentImageUrl ?? null,
+        agentIconUrl: bucket[0]?.agentIconUrl ?? null,
+        matches: sampleSize,
+        winRate: calculateWinRate(bucket),
+        kda,
+        avgAcs,
+        avgDamage,
+        consistencyScore,
+        impactScore: Math.max(0, Math.min(100, calculateWinRate(bucket) * 0.5 + kda * 15 + avgAcs * 0.12)),
+        comfortPick,
+        needsWork,
+        sampleSize,
+        confidence,
+        source: env.enableMockRiot ? "mock-demo" : "official-riot",
+      } satisfies AgentBreakdown
+    })
+    .sort((a, b) => b.matches - a.matches)
+}
+
+function buildMapStats(matches: MatchPerformance[]): MapBreakdown[] {
+  const buckets = new Map<string, MatchPerformance[]>()
+
+  for (const match of matches) {
+    const key = match.mapId || match.mapName || "unknown-map"
+    const list = buckets.get(key) ?? []
+    list.push(match)
+    buckets.set(key, list)
+  }
+
+  return Array.from(buckets.entries())
+    .map(([mapId, bucket]) => {
+      const sampleSize = bucket.length
+      return {
+        mapId,
+        mapName: bucket[0]?.mapName || "Unknown Map",
+        mapImageUrl: bucket[0]?.mapImageUrl ?? null,
+        mapIconUrl: bucket[0]?.mapIconUrl ?? null,
+        matches: sampleSize,
+        winRate: calculateWinRate(bucket),
+        kda: calculateKda(bucket),
+        avgAcs: calculateAverageAcs(bucket),
+        avgDamage: calculateAverageDamage(bucket),
+        consistencyScore: Math.max(0, Math.min(100, 100 - Math.abs(calculateAverageAcs(bucket) - calculateAverageAcs(matches)) / 2)),
+        sampleLabel: getSampleLabel(sampleSize),
+        sampleSize,
+        confidence: getSampleConfidence(sampleSize),
+        source: env.enableMockRiot ? "mock-demo" : "official-riot",
+      } satisfies MapBreakdown
+    })
+    .sort((a, b) => b.matches - a.matches)
+}
+
+function buildRecentVsPrevious(matches: MatchPerformance[]): RecentComparison {
+  const recent = matches.slice(0, 10)
+  const previous = matches.slice(10, 20)
+
+  if (recent.length < 5 || previous.length < 5) {
+    return {
+      available: false,
+      recentMatches: recent.length,
+      previousMatches: previous.length,
+      winRateDelta: 0,
+      kdaDelta: 0,
+      acsDelta: 0,
+    }
+  }
+
+  return {
+    available: true,
+    recentMatches: recent.length,
+    previousMatches: previous.length,
+    winRateDelta: calculateWinRate(recent) - calculateWinRate(previous),
+    kdaDelta: calculateKda(recent) - calculateKda(previous),
+    acsDelta: calculateAverageAcs(recent) - calculateAverageAcs(previous),
+  }
+}
+
+function buildSampleWarnings(matches: MatchPerformance[], mapStats: MapBreakdown[], agentStats: AgentBreakdown[]) {
+  const warnings: string[] = []
+
+  if (matches.length < 5) {
+    warnings.push("Datos insuficientes: menos de 5 partidas.")
+  }
+
+  if (mapStats.some((map) => (map.sampleSize ?? 0) < 4)) {
+    warnings.push("Algunos mapas tienen muestra pequena; interpreta el winrate con cautela.")
+  }
+
+  if (agentStats.some((agent) => (agent.sampleSize ?? 0) < 4)) {
+    warnings.push("Algunos agentes tienen muestra pequena; evita conclusiones fuertes.")
+  }
+
+  return warnings
+}
+
+function enrichMatchesWithContent(matches: MatchPerformance[], catalog: Awaited<ReturnType<typeof getContentCatalog>>) {
+  return matches.map((match) => {
+    const agentContent = resolveAgentContent(catalog, match.agentId, match.agentName)
+    const mapContent = resolveMapContent(catalog, match.mapId, match.mapName)
+
+    return {
+      ...match,
+      agentName: agentContent?.displayName || match.agentName || "Unknown Agent",
+      agentImageUrl: agentContent?.fullPortraitUrl || match.agentImageUrl || null,
+      agentIconUrl: agentContent?.displayIconUrl || match.agentIconUrl || null,
+      mapName: mapContent?.displayName || match.mapName || "Unknown Map",
+      mapImageUrl: mapContent?.splashUrl || match.mapImageUrl || null,
+      mapIconUrl: mapContent?.listViewIconUrl || match.mapIconUrl || null,
+    }
+  })
+}
+
+export async function getAnalyticsPayload(puuid?: string, filter?: MatchFilter): Promise<AnalyticsPayload> {
+  const rawMatches = env.enableMockRiot
+    ? await riotAdapter.getNormalizedMatches()
+    : await riotAdapter.getNormalizedMatches(puuid)
+
+  const catalog = await getContentCatalog()
+  const withContent = enrichMatchesWithContent(rawMatches, catalog)
+  const filteredMatches = applyMatchFilters(withContent, filter)
+
+  const summary = buildSummary(filteredMatches)
+  const mapStats = buildMapStats(filteredMatches)
+  const agentStats = buildAgentStats(filteredMatches)
+
+  return {
+    summary,
+    filteredMatches,
+    trend: buildTrendPoints(filteredMatches, filter?.periodDays ?? 60),
+    mapStats,
+    agentStats,
+    recentVsPrevious: buildRecentVsPrevious(filteredMatches),
+    smallSampleWarnings: buildSampleWarnings(filteredMatches, mapStats, agentStats),
+  }
+}

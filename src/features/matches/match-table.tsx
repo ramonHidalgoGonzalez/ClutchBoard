@@ -65,10 +65,18 @@ export function MatchTable({ matches }: { matches: MatchPerformance[] }) {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <MapBadge name={match.mapName || match.mapId || "Unknown Map"} />
+                  <MapBadge
+                    name={match.mapName || match.mapId || "Unknown Map"}
+                    imageUrl={match.mapImageUrl}
+                    iconUrl={match.mapIconUrl}
+                  />
                 </TableCell>
                 <TableCell>
-                  <AgentBadge name={match.agentName || "Unknown Agent"} />
+                  <AgentBadge
+                    name={match.agentName || "Unknown Agent"}
+                    imageUrl={match.agentImageUrl}
+                    iconUrl={match.agentIconUrl}
+                  />
                 </TableCell>
                 <TableCell>
                   <MatchResultBadge outcome={match.outcome || "unknown"} />
@@ -105,8 +113,16 @@ export function MatchTable({ matches }: { matches: MatchPerformance[] }) {
               <Badge variant="outline" className="border-white/15 bg-white/10 text-zinc-100">
                 {match.queueName || match.queueId || "Unknown Queue"}
               </Badge>
-              <MapBadge name={match.mapName || match.mapId || "Unknown Map"} />
-              <AgentBadge name={match.agentName || "Unknown Agent"} />
+              <MapBadge
+                name={match.mapName || match.mapId || "Unknown Map"}
+                imageUrl={match.mapImageUrl}
+                iconUrl={match.mapIconUrl}
+              />
+              <AgentBadge
+                name={match.agentName || "Unknown Agent"}
+                imageUrl={match.agentImageUrl}
+                iconUrl={match.agentIconUrl}
+              />
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-zinc-300">

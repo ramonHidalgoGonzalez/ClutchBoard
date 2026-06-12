@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 
 import { AppShell } from "@/components/app-shell"
+import { AgentAvatar } from "@/components/dashboard/agent-avatar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MatchResultBadge } from "@/components/dashboard/match-result-badge"
 import { SectionHeader } from "@/components/dashboard/section-header"
@@ -103,7 +104,12 @@ export default async function MatchDetailPage({
                       >
                         <TableCell>{row.name}</TableCell>
                         <TableCell>{row.teamId || "--"}</TableCell>
-                        <TableCell>{row.agentName || "Unknown Agent"}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <AgentAvatar name={row.agentName} imageUrl={row.agentImageUrl} iconUrl={row.agentIconUrl} size="sm" />
+                            <span>{row.agentName || "Unknown Agent"}</span>
+                          </div>
+                        </TableCell>
                         <TableCell>{row.kills ?? 0}</TableCell>
                         <TableCell>{row.deaths ?? 0}</TableCell>
                         <TableCell>{row.assists ?? 0}</TableCell>

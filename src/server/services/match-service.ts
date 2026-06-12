@@ -1,12 +1,15 @@
 import { buildAgentBreakdown, buildMapBreakdown } from "@/analytics/metrics"
 import { riotAdapter } from "@/integrations/riot"
 import { env } from "@/lib/env"
+import { getAnalyticsPayload } from "@/server/services/analytics-service"
 import type { RiotMatchDto } from "@/types/riot"
 
 type MatchPlayerRow = {
   name: string
   teamId: string
   agentName: string
+  agentImageUrl?: string | null
+  agentIconUrl?: string | null
   kills: number
   deaths: number
   assists: number
@@ -29,14 +32,17 @@ function resolvePlayerName(player: RiotMatchDto["players"][number]) {
   return `Player ${player.puuid.slice(0, 8)}`
 }
 
-export async function getMatchesData(puuid?: string) {
-  const matches = env.enableMockRiot
-    ? await riotAdapter.getNormalizedMatches()
-    : await riotAdapter.getNormalizedMatches(puuid)
+export async function getMatchesData(puuid?: string, periodDays = 60, queue?: string) {
+  const analytics = await getAnalyticsPayload(env.enableMockRiot ? undefined : puuid, {
+    periodDays,
+    queue,
+  })
+  const matches = analytics.filteredMatches
   return {
     matches,
     agents: buildAgentBreakdown(matches),
     maps: buildMapBreakdown(matches),
+    analytics,
   }
 }
 
@@ -61,6 +67,8 @@ export async function getMatchById(matchId: string, puuid?: string) {
         name: resolvePlayerName(player),
         teamId: player.teamId,
         agentName: player.characterName || player.characterId || "Unknown Agent",
+        agentImageUrl: null,
+        agentIconUrl: null,
         kills: player.stats.kills ?? 0,
         deaths: player.stats.deaths ?? 0,
         assists: player.stats.assists ?? 0,
