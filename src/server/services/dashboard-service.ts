@@ -4,7 +4,7 @@ import { env } from "@/lib/env"
 import { getLogger } from "@/lib/logger"
 import { getAnalyticsPayload } from "@/server/services/analytics-service"
 import { getCoachInsights } from "@/server/services/coach-service"
-import type { DashboardPayload } from "@/types/domain"
+import type { AnalyticsPayload, DashboardPayload } from "@/types/domain"
 
 type DashboardIdentity = {
   puuid: string
@@ -12,10 +12,8 @@ type DashboardIdentity = {
   tagLine: string
 }
 
-export async function getDashboardPayload(identity?: DashboardIdentity): Promise<DashboardPayload> {
-  const logger = getLogger()
-  const puuid = identity?.puuid
-  let analytics = {
+function createEmptyAnalyticsPayload(): AnalyticsPayload {
+  return {
     summary: {
       totalMatches: 0,
       winRate: 0,
@@ -40,6 +38,12 @@ export async function getDashboardPayload(identity?: DashboardIdentity): Promise
     },
     smallSampleWarnings: [],
   }
+}
+
+export async function getDashboardPayload(identity?: DashboardIdentity): Promise<DashboardPayload> {
+  const logger = getLogger()
+  const puuid = identity?.puuid
+  let analytics: AnalyticsPayload = createEmptyAnalyticsPayload()
   let matchesFetchFailed = false
   let matchesFetchMessage: string | undefined
 
