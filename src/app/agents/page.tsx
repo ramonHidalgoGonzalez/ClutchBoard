@@ -55,9 +55,10 @@ export default async function AgentsPage({
 
         {agents.length ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {agents.map((agent) => (
-              <AgentPortraitCard key={agent.agentName} agent={agent} />
-            ))}
+            {agents.map((agent) => {
+              const agentMatches = analytics.filteredMatches.filter((m) => (m.agentName || m.agentId) === (agent.agentName || agent.agentId))
+              return <AgentPortraitCard key={agent.agentName} agent={agent} matches={agentMatches.slice(0, 5)} />
+            })}
           </div>
         ) : (
           <EmptyState
