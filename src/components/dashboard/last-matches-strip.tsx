@@ -15,10 +15,10 @@ export function LastMatchesStrip({ matches }: { matches?: MatchPerformance[] }) 
         <Link
           key={m.matchId}
           href={`/matches/${m.matchId}`}
-          className="relative w-36 shrink-0 overflow-hidden rounded-xl border border-white/6 bg-black/20 p-2 text-xs text-zinc-200"
+          className="relative w-40 shrink-0 overflow-hidden rounded-xl border border-white/8 bg-black/20 p-2 text-xs text-zinc-200"
         >
-          <div className="relative h-20 w-full overflow-hidden rounded-md bg-black/10">
-            <MapThumbnail name={m.mapName || m.mapId} imageUrl={m.mapImageUrl} size="sm" />
+          <div className="relative h-24 w-full overflow-hidden rounded-md bg-black/10">
+            <MapThumbnail name={m.mapName || m.mapId} imageUrl={m.mapImageUrl} size="md" />
           </div>
           <div className="mt-2 flex items-center justify-between">
             <div>

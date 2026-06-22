@@ -29,9 +29,9 @@ export function AgentPortraitCard({ agent, matches }: { agent: AgentBreakdown; m
             </div>
 
             <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
-              <Metric label="WR" value={`${agent.winRate.toFixed(1)}%`} />
-              <Metric label="KDA" value={agent.kda.toFixed(2)} />
-              <Metric label="ACS" value={agent.avgAcs.toFixed(0)} />
+              <Metric label="WR" value={`${agent.winRate.toFixed(1)}%`} className="text-lg" />
+              <Metric label="KDA" value={agent.kda.toFixed(2)} className="text-lg" />
+              <Metric label="ACS" value={agent.avgAcs.toFixed(0)} className="text-lg" />
             </div>
           </div>
         </div>
@@ -55,9 +55,9 @@ export function AgentPortraitCard({ agent, matches }: { agent: AgentBreakdown; m
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-3 text-center backdrop-blur-sm">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">{label}</p>
-      <p className="mt-1 font-semibold text-zinc-100">{value}</p>
+    <div className="rounded-2xl border border-white/10 bg-black/30 p-3 text-center backdrop-blur-sm">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-400">{label}</p>
+      <p className="mt-1 font-semibold text-zinc-100 text-lg">{value}</p>
     </div>
   )
 }
