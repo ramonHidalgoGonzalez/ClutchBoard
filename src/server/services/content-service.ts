@@ -79,10 +79,12 @@ function buildLookups(
 
   for (const [index, map] of maps.entries()) {
     const rawMap = rawMaps?.[index]
+    mapById.set(normalizeContentKey(map.id), map)
+
     for (const key of buildMapLookupKeys(map.id, map.displayName, rawMap?.name, rawMap?.mapUrl, rawMap?.displayName)) {
-      mapById.set(key, map)
       mapByPath.set(key, map)
     }
+
     mapByName.set(normalizeContentKey(map.displayName), map)
   }
 
@@ -169,30 +171,24 @@ export function resolveAgentContent(catalog: ContentCatalog, candidateId?: strin
 }
 
 export function resolveMapContent(catalog: ContentCatalog, candidateId?: string, candidateName?: string) {
-  if (candidateId) {
-    const normalizedId = normalizeContentKey(candidateId)
-    const byId = catalog.lookups.mapById.get(normalizedId)
-    if (byId) {
-      return byId
-    }
+  const normalizedId = candidateId ? normalizeContentKey(candidateId) : null
+  const normalizedName = candidateName ? normalizeContentKey(candidateName) : null
 
-    const byPath = catalog.lookups.mapByPath.get(normalizedId)
-    if (byPath) {
-      return byPath
-    }
+  if (normalizedId) {
+    return (
+      catalog.lookups.mapById.get(normalizedId) ||
+      catalog.lookups.mapByName.get(normalizedId) ||
+      catalog.lookups.mapByPath.get(normalizedId) ||
+      null
+    )
   }
 
-  if (candidateName) {
-    const normalizedName = normalizeContentKey(candidateName)
-    const byName = catalog.lookups.mapByName.get(normalizedName)
-    if (byName) {
-      return byName
-    }
-
-    const byPath = catalog.lookups.mapByPath.get(normalizedName)
-    if (byPath) {
-      return byPath
-    }
+  if (normalizedName) {
+    return (
+      catalog.lookups.mapByName.get(normalizedName) ||
+      catalog.lookups.mapByPath.get(normalizedName) ||
+      null
+    )
   }
 
   return null

@@ -38,6 +38,58 @@ describe("analytics-service", () => {
     expect(result.agentStats[0]?.matches).toBeGreaterThan(0)
   })
 
+  it("enriches matches with Riot content images", async () => {
+    vi.doMock("@/integrations/riot", () => ({
+      riotAdapter: {
+        getNormalizedMatches: vi.fn(async () => createMockMatches(10)),
+        getContent: vi.fn(async () => ({
+          version: "1",
+          characters: [
+            {
+              id: "jett",
+              name: "Jett",
+              displayName: "Jett",
+              displayIcon: "https://media.valorant-api.com/agents/jett/icon.png",
+              fullPortrait: "https://media.valorant-api.com/agents/jett/portrait.png",
+            },
+            {
+              id: "sova",
+              name: "Sova",
+              displayName: "Sova",
+              displayIcon: "https://media.valorant-api.com/agents/sova/icon.png",
+              fullPortrait: "https://media.valorant-api.com/agents/sova/portrait.png",
+            },
+          ],
+          maps: [
+            {
+              id: "ascent",
+              name: "Ascent",
+              displayName: "Ascent",
+              mapUrl: "/Game/Maps/Ascent/Ascent",
+              splash: "https://media.valorant-api.com/maps/ascent/splash.png",
+              listViewIcon: "https://media.valorant-api.com/maps/ascent/icon.png",
+            },
+            {
+              id: "bind",
+              name: "Bind",
+              displayName: "Bind",
+              mapUrl: "/Game/Maps/Bind/Bind",
+              splash: "https://media.valorant-api.com/maps/bind/splash.png",
+              listViewIcon: "https://media.valorant-api.com/maps/bind/icon.png",
+            },
+          ],
+          acts: [],
+        })),
+      },
+    }))
+
+    const { getAnalyticsPayload: getPayload } = await import("@/server/services/analytics-service")
+    const result = await getPayload("puuid-1")
+
+    expect(result.filteredMatches.some((match) => Boolean(match.mapImageUrl))).toBe(true)
+    expect(result.filteredMatches.some((match) => Boolean(match.agentImageUrl))).toBe(true)
+  })
+
   it("returns recentVsPrevious when enough sample exists", async () => {
     vi.doMock("@/integrations/riot", () => ({
       riotAdapter: {
