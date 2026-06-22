@@ -11,7 +11,7 @@ type AgentAvatarProps = {
   name?: string
   imageUrl?: string | null
   iconUrl?: string | null
-  size?: "sm" | "md" | "lg"
+  size?: "sm" | "md" | "lg" | "xl"
   className?: string
 }
 
@@ -19,12 +19,14 @@ const SIZE_CLASS = {
   sm: "size-8",
   md: "size-10",
   lg: "size-16",
+  xl: "size-24",
 }
 
 const SIZE_HINT = {
   sm: "32px",
   md: "40px",
   lg: "64px",
+  xl: "96px",
 }
 
 function initials(value?: string) {

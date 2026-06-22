@@ -3,6 +3,7 @@ import { AgentPortraitCard } from "@/components/dashboard/agent-portrait-card"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { SectionHeader } from "@/components/dashboard/section-header"
 import { getImprovementData } from "@/server/services/improvement-service"
+import { getCurrentSession } from "@/server/auth/session"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default async function AgentsPage({
@@ -11,7 +12,8 @@ export default async function AgentsPage({
   searchParams: Promise<{ order?: string }>
 }) {
   const params = await searchParams
-  const puuid = undefined
+  const session = await getCurrentSession()
+  const puuid = session?.puuid
   const { analytics } = await getImprovementData(puuid)
   const order = params.order ?? "matches"
 

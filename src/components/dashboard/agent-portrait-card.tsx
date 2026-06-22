@@ -13,7 +13,7 @@ export function AgentPortraitCard({ agent, matches }: { agent: AgentBreakdown; m
         <div className="absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top_left,rgba(244,63,94,0.35),transparent_42%),linear-gradient(135deg,rgba(12,10,9,0.96),rgba(59,130,246,0.28))]" />
 
         <div className="relative flex items-start gap-6 px-5 pb-4 pt-5">
-          <AgentAvatar name={agent.agentName} imageUrl={agent.agentImageUrl} iconUrl={agent.agentIconUrl} size="lg" className="shrink-0" />
+          <AgentAvatar name={agent.agentName} imageUrl={agent.agentImageUrl} iconUrl={agent.agentIconUrl} size="xl" className="shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between">
               <div>

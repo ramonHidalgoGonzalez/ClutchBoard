@@ -15,14 +15,16 @@ export function LastMatchesStrip({ matches }: { matches?: MatchPerformance[] }) 
         <Link
           key={m.matchId}
           href={`/matches/${m.matchId}`}
-          className="relative w-40 shrink-0 overflow-hidden rounded-xl border border-white/8 bg-black/20 p-2 text-xs text-zinc-200"
+          className="relative w-44 shrink-0 overflow-hidden rounded-xl border border-white/8 bg-black/20 p-2 text-xs text-zinc-200"
         >
-          <div className="relative h-24 w-full overflow-hidden rounded-md bg-black/10">
+          <div className="relative h-28 w-full overflow-hidden rounded-md bg-black/10">
             <MapThumbnail name={m.mapName || m.mapId} imageUrl={m.mapImageUrl} size="md" />
           </div>
           <div className="mt-2 flex items-center justify-between">
             <div>
-              <div className="text-sm font-semibold text-white">{m.outcome === "win" ? "W" : m.outcome === "loss" ? "L" : "-"}</div>
+              <div className={`text-sm font-semibold ${m.outcome === "win" ? "text-emerald-300" : m.outcome === "loss" ? "text-amber-300" : "text-zinc-200"}`}>
+                {m.outcome === "win" ? "W" : m.outcome === "loss" ? "L" : "-"}
+              </div>
               <div className="text-[11px] text-zinc-300">ACS {m.acsEstimate ?? "--"}</div>
             </div>
             <div className="text-right text-[11px] text-zinc-400">{m.kills ?? "--"}-{m.deaths ?? "--"}</div>
