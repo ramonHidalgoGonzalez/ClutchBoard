@@ -55,22 +55,9 @@ export function AgentAvatar({ name, imageUrl, iconUrl, size = "md", className }:
       aria-label={label}
     >
       {src ? (
-        // Use native <img> for SVGs or internal media endpoints to avoid Next Image SVG restrictions
-        (src.endsWith(".svg") || src.startsWith("/api/media")) ? (
-          // absolute positioning to emulate `fill`
-          // eslint-disable-next-line jsx-a11y/alt-text
-          <img src={src} alt={label} className="absolute inset-0 h-full w-full object-cover" onError={() => setFailed(true)} />
-        ) : (
-          <Image
-            src={src}
-            alt={label}
-            fill
-            loading="lazy"
-            sizes={SIZE_HINT[size]}
-            className="object-cover"
-            onError={() => setFailed(true)}
-          />
-        )
+        // Use native <img> for all agent media to avoid Next/Image domain and SVG issues
+        // eslint-disable-next-line jsx-a11y/alt-text
+        <img src={src} alt={label} className="absolute inset-0 h-full w-full object-cover" onError={() => setFailed(true)} />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-black/10 text-xs font-semibold text-white">
           {name ? initials(name) : <UserRound className="size-4" />}
