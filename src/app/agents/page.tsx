@@ -2,8 +2,6 @@ import { AppShell } from "@/components/app-shell"
 import { AgentPortraitCard } from "@/components/dashboard/agent-portrait-card"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { SectionHeader } from "@/components/dashboard/section-header"
-import { requireSession } from "@/server/auth/session"
-import { env } from "@/lib/env"
 import { getImprovementData } from "@/server/services/improvement-service"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -12,9 +10,9 @@ export default async function AgentsPage({
 }: {
   searchParams: Promise<{ order?: string }>
 }) {
-  const session = env.enableMockRiot ? undefined : await requireSession()
   const params = await searchParams
-  const { analytics } = await getImprovementData(session.puuid)
+  const puuid = undefined
+  const { analytics } = await getImprovementData(puuid)
   const order = params.order ?? "matches"
 
   const agents = [...analytics.agentStats].sort((a, b) => {
