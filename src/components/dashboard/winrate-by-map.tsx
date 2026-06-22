@@ -9,10 +9,10 @@ function computeWinrates(matches?: MatchPerformance[]) {
   const mapBuckets = new Map<string, { wins: number; total: number; imageUrl?: string }>()
   for (const m of matches) {
     const key = m.mapName || m.mapId || "unknown"
-    const prev = mapBuckets.get(key) ?? { wins: 0, total: 0, imageUrl: m.mapImageUrl }
+    const prev = mapBuckets.get(key) ?? { wins: 0, total: 0, imageUrl: m.mapImageUrl ?? undefined }
     prev.total += 1
     if (m.outcome === "win") prev.wins += 1
-    if (!prev.imageUrl) prev.imageUrl = m.mapImageUrl
+    if (!prev.imageUrl && m.mapImageUrl) prev.imageUrl = m.mapImageUrl
     mapBuckets.set(key, prev)
   }
 
