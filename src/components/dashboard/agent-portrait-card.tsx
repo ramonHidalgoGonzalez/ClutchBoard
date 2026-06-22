@@ -53,9 +53,9 @@ export function AgentPortraitCard({ agent, matches }: { agent: AgentBreakdown; m
   )
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/30 p-3 text-center backdrop-blur-sm">
+    <div className={"rounded-2xl border border-white/10 bg-black/30 p-3 text-center backdrop-blur-sm " + (className ?? "")}>
       <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-400">{label}</p>
       <p className="mt-1 font-semibold text-zinc-100 text-lg">{value}</p>
     </div>
