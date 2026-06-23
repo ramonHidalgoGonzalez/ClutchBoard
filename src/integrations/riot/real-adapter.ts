@@ -1,6 +1,6 @@
 import { env } from "@/lib/env"
 import { getLogger } from "@/lib/logger"
-import { buildMapLookupKeys, cleanMapName, normalizeContentKey } from "@/lib/valorant-content"
+import { buildMapLookupKeys, normalizeContentKey, resolveCanonicalMapName } from "@/lib/valorant-content"
 import { RiotHttpClient } from "@/integrations/riot/client"
 import { mapRiotMatchToPerformance } from "@/integrations/riot/mapper"
 import { riotAccountSchema, riotMatchListSchema, riotMatchSchema } from "@/integrations/riot/schemas"
@@ -47,12 +47,12 @@ function buildContentLookups(content: RiotContentDto): ContentLookups {
     }
 
     const record = {
-      name: map.displayName ?? cleanMapName(map.mapUrl ?? map.name),
-      imageUrl: map.splash ?? map.assetPath ?? null,
-      iconUrl: map.listViewIcon ?? map.assetPath ?? null,
+      name: map.displayName ?? resolveCanonicalMapName(map.mapUrl ?? map.assetPath ?? map.name),
+      imageUrl: map.splash ?? null,
+      iconUrl: map.listViewIcon ?? null,
     }
 
-    for (const key of buildMapLookupKeys(map.id, map.name, map.displayName, map.mapUrl)) {
+    for (const key of buildMapLookupKeys(map.id, map.name, map.displayName, map.mapUrl, map.assetPath)) {
       mapById.set(key, record)
     }
   }

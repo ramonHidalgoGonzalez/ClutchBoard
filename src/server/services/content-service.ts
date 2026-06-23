@@ -1,6 +1,11 @@
 import { riotAdapter } from "@/integrations/riot"
+import { getArtworkUrl } from "@/lib/game-visuals"
 import { getLogger } from "@/lib/logger"
-import { buildMapLookupKeys, cleanMapName, normalizeContentKey } from "@/lib/valorant-content"
+import {
+  buildMapLookupKeys,
+  normalizeContentKey,
+  resolveCanonicalMapName,
+} from "@/lib/valorant-content"
 import type { AgentContent, ContentCatalog, MapContent } from "@/types/domain"
 
 const logger = getLogger()
@@ -15,6 +20,26 @@ function fallbackImage(kind: "agent" | "map", name: string) {
   return `/api/media/${kind}/${encodeURIComponent(name)}`
 }
 
+// Only accept absolute http(s) URLs as "real" Riot imagery. The official
+// content endpoint omits these fields and sometimes exposes internal engine
+// paths (e.g. "/Game/Maps/Triad/Triad") that are not usable as <img> sources.
+function usableRemoteImage(value?: string | null) {
+  return typeof value === "string" && /^https?:\/\//.test(value) ? value : null
+}
+
+// Prefer a real Riot URL, then the bundled local artwork
+// (/public/game-assets/<kind>/<slug>.png), then the generated SVG placeholder.
+function resolveImageUrl(kind: "agent" | "map", name: string, ...candidates: Array<string | null | undefined>) {
+  for (const candidate of candidates) {
+    const remote = usableRemoteImage(candidate)
+    if (remote) {
+      return remote
+    }
+  }
+
+  return getArtworkUrl(kind, name) || fallbackImage(kind, name)
+}
+
 function toAgentContent(index: number, entry: {
   id: string
   name: string
@@ -26,14 +51,12 @@ function toAgentContent(index: number, entry: {
   role?: { displayName?: string | null } | null
 }): AgentContent {
   const displayName = entry.displayName || entry.name || "Unknown Agent"
-  const icon = entry.displayIcon || null
-  const portrait = entry.fullPortraitV2 || entry.fullPortrait || entry.assetPath || null
 
   return {
     id: entry.id,
     displayName,
-    displayIconUrl: icon || fallbackImage("agent", displayName),
-    fullPortraitUrl: portrait || fallbackImage("agent", displayName),
+    displayIconUrl: resolveImageUrl("agent", displayName, entry.displayIcon),
+    fullPortraitUrl: resolveImageUrl("agent", displayName, entry.fullPortraitV2, entry.fullPortrait),
     role: entry.role?.displayName || null,
     fallbackColor: AGENT_FALLBACKS[index % AGENT_FALLBACKS.length] || "#ff4655",
   }
@@ -49,13 +72,14 @@ function toMapContent(index: number, entry: {
   mapUrl?: string | null
   coordinates?: string | null
 }): MapContent {
-  const displayName = entry.displayName || cleanMapName(entry.mapUrl || entry.name) || "Unknown Map"
+  const displayName =
+    entry.displayName || resolveCanonicalMapName(entry.mapUrl || entry.assetPath || entry.name)
 
   return {
     id: entry.id,
     displayName,
-    splashUrl: entry.splash || entry.assetPath || fallbackImage("map", displayName),
-    listViewIconUrl: entry.listViewIcon || entry.assetPath || fallbackImage("map", displayName),
+    splashUrl: resolveImageUrl("map", displayName, entry.splash),
+    listViewIconUrl: resolveImageUrl("map", displayName, entry.listViewIcon),
     coordinates: entry.coordinates || null,
     fallbackColor: MAP_FALLBACKS[index % MAP_FALLBACKS.length] || "#0ea5e9",
   }
@@ -64,7 +88,13 @@ function toMapContent(index: number, entry: {
 function buildLookups(
   agents: AgentContent[],
   maps: MapContent[],
-  rawMaps?: Array<{ id: string; name: string; displayName?: string | null; mapUrl?: string | null }>,
+  rawMaps?: Array<{
+    id: string
+    name: string
+    displayName?: string | null
+    mapUrl?: string | null
+    assetPath?: string | null
+  }>,
 ) {
   const agentById = new Map<string, AgentContent>()
   const agentByName = new Map<string, AgentContent>()
@@ -81,7 +111,15 @@ function buildLookups(
     const rawMap = rawMaps?.[index]
     mapById.set(normalizeContentKey(map.id), map)
 
-    for (const key of buildMapLookupKeys(map.id, map.displayName, rawMap?.name, rawMap?.mapUrl, rawMap?.displayName)) {
+    for (const key of buildMapLookupKeys(
+      map.id,
+      map.displayName,
+      rawMap?.name,
+      rawMap?.mapUrl,
+      rawMap?.displayName,
+      // The match payload identifies maps by their internal asset path/codename.
+      rawMap?.assetPath,
+    )) {
       mapByPath.set(key, map)
     }
 
@@ -175,18 +213,26 @@ export function resolveMapContent(catalog: ContentCatalog, candidateId?: string,
   const normalizedName = candidateName ? normalizeContentKey(candidateName) : null
 
   if (normalizedId) {
-    return (
+    const direct =
       catalog.lookups.mapById.get(normalizedId) ||
       catalog.lookups.mapByName.get(normalizedId) ||
-      catalog.lookups.mapByPath.get(normalizedId) ||
-      null
-    )
+      catalog.lookups.mapByPath.get(normalizedId)
+    if (direct) {
+      return direct
+    }
+
+    // Translate "/Game/Maps/Triad/Triad" (or a bare codename) to "Haven".
+    const canonical = catalog.lookups.mapByName.get(normalizeContentKey(resolveCanonicalMapName(candidateId!)))
+    if (canonical) {
+      return canonical
+    }
   }
 
   if (normalizedName) {
     return (
       catalog.lookups.mapByName.get(normalizedName) ||
       catalog.lookups.mapByPath.get(normalizedName) ||
+      catalog.lookups.mapByName.get(normalizeContentKey(resolveCanonicalMapName(candidateName!))) ||
       null
     )
   }
