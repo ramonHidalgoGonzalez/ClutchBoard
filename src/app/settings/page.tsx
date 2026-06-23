@@ -1,4 +1,6 @@
 import { AppShell } from "@/components/app-shell"
+import { getTranslations } from "@/i18n/get-dictionary"
+import { LanguageSelector } from "@/components/settings/language-selector"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { env } from "@/lib/env"
@@ -6,31 +8,42 @@ import { requireSession } from "@/server/auth/session"
 
 export default async function SettingsPage() {
   const session = await requireSession()
+  const t = await getTranslations()
 
   return (
-    <AppShell title="Settings" subtitle="Sesion, sincronizacion y preferencias">
+    <AppShell title={t("settings.title")} subtitle={t("settings.subtitle")} connected>
       <div className="grid gap-6 xl:grid-cols-2">
+        <Card className="border-white/10 bg-white/5 text-white xl:col-span-2">
+          <CardHeader>
+            <CardTitle>{t("settings.language")}</CardTitle>
+            <p className="text-sm text-zinc-400">{t("settings.languageDescription")}</p>
+          </CardHeader>
+          <CardContent>
+            <LanguageSelector />
+          </CardContent>
+        </Card>
+
         <Card className="border-white/10 bg-white/5 text-white">
           <CardHeader>
-            <CardTitle>Cuenta conectada</CardTitle>
+            <CardTitle>{t("settings.account")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-zinc-300">
             <p>PUUID: {session.puuid}</p>
-            <p>Jugador: {session.gameName}#{session.tagLine}</p>
-            <p>Modo actual: {env.enableMockRiot ? "mock/demo" : "riot"}</p>
-            <p>Cookies `httpOnly` y sesión firmada activas.</p>
+            <p>{session.gameName}#{session.tagLine}</p>
+            <p>{env.enableMockRiot ? "mock/demo" : "riot"}</p>
           </CardContent>
         </Card>
+
         <Card className="border-white/10 bg-white/5 text-white">
           <CardHeader>
-            <CardTitle>Acciones</CardTitle>
+            <CardTitle>{t("settings.actions")}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
             <Button asChild className="rounded-2xl bg-[#ff4655] hover:bg-[#ff5d6a]">
-              <a href="/api/sync">Refresh manual</a>
+              <a href="/api/sync">{t("settings.manualRefresh")}</a>
             </Button>
             <Button asChild variant="outline" className="rounded-2xl border-white/10 bg-white/5 text-white">
-              <a href="/api/auth/logout">Cerrar sesion</a>
+              <a href="/api/auth/logout">{t("settings.logout")}</a>
             </Button>
           </CardContent>
         </Card>

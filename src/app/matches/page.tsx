@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { AppShell } from "@/components/app-shell"
+import { getTranslations } from "@/i18n/get-dictionary"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MatchHistory } from "@/components/matches/match-history"
 import { env } from "@/lib/env"
@@ -21,11 +22,12 @@ export default async function MatchesPage() {
     .sort((a, b) => b.winRate - a.winRate)[0]
   const topAgent = [...analytics.agentStats].sort((a, b) => b.matches - a.matches)[0]
   const lastSyncedAt = new Date().toISOString()
+  const t = await getTranslations()
 
   return (
     <AppShell
-      title="Historial de partidas"
-      subtitle="Post-match analytics personal. No scouting pre-game."
+      title={t("matches.title")}
+      subtitle={t("matches.subtitle")}
       connected
       lastSyncedAt={lastSyncedAt}
     >

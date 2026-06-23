@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { AppShell } from "@/components/app-shell"
+import { getTranslations } from "@/i18n/get-dictionary"
 import { VisualAgentCard } from "@/components/agents/visual-agent-card"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { SectionHeader } from "@/components/dashboard/section-header"
@@ -35,8 +36,10 @@ export default async function AgentsPage({
     return b.matches - a.matches
   })
 
+  const t = await getTranslations()
+
   return (
-    <AppShell title="Agents" subtitle="Analítica por agente" connected>
+    <AppShell title={t("agents.title")} subtitle={t("agents.subtitle")} connected>
       <div className="space-y-5">
         <SectionHeader
           title="Pool de agentes"

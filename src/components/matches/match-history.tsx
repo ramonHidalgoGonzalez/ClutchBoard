@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Crosshair, Search, Star, Target, Trophy } fr
 
 import { AgentAvatar } from "@/components/dashboard/agent-avatar"
 import { MatchHistoryRow } from "@/components/matches/match-history-row"
+import { useLocale, useTranslations } from "@/i18n/provider"
 import { WinrateDonut } from "@/components/stats/winrate-donut"
 import { roleRingClass } from "@/lib/agent-roles"
 import { Input } from "@/components/ui/input"
@@ -155,6 +156,8 @@ export function MatchHistory({
   topAgent,
   recentVsPrevious,
 }: MatchHistoryProps) {
+  const locale = useLocale()
+  const t = useTranslations()
   const [query, setQuery] = useState("")
   const [result, setResult] = useState("all")
   const [queue, setQueue] = useState("all")
@@ -276,7 +279,7 @@ export function MatchHistory({
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar por mapa, agente o cola..."
+            placeholder={t("matches.search")}
             className="border-white/15 bg-black/30 pl-9 text-zinc-100"
           />
         </div>
@@ -322,7 +325,7 @@ export function MatchHistory({
       {/* Match rows (desktop) — tracker cards, not a table */}
       <div className="hidden flex-col gap-2.5 lg:flex">
         {paged.map((match) => (
-          <MatchHistoryRow key={match.matchId} match={match} />
+          <MatchHistoryRow key={match.matchId} match={match} locale={locale} />
         ))}
       </div>
 

@@ -4,14 +4,17 @@ import { ChevronRight } from "lucide-react"
 import { AgentAvatar } from "@/components/dashboard/agent-avatar"
 import { MapThumbnail } from "@/components/dashboard/map-thumbnail"
 import { roleRingClass } from "@/lib/agent-roles"
+import { formatQueue, formatResult } from "@/i18n/format"
+import { defaultLocale, type Locale } from "@/i18n/locales"
 import { getAgentCropPosition, getMapCropPosition } from "@/server/valorant/assets/asset-crop-overrides"
 import { cn } from "@/lib/utils"
 import type { MatchPerformance } from "@/types/domain"
 
-function resultMeta(outcome: MatchPerformance["outcome"]) {
-  if (outcome === "win") return { label: "VICTORIA", tone: "text-emerald-400", bar: "bg-emerald-400", glow: "shadow-[0_0_18px_-2px_rgba(52,211,153,0.5)]" }
-  if (outcome === "loss") return { label: "DERROTA", tone: "text-rose-400", bar: "bg-rose-500", glow: "shadow-[0_0_18px_-2px_rgba(244,63,94,0.5)]" }
-  if (outcome === "draw") return { label: "EMPATE", tone: "text-sky-300", bar: "bg-sky-400", glow: "" }
+function resultMeta(outcome: MatchPerformance["outcome"], locale: Locale) {
+  const label = formatResult(outcome, locale).toUpperCase()
+  if (outcome === "win") return { label, tone: "text-emerald-400", bar: "bg-emerald-400", glow: "shadow-[0_0_18px_-2px_rgba(52,211,153,0.5)]" }
+  if (outcome === "loss") return { label, tone: "text-rose-400", bar: "bg-rose-500", glow: "shadow-[0_0_18px_-2px_rgba(244,63,94,0.5)]" }
+  if (outcome === "draw") return { label, tone: "text-sky-300", bar: "bg-sky-400", glow: "" }
   return { label: "—", tone: "text-zinc-300", bar: "bg-zinc-500", glow: "" }
 }
 
@@ -34,8 +37,8 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: str
 }
 
 /** Premium horizontal "match row" — a tracker card, not a table row. */
-export function MatchHistoryRow({ match, compact = false }: { match: MatchPerformance; compact?: boolean }) {
-  const m = resultMeta(match.outcome)
+export function MatchHistoryRow({ match, compact = false, locale = defaultLocale }: { match: MatchPerformance; compact?: boolean; locale?: Locale }) {
+  const m = resultMeta(match.outcome, locale)
   const w = when(match.startedAt)
   const ratio = ((match.kills + match.assists) / Math.max(1, match.deaths)).toFixed(2)
   const score = `${match.roundsWon ?? 0} - ${match.roundsLost ?? 0}`
@@ -67,7 +70,7 @@ export function MatchHistoryRow({ match, compact = false }: { match: MatchPerfor
         </div>
         <div className="min-w-0">
           <p className="truncate font-semibold text-white">{match.mapName}</p>
-          <p className="truncate text-xs text-zinc-400">{match.queueName || match.queueId}</p>
+          <p className="truncate text-xs text-zinc-400">{formatQueue(match.queueName || match.queueId, locale)}</p>
         </div>
       </div>
 

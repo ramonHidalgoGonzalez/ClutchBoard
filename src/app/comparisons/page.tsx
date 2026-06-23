@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { AppShell } from "@/components/app-shell"
+import { getTranslations } from "@/i18n/get-dictionary"
 import { ComparisonsView } from "@/components/comparisons/comparisons-view"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { env } from "@/lib/env"
@@ -17,11 +18,12 @@ export default async function ComparisonsPage() {
   const matches = analytics.filteredMatches
   const agents = analytics.agentStats.map((a) => a.agentName).filter(Boolean)
   const maps = analytics.mapStats.map((m) => m.mapName).filter(Boolean)
+  const t = await getTranslations()
 
   return (
     <AppShell
-      title="Comparativas"
-      subtitle="Compara tu rendimiento por periodo, agente, mapa y resultado."
+      title={t("comparisons.title")}
+      subtitle={t("comparisons.subtitle")}
       connected
       lastSyncedAt={new Date().toISOString()}
     >

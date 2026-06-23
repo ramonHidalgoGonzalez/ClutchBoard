@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app-shell"
+import { getTranslations } from "@/i18n/get-dictionary"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { SectionHeader } from "@/components/dashboard/section-header"
@@ -13,9 +14,10 @@ export default async function ImprovementPage() {
   const session = await requireSession()
   const { insights, summary, matches } = await getImprovementData(session.puuid)
   const insufficientSample = matches.length < 8
+  const t = await getTranslations()
 
   return (
-    <AppShell title="Improvement" subtitle="Coach mode explicable" connected lastSyncedAt={new Date().toISOString()}>
+    <AppShell title={t("improvement.title")} subtitle={t("improvement.subtitle")} connected lastSyncedAt={new Date().toISOString()}>
       <div className="space-y-6">
         <SectionHeader
           title="Areas de mejora"

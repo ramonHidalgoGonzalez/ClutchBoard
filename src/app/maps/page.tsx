@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { AppShell } from "@/components/app-shell"
+import { getTranslations } from "@/i18n/get-dictionary"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { VisualMapCard } from "@/components/maps/visual-map-card"
 import { SectionHeader } from "@/components/dashboard/section-header"
@@ -36,8 +37,10 @@ export default async function MapsPage({
   const bestKey = bestMap?.mapId || bestMap?.mapName
   const worstKey = worstMap?.mapId || worstMap?.mapName
 
+  const t = await getTranslations()
+
   return (
-    <AppShell title="Maps" subtitle="Analítica por mapa" connected>
+    <AppShell title={t("maps.title")} subtitle={t("maps.subtitle")} connected>
       <div className="space-y-5">
         <SectionHeader
           title="Rendimiento por mapa"

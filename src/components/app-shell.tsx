@@ -4,6 +4,8 @@ import { headers } from "next/headers"
 
 import { NavSidebar } from "@/components/nav-sidebar"
 import { Topbar } from "@/components/topbar"
+import { I18nProvider } from "@/i18n/provider"
+import { getDictionary, getLocale } from "@/i18n/get-dictionary"
 import { getCurrentSession } from "@/server/auth/session"
 
 export async function AppShell({
@@ -21,27 +23,31 @@ export async function AppShell({
 }) {
   const pathname = (await headers()).get("x-pathname") ?? "/dashboard"
   const session = await getCurrentSession()
+  const locale = await getLocale()
+  const dictionary = await getDictionary(locale)
   const profile = {
     name: session ? `${session.gameName}#${session.tagLine}` : "Invitado",
     connected: connected && Boolean(session),
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_12%,rgba(255,94,98,0.22),transparent_30%),radial-gradient(circle_at_86%_4%,rgba(56,189,248,0.12),transparent_26%),linear-gradient(180deg,#07070a_0%,#0b1020_52%,#060811_100%)] text-white">
-      <div className="mx-auto flex min-h-screen max-w-[1600px]">
-        <NavSidebar pathname={pathname} profile={profile} />
-        <div className="flex min-h-screen flex-1 flex-col">
-          <Topbar
-            title={title}
-            subtitle={subtitle}
-            pathname={pathname}
-            connected={connected}
-            lastSyncedAt={lastSyncedAt}
-            profile={profile}
-          />
-          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+    <I18nProvider locale={locale} dictionary={dictionary}>
+      <div className="min-h-screen bg-[radial-gradient(circle_at_12%_12%,rgba(255,94,98,0.22),transparent_30%),radial-gradient(circle_at_86%_4%,rgba(56,189,248,0.12),transparent_26%),linear-gradient(180deg,#07070a_0%,#0b1020_52%,#060811_100%)] text-white">
+        <div className="mx-auto flex min-h-screen max-w-[1600px]">
+          <NavSidebar pathname={pathname} profile={profile} />
+          <div className="flex min-h-screen flex-1 flex-col">
+            <Topbar
+              title={title}
+              subtitle={subtitle}
+              pathname={pathname}
+              connected={connected}
+              lastSyncedAt={lastSyncedAt}
+              profile={profile}
+            />
+            <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+          </div>
         </div>
       </div>
-    </div>
+    </I18nProvider>
   )
 }

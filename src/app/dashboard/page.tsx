@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { Crosshair, Shield, Star, Swords, Target, Trophy } from "lucide-react"
 
 import { AppShell } from "@/components/app-shell"
+import { getLocale, getTranslations } from "@/i18n/get-dictionary"
 import { DashboardTrendChart } from "@/components/dashboard/dashboard-trend-chart"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { EntityHeroMini } from "@/components/dashboard/entity-hero-mini"
@@ -125,11 +126,13 @@ export default async function DashboardPage() {
   const roleRows = buildRoleRows(matches, catalog)
   const rankedOverview = buildRankedOverview(matches)
   const playerName = session?.gameName ?? "jugador"
+  const t = await getTranslations()
+  const locale = await getLocale()
 
   return (
     <AppShell
-      title={`¡Bienvenido de vuelta, ${playerName}!`}
-      subtitle="Aquí tienes tu rendimiento reciente en VALORANT."
+      title={t("dashboard.welcomeBack", { name: playerName })}
+      subtitle={t("dashboard.recentPerformance")}
       connected
       lastSyncedAt={new Date().toISOString()}
     >
@@ -241,7 +244,7 @@ export default async function DashboardPage() {
                   <p className="text-sm font-semibold text-zinc-300">Últimas partidas</p>
                   <div className="space-y-2.5">
                     {lastN(matches, 5).map((m) => (
-                      <MatchHistoryRow key={m.matchId} match={m} compact />
+                      <MatchHistoryRow key={m.matchId} match={m} compact locale={locale} />
                     ))}
                   </div>
                   <Link

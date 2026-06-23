@@ -15,19 +15,20 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { getTranslations } from "@/i18n/get-dictionary"
 
 const primaryItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/matches", label: "Matches", icon: Swords },
-  { href: "/agents", label: "Agents", icon: Bot },
-  { href: "/maps", label: "Maps", icon: MapIcon },
-  { href: "/improvement", label: "Improvement", icon: TrendingUp },
-  { href: "/comparisons", label: "Comparativas", icon: BarChart3 },
-  { href: "/ranked", label: "Ranked", icon: Trophy },
-  { href: "/notas", label: "Notas de partida", icon: NotebookPen },
+  { href: "/dashboard", tkey: "nav.dashboard", icon: LayoutDashboard },
+  { href: "/matches", tkey: "nav.matches", icon: Swords },
+  { href: "/agents", tkey: "nav.agents", icon: Bot },
+  { href: "/maps", tkey: "nav.maps", icon: MapIcon },
+  { href: "/improvement", tkey: "nav.improvement", icon: TrendingUp },
+  { href: "/comparisons", tkey: "nav.comparisons", icon: BarChart3 },
+  { href: "/ranked", tkey: "nav.ranked", icon: Trophy },
+  { href: "/notas", tkey: "nav.notes", icon: NotebookPen },
 ]
 
-const secondaryItems = [{ href: "/settings", label: "Configuración", icon: Settings }]
+const secondaryItems = [{ href: "/settings", tkey: "nav.settings", icon: Settings }]
 
 type NavSidebarProps = {
   pathname: string
@@ -57,7 +58,8 @@ function NavLink({ pathname, href, label, icon: Icon }: { pathname: string; href
   )
 }
 
-export function NavSidebar({ pathname, mobile = false, profile }: NavSidebarProps) {
+export async function NavSidebar({ pathname, mobile = false, profile }: NavSidebarProps) {
+  const t = await getTranslations()
   const initial = (profile?.name ?? "?").charAt(0).toUpperCase()
 
   return (
@@ -96,7 +98,7 @@ export function NavSidebar({ pathname, mobile = false, profile }: NavSidebarProp
                 profile?.connected ? "bg-emerald-400" : "bg-zinc-500",
               )}
             />
-            {profile?.connected ? "Conectado a Riot" : "Sin conexión"}
+            {profile?.connected ? t("common.riotConnected") : t("common.notConnected")}
           </p>
         </div>
       </div>
@@ -104,11 +106,11 @@ export function NavSidebar({ pathname, mobile = false, profile }: NavSidebarProp
       {/* Navigation */}
       <nav className="mt-6 space-y-1">
         {primaryItems.map((item) => (
-          <NavLink key={item.href} pathname={pathname} {...item} />
+          <NavLink key={item.href} pathname={pathname} href={item.href} icon={item.icon} label={t(item.tkey)} />
         ))}
         <div className="my-3 border-t border-white/10" />
         {secondaryItems.map((item) => (
-          <NavLink key={item.href} pathname={pathname} {...item} />
+          <NavLink key={item.href} pathname={pathname} href={item.href} icon={item.icon} label={t(item.tkey)} />
         ))}
       </nav>
 

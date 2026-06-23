@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { NavSidebar } from "@/components/nav-sidebar"
 import { RefreshButtons } from "@/components/refresh-buttons"
+import { getTranslations } from "@/i18n/get-dictionary"
 
 type TopbarProps = {
   title: string
@@ -32,7 +33,8 @@ function formatLastSync(value?: string) {
   return `${date.toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}, ${time}`
 }
 
-export function Topbar({ title, subtitle, pathname, connected = true, lastSyncedAt, profile }: TopbarProps) {
+export async function Topbar({ title, subtitle, pathname, connected = true, lastSyncedAt, profile }: TopbarProps) {
+  const t = await getTranslations()
   return (
     <header className="sticky top-0 z-20 border-b border-white/10 bg-black/30 backdrop-blur-xl">
       <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
@@ -58,9 +60,9 @@ export function Topbar({ title, subtitle, pathname, connected = true, lastSynced
           <div className="hidden rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2 sm:block">
             <p className="flex items-center gap-1.5 text-sm font-medium text-zinc-100">
               <span className={`size-2 rounded-full ${connected ? "bg-emerald-400" : "bg-zinc-500"}`} />
-              {connected ? "Riot conectado" : "Sin conexión"}
+              {connected ? t("common.riotConnected") : t("common.notConnected")}
             </p>
-            <p className="text-[11px] text-zinc-500">Última actualización: {formatLastSync(lastSyncedAt)}</p>
+            <p className="text-[11px] text-zinc-500">{t("common.lastUpdate")}: {formatLastSync(lastSyncedAt)}</p>
           </div>
           <RefreshButtons />
         </div>
