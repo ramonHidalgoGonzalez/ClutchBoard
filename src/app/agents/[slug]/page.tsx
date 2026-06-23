@@ -9,15 +9,24 @@ import { getContentCatalog, resolveAgentContent } from "@/server/services/conten
 import { getImprovementData } from "@/server/services/improvement-service"
 import { buildAgentProfile } from "@/server/valorant/analytics/agent-profile"
 import { buildRankedMapStats, buildRankedOverview } from "@/server/valorant/analytics/ranked"
+import { AnalyticsScopeSelector } from "@/components/analytics/analytics-scope-selector"
+import { resolveScopeFromSearchParams } from "@/server/valorant/analytics/scope-filter"
 
-export default async function AgentDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function AgentDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const session = await getCurrentSession()
   if (!session && !env.enableMockRiot) {
     redirect("/login")
   }
 
   const { slug } = await params
-  const { analytics } = await getImprovementData(session?.puuid)
+  const scope = resolveScopeFromSearchParams(await searchParams)
+  const { analytics, acts, syncedTotal } = await getImprovementData(session?.puuid, scope)
   const catalog = await getContentCatalog()
 
   const agent = analytics.agentStats.find(
@@ -44,6 +53,9 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ sl
 
   return (
     <AppShell title={agent.agentName} subtitle="Perfil de agente" connected lastSyncedAt={new Date().toISOString()}>
+      <div className="mb-5 flex justify-end">
+        <AnalyticsScopeSelector scope={scope} acts={acts} syncedTotal={syncedTotal} />
+      </div>
       <AgentDetail name={agent.agentName} role={role} profile={profile} isTop={isTop} now={new Date().getTime()} ranked={ranked} />
     </AppShell>
   )

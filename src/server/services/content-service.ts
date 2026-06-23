@@ -191,6 +191,31 @@ export async function getContentCatalog(forceRefresh = false): Promise<ContentCa
   }
 }
 
+export type ActMeta = { id: string; name: string; isActive: boolean }
+
+let actsCache: { expiresAt: number; value: Map<string, ActMeta> } | null = null
+
+/** Map of act/season id -> { name, isActive } from VAL-CONTENT-V1. */
+export async function getActsCatalog(): Promise<Map<string, ActMeta>> {
+  const now = Date.now()
+  if (actsCache && actsCache.expiresAt > now) {
+    return actsCache.value
+  }
+  const map = new Map<string, ActMeta>()
+  try {
+    const content = await riotAdapter.getContent("en-US")
+    for (const act of content.acts ?? []) {
+      if (act.type === "act" && act.id && act.name) {
+        map.set(normalizeContentKey(act.id), { id: act.id, name: act.name, isActive: Boolean(act.isActive) })
+      }
+    }
+  } catch {
+    // content unavailable — acts stay empty, matches fall back to "no act"
+  }
+  actsCache = { expiresAt: now + CONTENT_TTL_MS, value: map }
+  return map
+}
+
 export function resolveAgentContent(catalog: ContentCatalog, candidateId?: string, candidateName?: string) {
   if (candidateId) {
     const byId = catalog.lookups.agentById.get(normalizeContentKey(candidateId))

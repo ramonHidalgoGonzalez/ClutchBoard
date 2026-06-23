@@ -3,18 +3,25 @@ import { redirect } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
 import { getTranslations } from "@/i18n/get-dictionary"
 import { ComparisonsView } from "@/components/comparisons/comparisons-view"
+import { AnalyticsScopeSelector } from "@/components/analytics/analytics-scope-selector"
+import { resolveScopeFromSearchParams } from "@/server/valorant/analytics/scope-filter"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { env } from "@/lib/env"
 import { getCurrentSession } from "@/server/auth/session"
 import { getImprovementData } from "@/server/services/improvement-service"
 
-export default async function ComparisonsPage() {
+export default async function ComparisonsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const session = await getCurrentSession()
   if (!session && !env.enableMockRiot) {
     redirect("/login")
   }
 
-  const { analytics } = await getImprovementData(session?.puuid)
+  const scope = resolveScopeFromSearchParams(await searchParams)
+  const { analytics, acts, syncedTotal } = await getImprovementData(session?.puuid, scope)
   const matches = analytics.filteredMatches
   const agents = analytics.agentStats.map((a) => a.agentName).filter(Boolean)
   const maps = analytics.mapStats.map((m) => m.mapName).filter(Boolean)
@@ -27,10 +34,13 @@ export default async function ComparisonsPage() {
       connected
       lastSyncedAt={new Date().toISOString()}
     >
+      <div className="mb-5 flex justify-end">
+        <AnalyticsScopeSelector scope={scope} acts={acts} syncedTotal={syncedTotal} />
+      </div>
       {matches.length === 0 ? (
         <EmptyState
-          title="Sin partidas todavía"
-          description="Cuando Riot sincronice tus partidas podrás comparar tu rendimiento."
+          title="No hay partidas sincronizadas para este acto"
+          description="Cambia el filtro de acto o sincroniza más partidas para comparar."
         />
       ) : (
         <ComparisonsView matches={matches} agents={agents} maps={maps} now={new Date().getTime()} />

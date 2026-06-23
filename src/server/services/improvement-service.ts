@@ -4,15 +4,22 @@ import {
   buildSummaryStats,
 } from "@/analytics/metrics"
 import { filterStandardMaps } from "@/integrations/riot/catalog"
-import { getAnalyticsPayload } from "@/server/services/analytics-service"
-import { getCoachInsights } from "@/server/services/coach-service"
+import { buildScopedAnalytics, getEnrichedMatches } from "@/server/services/analytics-service"
+import { buildCoachInsights } from "@/server/services/coach-service"
 import { getContentCatalog } from "@/server/services/content-service"
+import {
+  filterMatchesByScope,
+  getAvailableActScopes,
+  type AnalyticsScope,
+} from "@/server/valorant/analytics/scope-filter"
 
-export async function getImprovementData(puuid?: string) {
-  const analytics = await getAnalyticsPayload(puuid)
-  const insights = await getCoachInsights(puuid)
+export async function getImprovementData(puuid?: string, scope: AnalyticsScope = { type: "all" }) {
+  const enriched = await getEnrichedMatches(puuid)
+  const acts = getAvailableActScopes(enriched)
+  const matches = filterMatchesByScope(enriched, scope)
+  const analytics = buildScopedAnalytics(matches)
+  const insights = buildCoachInsights(analytics)
   const content = await getContentCatalog().catch(() => null)
-  const matches = analytics.filteredMatches
 
   return {
     insights,
@@ -29,5 +36,8 @@ export async function getImprovementData(puuid?: string) {
     matches,
     content,
     analytics,
+    acts,
+    scope,
+    syncedTotal: enriched.length,
   }
 }

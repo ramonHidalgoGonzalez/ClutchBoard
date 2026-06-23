@@ -8,12 +8,18 @@ export async function getCurrentAccount(accessToken?: string) {
 }
 
 export async function getNormalizedMatches(puuid?: string) {
-  void puuid
-  return createMockMatches()
+  // If a puuid is provided, bind the mock profile and match ids to it
+  // so mock data appears linked to the logged-in account.
+  if (puuid) {
+    // mutate exported mock profile so other helpers like getMatchListByPuuid return the same puuid
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(mockAccountProfile as any).puuid = puuid
+  }
+  return createMockMatches(undefined, puuid)
 }
 
 export async function getMatchListByPuuid() {
-  const matches = createMockMatches()
+  const matches = createMockMatches(undefined, mockAccountProfile.puuid)
   return {
     puuid: mockAccountProfile.puuid,
     history: matches.map((match) => match.matchId),
@@ -21,7 +27,7 @@ export async function getMatchListByPuuid() {
 }
 
 export async function getMatchById(matchId: string) {
-  return createMockMatches().find((match) => match.matchId === matchId) ?? null
+  return createMockMatches(undefined, mockAccountProfile.puuid).find((match) => match.matchId === matchId) ?? null
 }
 
 export async function getContent(): Promise<RiotContentDto> {
@@ -29,7 +35,11 @@ export async function getContent(): Promise<RiotContentDto> {
     version: "mock-1.0",
     characters: MOCK_AGENT_CATALOG,
     maps: MOCK_MAP_CATALOG,
-    acts: [{ id: "act-1", name: "Act 1", type: "act", isActive: true }],
+    acts: [
+      { id: "act-ep9a1", name: "Episodio 9 // Acto 1", type: "act", isActive: true },
+      { id: "act-ep8a3", name: "Episodio 8 // Acto 3", type: "act", isActive: false },
+      { id: "act-ep8a2", name: "Episodio 8 // Acto 2", type: "act", isActive: false },
+    ],
   }
 }
 

@@ -6,7 +6,7 @@ export async function listStoredMatches(_puuid: string): Promise<MatchPerformanc
   const prisma = getPrisma()
 
   if (!prisma) {
-    return createMockMatches()
+    return createMockMatches(undefined, _puuid)
   }
 
   const participants = await prisma.matchParticipant.findMany({

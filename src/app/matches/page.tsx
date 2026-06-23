@@ -4,17 +4,24 @@ import { AppShell } from "@/components/app-shell"
 import { getTranslations } from "@/i18n/get-dictionary"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MatchHistory } from "@/components/matches/match-history"
+import { AnalyticsScopeSelector } from "@/components/analytics/analytics-scope-selector"
+import { resolveScopeFromSearchParams } from "@/server/valorant/analytics/scope-filter"
 import { env } from "@/lib/env"
 import { getCurrentSession } from "@/server/auth/session"
 import { getImprovementData } from "@/server/services/improvement-service"
 
-export default async function MatchesPage() {
+export default async function MatchesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const session = await getCurrentSession()
   if (!session && !env.enableMockRiot) {
     redirect("/login")
   }
 
-  const { analytics } = await getImprovementData(session?.puuid)
+  const scope = resolveScopeFromSearchParams(await searchParams)
+  const { analytics, acts, syncedTotal } = await getImprovementData(session?.puuid, scope)
   const matches = analytics.filteredMatches
 
   const bestMap = [...analytics.mapStats]
@@ -31,6 +38,9 @@ export default async function MatchesPage() {
       connected
       lastSyncedAt={lastSyncedAt}
     >
+      <div className="mb-5 flex justify-end">
+        <AnalyticsScopeSelector scope={scope} acts={acts} syncedTotal={syncedTotal} />
+      </div>
       {matches.length ? (
         <MatchHistory
           matches={matches}
@@ -42,8 +52,8 @@ export default async function MatchesPage() {
         />
       ) : (
         <EmptyState
-          title="No hay partidas para mostrar"
-          description="Cuando Riot sincronice nuevas partidas, aparecerán aquí con sus métricas clave."
+          title="No hay partidas sincronizadas para este acto"
+          description="Cambia el filtro de acto o sincroniza más partidas para ver tu historial."
         />
       )}
     </AppShell>

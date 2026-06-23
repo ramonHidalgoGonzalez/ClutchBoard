@@ -4,6 +4,8 @@ import { AppShell } from "@/components/app-shell"
 import { getTranslations } from "@/i18n/get-dictionary"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { VisualMapCard } from "@/components/maps/visual-map-card"
+import { AnalyticsScopeSelector } from "@/components/analytics/analytics-scope-selector"
+import { resolveScopeFromSearchParams } from "@/server/valorant/analytics/scope-filter"
 import { SectionHeader } from "@/components/dashboard/section-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { env } from "@/lib/env"
@@ -13,7 +15,7 @@ import { getImprovementData } from "@/server/services/improvement-service"
 export default async function MapsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ order?: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const session = await getCurrentSession()
   if (!session && !env.enableMockRiot) {
@@ -21,8 +23,9 @@ export default async function MapsPage({
   }
 
   const params = await searchParams
-  const order = params.order ?? "matches"
-  const { analytics } = await getImprovementData(session?.puuid)
+  const order = typeof params.order === "string" ? params.order : "matches"
+  const scope = resolveScopeFromSearchParams(params)
+  const { analytics, acts, syncedTotal } = await getImprovementData(session?.puuid, scope)
 
   const maps = [...analytics.mapStats].sort((a, b) => {
     if (order === "winrate") {
@@ -42,6 +45,9 @@ export default async function MapsPage({
   return (
     <AppShell title={t("maps.title")} subtitle={t("maps.subtitle")} connected>
       <div className="space-y-5">
+        <div className="flex justify-end">
+          <AnalyticsScopeSelector scope={scope} acts={acts} syncedTotal={syncedTotal} />
+        </div>
         <SectionHeader
           title="Rendimiento por mapa"
           description="Métricas post-match por battleground. Haz clic en un mapa para ver el perfil completo."

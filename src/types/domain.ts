@@ -40,6 +40,11 @@ export type MatchPerformance = {
   roundsPlayed?: number
   abilityCasts?: Record<string, number> | null
   competitiveTier?: number | null
+  seasonId?: string | null
+  actId?: string | null
+  actName?: string | null
+  episodeName?: string | null
+  isCurrentAct?: boolean
   kills: number
   deaths: number
   assists: number

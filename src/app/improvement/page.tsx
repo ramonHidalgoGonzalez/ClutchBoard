@@ -7,18 +7,28 @@ import { MapThumbnail } from "@/components/dashboard/map-thumbnail"
 import { AgentAvatar } from "@/components/dashboard/agent-avatar"
 import { InsightCard } from "@/features/improvement/insight-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AnalyticsScopeSelector } from "@/components/analytics/analytics-scope-selector"
+import { resolveScopeFromSearchParams } from "@/server/valorant/analytics/scope-filter"
 import { requireSession } from "@/server/auth/session"
 import { getImprovementData } from "@/server/services/improvement-service"
 
-export default async function ImprovementPage() {
+export default async function ImprovementPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const session = await requireSession()
-  const { insights, summary, matches } = await getImprovementData(session.puuid)
+  const scope = resolveScopeFromSearchParams(await searchParams)
+  const { insights, summary, matches, acts, syncedTotal } = await getImprovementData(session.puuid, scope)
   const insufficientSample = matches.length < 8
   const t = await getTranslations()
 
   return (
     <AppShell title={t("improvement.title")} subtitle={t("improvement.subtitle")} connected lastSyncedAt={new Date().toISOString()}>
       <div className="space-y-6">
+        <div className="flex justify-end">
+          <AnalyticsScopeSelector scope={scope} acts={acts} syncedTotal={syncedTotal} />
+        </div>
         <SectionHeader
           title="Areas de mejora"
           description="Recomendaciones post-match basadas en tu muestra reciente."

@@ -1,4 +1,4 @@
-import type { ImprovementInsight } from "@/types/domain"
+import type { AnalyticsPayload, ImprovementInsight } from "@/types/domain"
 import { getAnalyticsPayload } from "@/server/services/analytics-service"
 
 function makeInsight(id: string, payload: Omit<ImprovementInsight, "id">): ImprovementInsight {
@@ -9,7 +9,10 @@ function makeInsight(id: string, payload: Omit<ImprovementInsight, "id">): Impro
 }
 
 export async function getCoachInsights(puuid?: string): Promise<ImprovementInsight[]> {
-  const analytics = await getAnalyticsPayload(puuid)
+  return buildCoachInsights(await getAnalyticsPayload(puuid))
+}
+
+export function buildCoachInsights(analytics: AnalyticsPayload): ImprovementInsight[] {
   const insights: ImprovementInsight[] = []
   const { filteredMatches, summary, mapStats, agentStats, recentVsPrevious, smallSampleWarnings } = analytics
 

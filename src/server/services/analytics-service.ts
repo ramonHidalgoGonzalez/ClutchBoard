@@ -16,7 +16,7 @@ import type {
   MatchPerformance,
   RecentComparison,
 } from "@/types/domain"
-import { getContentCatalog, resolveAgentContent, resolveMapContent } from "@/server/services/content-service"
+import { getActsCatalog, getContentCatalog, resolveAgentContent, resolveMapContent } from "@/server/services/content-service"
 import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
 import { getMapAssets } from "@/server/valorant/assets/map-assets"
 
@@ -195,10 +195,15 @@ function buildSampleWarnings(matches: MatchPerformance[], mapStats: MapBreakdown
   return warnings
 }
 
-function enrichMatchesWithContent(matches: MatchPerformance[], catalog: Awaited<ReturnType<typeof getContentCatalog>>) {
+function enrichMatchesWithContent(
+  matches: MatchPerformance[],
+  catalog: Awaited<ReturnType<typeof getContentCatalog>>,
+  acts?: Map<string, { id: string; name: string; isActive: boolean }>,
+) {
   return matches.map((match) => {
     const agentContent = resolveAgentContent(catalog, match.agentId, match.agentName)
     const mapContent = resolveMapContent(catalog, match.mapId, match.mapName)
+    const actMeta = match.seasonId && acts ? acts.get(match.seasonId.trim().toLowerCase()) : undefined
     const agentName = agentContent?.displayName || match.agentName || "Unknown Agent"
     const mapName = mapContent?.displayName || match.mapName || "Unknown Map"
     // characterId -> displayName -> slug -> curated local asset (per context).
@@ -224,30 +229,41 @@ function enrichMatchesWithContent(matches: MatchPerformance[], catalog: Awaited<
       mapThumbImageUrl: map.thumb ?? mapSplash,
       mapBannerImageUrl: map.banner ?? mapSplash,
       mapCardImageUrl: map.card ?? mapSplash,
+      actId: match.seasonId ?? null,
+      actName: actMeta?.name ?? null,
+      isCurrentAct: actMeta?.isActive ?? false,
     }
   })
 }
 
-export async function getAnalyticsPayload(puuid?: string, filter?: MatchFilter): Promise<AnalyticsPayload> {
+/** All synced matches, enriched with content + act metadata (no scope filter). */
+export async function getEnrichedMatches(puuid?: string): Promise<MatchPerformance[]> {
   const rawMatches = env.enableMockRiot
     ? await riotAdapter.getNormalizedMatches()
     : await riotAdapter.getNormalizedMatches(puuid)
-
   const catalog = await getContentCatalog()
-  const withContent = enrichMatchesWithContent(rawMatches, catalog)
-  const filteredMatches = applyMatchFilters(withContent, filter)
+  const acts = await getActsCatalog()
+  return enrichMatchesWithContent(rawMatches, catalog, acts)
+}
 
+/** Build the analytics payload from an already-enriched (and scoped) match set. */
+export function buildScopedAnalytics(filteredMatches: MatchPerformance[], periodDays = 60): AnalyticsPayload {
   const summary = buildSummary(filteredMatches)
   const mapStats = buildMapStats(filteredMatches)
   const agentStats = buildAgentStats(filteredMatches)
-
   return {
     summary,
     filteredMatches,
-    trend: buildTrendPoints(filteredMatches, filter?.periodDays ?? 60),
+    trend: buildTrendPoints(filteredMatches, periodDays),
     mapStats,
     agentStats,
     recentVsPrevious: buildRecentVsPrevious(filteredMatches),
     smallSampleWarnings: buildSampleWarnings(filteredMatches, mapStats, agentStats),
   }
+}
+
+export async function getAnalyticsPayload(puuid?: string, filter?: MatchFilter): Promise<AnalyticsPayload> {
+  const enriched = await getEnrichedMatches(puuid)
+  const filteredMatches = applyMatchFilters(enriched, filter)
+  return buildScopedAnalytics(filteredMatches, filter?.periodDays ?? 60)
 }

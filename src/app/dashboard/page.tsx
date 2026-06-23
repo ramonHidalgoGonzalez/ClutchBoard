@@ -10,7 +10,9 @@ import { EntityHeroMini } from "@/components/dashboard/entity-hero-mini"
 import { QuickInsights } from "@/components/dashboard/quick-insights"
 import { MatchHistoryRow } from "@/components/matches/match-history-row"
 import { RankBadge } from "@/components/ranked/rank-badge"
+import { AnalyticsScopeSelector } from "@/components/analytics/analytics-scope-selector"
 import { buildRankedOverview } from "@/server/valorant/analytics/ranked"
+import { getScopeLabel, resolveScopeFromSearchParams } from "@/server/valorant/analytics/scope-filter"
 import { RolePerformance, type RoleRow } from "@/components/dashboard/role-performance"
 import { ResultsDonut } from "@/components/dashboard/results-donut"
 import { WinrateDonut } from "@/components/stats/winrate-donut"
@@ -94,13 +96,18 @@ function buildRoleRows(matches: MatchPerformance[], catalog: Awaited<ReturnType<
     .sort((a, b) => b.winRate - a.winRate || b.matches - a.matches)
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const session = await getCurrentSession()
   if (!session && !env.enableMockRiot) {
     redirect("/login")
   }
 
-  const { analytics } = await getImprovementData(session?.puuid)
+  const scope = resolveScopeFromSearchParams(await searchParams)
+  const { analytics, acts, syncedTotal } = await getImprovementData(session?.puuid, scope)
   const catalog = await getContentCatalog()
 
   const matches = analytics.filteredMatches
@@ -136,10 +143,17 @@ export default async function DashboardPage() {
       connected
       lastSyncedAt={new Date().toISOString()}
     >
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-zinc-400">
+          <span className="font-semibold text-zinc-200">{getScopeLabel(scope, locale, acts)}</span> ·{" "}
+          {analytics.summary.totalMatches} / {syncedTotal} sincronizadas
+        </p>
+        <AnalyticsScopeSelector scope={scope} acts={acts} syncedTotal={syncedTotal} />
+      </div>
       {matches.length === 0 ? (
         <EmptyState
-          title="Sin partidas todavía"
-          description="Cuando Riot sincronice tus partidas verás aquí tu rendimiento."
+          title="No hay partidas sincronizadas para este acto"
+          description="Cambia el filtro de acto o sincroniza más partidas."
         />
       ) : (
         <div className="space-y-5">

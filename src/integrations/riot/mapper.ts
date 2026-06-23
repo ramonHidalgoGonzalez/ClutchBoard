@@ -162,6 +162,7 @@ export function mapRiotMatchToPerformance(
     roundsPlayed: player.stats.roundsPlayed ?? roundsWon + roundsLost,
     abilityCasts: player.stats.abilityCasts ?? null,
     competitiveTier: player.competitiveTier ?? null,
+    seasonId: match.matchInfo.seasonId ?? null,
     kills: player.stats.kills ?? 0,
     deaths: player.stats.deaths ?? 0,
     assists: player.stats.assists ?? 0,

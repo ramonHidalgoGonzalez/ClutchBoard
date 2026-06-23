@@ -10,11 +10,15 @@ import { RankedEntityCard } from "@/components/ranked/ranked-entity-card"
 import { buildRankedAgentStats, buildRankedOverview } from "@/server/valorant/analytics/ranked"
 import { getCurrentSession } from "@/server/auth/session"
 import { getImprovementData } from "@/server/services/improvement-service"
+import { AnalyticsScopeSelector } from "@/components/analytics/analytics-scope-selector"
+import { resolveScopeFromSearchParams } from "@/server/valorant/analytics/scope-filter"
 
 export default async function MapDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const session = await getCurrentSession()
   if (!session && !env.enableMockRiot) {
@@ -22,7 +26,8 @@ export default async function MapDetailPage({
   }
 
   const { slug } = await params
-  const { analytics } = await getImprovementData(session?.puuid)
+  const scope = resolveScopeFromSearchParams(await searchParams)
+  const { analytics, acts, syncedTotal } = await getImprovementData(session?.puuid, scope)
 
   const map = analytics.mapStats.find(
     (candidate) => toSlug(candidate.mapName || candidate.mapId || "") === slug,
@@ -60,6 +65,9 @@ export default async function MapDetailPage({
 
   return (
     <AppShell title={map.mapName} subtitle="Perfil de mapa" connected>
+      <div className="mb-5 flex justify-end">
+        <AnalyticsScopeSelector scope={scope} acts={acts} syncedTotal={syncedTotal} />
+      </div>
       <EntityDetail
         kind="map"
         name={map.mapName}
