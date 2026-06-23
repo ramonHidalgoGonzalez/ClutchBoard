@@ -75,8 +75,8 @@ describe("MapThumbnail", () => {
   it("renders the image at the md default size", () => {
     const { container } = render(<MapThumbnail name="Haven" imageUrl="https://x/haven.png" />)
     const root = container.firstChild as HTMLElement
-    expect(root.className).toContain("h-12")
-    expect(root.className).toContain("w-20")
+    expect(root.className).toContain("h-[52px]")
+    expect(root.className).toContain("w-[84px]")
     expect(screen.getByAltText("Haven")).toBeInTheDocument()
   })
 
@@ -109,25 +109,48 @@ describe("AgentAvatar", () => {
 })
 
 describe("MatchHistory visuals", () => {
-  it("shows visible map thumbnails and agent portraits", () => {
+  it("shows visible map thumbnails and agent portraits with clean names", () => {
     render(
       <MatchHistory matches={[baseMatch]} summary={summary} recentVsPrevious={recentVsPrevious} />,
     )
     expect(screen.getAllByAltText("Haven").length).toBeGreaterThan(0)
     expect(screen.getAllByAltText("Sova").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Haven").length).toBeGreaterThan(0)
   })
 
-  it("never renders internal map asset paths", () => {
+  it("renders KDA and score on a single line (no broken wraps)", () => {
     render(
       <MatchHistory matches={[baseMatch]} summary={summary} recentVsPrevious={recentVsPrevious} />,
     )
-    expect(screen.queryByText(/\/Game\/Maps/)).not.toBeInTheDocument()
+    // Single text nodes — assert the exact joined strings exist.
+    expect(screen.getAllByText("20 / 14 / 7").length).toBeGreaterThan(0)
+    expect(screen.getByText("1.93")).toBeInTheDocument()
+    expect(screen.getAllByText("13 - 9").length).toBeGreaterThan(0)
+  })
+
+  it("never leaks internal paths, undefined or null", () => {
+    const { container } = render(
+      <MatchHistory matches={[baseMatch]} summary={summary} recentVsPrevious={recentVsPrevious} />,
+    )
+    expect(container.textContent).not.toContain("/Game/Maps")
+    expect(container.textContent).not.toContain("undefined")
+    expect(container.textContent).not.toMatch(/\bnull\b/)
+  })
+
+  it("renders a mobile card with result, map, agent and KDA", () => {
+    render(
+      <MatchHistory matches={[baseMatch]} summary={summary} recentVsPrevious={recentVsPrevious} />,
+    )
+    // Desktop + mobile both in the DOM (visibility is CSS-only).
+    expect(screen.getAllByText("VICTORIA").length).toBeGreaterThan(0)
+    expect(screen.getAllByAltText("Haven").length).toBeGreaterThan(0)
+    expect(screen.getAllByAltText("Sova").length).toBeGreaterThan(0)
   })
 
   it("does not crash when imagery is missing", () => {
     render(
       <MatchHistory
-        matches={[{ ...baseMatch, mapImageUrl: null, mapIconUrl: null, agentImageUrl: null, agentIconUrl: null }]}
+        matches={[{ ...baseMatch, mapImageUrl: null, mapIconUrl: null, agentImageUrl: null, agentIconUrl: null, agentAvatarUrl: null }]}
         summary={summary}
         recentVsPrevious={recentVsPrevious}
       />,

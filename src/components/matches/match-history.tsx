@@ -320,8 +320,21 @@ export function MatchHistory({
       </div>
 
       {/* Table */}
-      <div className="hidden overflow-hidden rounded-2xl border border-white/10 lg:block">
-        <table className="w-full text-sm">
+      <div className="hidden overflow-x-auto rounded-2xl border border-white/10 lg:block">
+        <table className="w-full min-w-[1180px] table-fixed text-sm">
+          <colgroup>
+            <col className="w-[120px]" />
+            <col className="w-[120px]" />
+            <col className="w-[140px]" />
+            <col className="w-[190px]" />
+            <col className="w-[170px]" />
+            <col className="w-[90px]" />
+            <col className="w-[110px]" />
+            <col className="w-[80px]" />
+            <col className="w-[80px]" />
+            <col className="w-[90px]" />
+            <col className="w-[60px]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-[0.12em] text-zinc-500">
               <th className="px-4 py-3 font-medium">Resultado</th>
@@ -346,23 +359,23 @@ export function MatchHistory({
                   <td className="py-4 pl-4 pr-3">
                     <div className="flex items-center gap-3">
                       <span className={cn("h-12 w-1.5 rounded-full", meta.bar)} />
-                      <div>
+                      <div className="whitespace-nowrap">
                         <p className={cn("text-xs font-bold", meta.tone)}>{meta.label}</p>
                         <p className="text-base font-semibold text-white">
-                          {match.roundsWon ?? 0} - {match.roundsLost ?? 0}
+                          {`${match.roundsWon ?? 0} - ${match.roundsLost ?? 0}`}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4 text-zinc-300">
+                  <td className="whitespace-nowrap px-4 py-4 text-zinc-300">
                     <p>{when.date}</p>
                     <p className="text-xs text-zinc-500">{when.time}</p>
                   </td>
-                  <td className="px-4 py-4 text-zinc-300">{match.queueName || match.queueId}</td>
+                  <td className="truncate px-4 py-4 text-zinc-300">{match.queueName || match.queueId}</td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
                       <MapThumbnail name={match.mapName} imageUrl={match.mapImageUrl} iconUrl={match.mapIconUrl} size="md" />
-                      <span className="font-medium text-white">{match.mapName}</span>
+                      <span className="min-w-0 truncate font-medium text-white">{match.mapName}</span>
                     </div>
                   </td>
                   <td className="px-4 py-4">
@@ -375,23 +388,25 @@ export function MatchHistory({
                         framing="avatar"
                         ringClassName={roleRingClass(match.agentName)}
                       />
-                      <span className="font-medium text-white">{match.agentName}</span>
+                      <span className="min-w-0 truncate font-medium text-white">{match.agentName}</span>
                     </div>
                   </td>
-                  <td className={cn("px-4 py-4 font-semibold", meta.tone)}>
-                    {match.roundsWon ?? 0} - {match.roundsLost ?? 0}
+                  <td className={cn("whitespace-nowrap px-4 py-4 font-semibold", meta.tone)}>
+                    {`${match.roundsWon ?? 0} - ${match.roundsLost ?? 0}`}
                   </td>
                   <td className="px-4 py-4">
-                    <p className="text-white">
-                      {match.kills} / {match.deaths} / {match.assists}
-                    </p>
-                    <p className="text-xs text-zinc-500">{kdaRatio(match)}</p>
+                    <div className="whitespace-nowrap">
+                      <p className="font-semibold text-white">
+                        {`${match.kills} / ${match.deaths} / ${match.assists}`}
+                      </p>
+                      <p className="text-xs text-zinc-500">{kdaRatio(match)}</p>
+                    </div>
                   </td>
-                  <td className="px-4 py-4 font-semibold text-white">{match.acsEstimate ?? "--"}</td>
-                  <td className="px-4 py-4 text-zinc-300">
+                  <td className="whitespace-nowrap px-4 py-4 font-semibold text-white">{match.acsEstimate ?? "--"}</td>
+                  <td className="whitespace-nowrap px-4 py-4 text-zinc-300">
                     {Number.isFinite(match.headshotPct) ? `${match.headshotPct.toFixed(1)}%` : "--"}
                   </td>
-                  <td className="px-4 py-4 text-zinc-400">
+                  <td className="whitespace-nowrap px-4 py-4 text-zinc-400">
                     {match.durationSeconds ? `${Math.round(match.durationSeconds / 60)} min` : "--"}
                   </td>
                   <td className="px-4 py-4 text-right">
@@ -430,10 +445,10 @@ export function MatchHistory({
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,9,11,0.2),rgba(9,9,11,0.85))]" />
                 <span className={cn("absolute inset-y-0 left-0 w-1.5", meta.bar)} />
                 <div className="absolute inset-0 flex items-end justify-between p-3">
-                  <div>
+                  <div className="whitespace-nowrap">
                     <p className={cn("text-xs font-bold", meta.tone)}>{meta.label}</p>
                     <p className="text-2xl font-extrabold text-white">
-                      {match.roundsWon ?? 0} - {match.roundsLost ?? 0}
+                      {`${match.roundsWon ?? 0} - ${match.roundsLost ?? 0}`}
                     </p>
                   </div>
                   <div className="text-right text-xs text-zinc-300">

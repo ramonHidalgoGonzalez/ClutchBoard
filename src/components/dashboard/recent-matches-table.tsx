@@ -83,20 +83,22 @@ export function RecentMatchesTable({ matches }: { matches: MatchPerformance[] })
                     <span className="font-medium text-white">{match.agentName}</span>
                   </div>
                 </td>
-                <td className={cn("px-3 py-3.5 font-semibold", m.tone)}>
-                  {match.roundsWon ?? 0} - {match.roundsLost ?? 0}
+                <td className={cn("whitespace-nowrap px-3 py-3.5 font-semibold", m.tone)}>
+                  {`${match.roundsWon ?? 0} - ${match.roundsLost ?? 0}`}
                 </td>
                 <td className="px-3 py-3.5">
-                  <p className="text-white">
-                    {match.kills} / {match.deaths} / {match.assists}
-                  </p>
-                  <p className="text-xs text-zinc-500">{ratio}</p>
+                  <div className="whitespace-nowrap">
+                    <p className="font-semibold text-white">
+                      {`${match.kills} / ${match.deaths} / ${match.assists}`}
+                    </p>
+                    <p className="text-xs text-zinc-500">{ratio}</p>
+                  </div>
                 </td>
-                <td className="px-3 py-3.5 font-semibold text-white">{match.acsEstimate ?? "--"}</td>
-                <td className="px-3 py-3.5 text-zinc-300">
+                <td className="whitespace-nowrap px-3 py-3.5 font-semibold text-white">{match.acsEstimate ?? "--"}</td>
+                <td className="whitespace-nowrap px-3 py-3.5 text-zinc-300">
                   {Number.isFinite(match.headshotPct) ? `${match.headshotPct.toFixed(1)}%` : "--"}
                 </td>
-                <td className="px-3 py-3.5 text-zinc-400">
+                <td className="whitespace-nowrap px-3 py-3.5 text-zinc-400">
                   {match.durationSeconds ? `${Math.round(match.durationSeconds / 60)} min` : "--"}
                 </td>
                 <td className="px-3 py-3.5 text-right">
