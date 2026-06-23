@@ -47,6 +47,7 @@ export const riotMatchSchema = z.object({
         kills: z.number().optional(),
         deaths: z.number().optional(),
         assists: z.number().optional(),
+        abilityCasts: z.record(z.string(), z.number()).nullable().optional(),
       }),
       economy: z.object({ spent: z.number().optional() }).nullable().optional(),
       behaviorFactors: z

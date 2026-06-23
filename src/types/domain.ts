@@ -37,6 +37,8 @@ export type MatchPerformance = {
   outcome: "win" | "loss" | "draw" | "unknown"
   roundsWon: number
   roundsLost: number
+  roundsPlayed?: number
+  abilityCasts?: Record<string, number> | null
   kills: number
   deaths: number
   assists: number

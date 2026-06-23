@@ -159,6 +159,8 @@ export function mapRiotMatchToPerformance(
     outcome: deriveOutcome(team, opponent),
     roundsWon,
     roundsLost,
+    roundsPlayed: player.stats.roundsPlayed ?? roundsWon + roundsLost,
+    abilityCasts: player.stats.abilityCasts ?? null,
     kills: player.stats.kills ?? 0,
     deaths: player.stats.deaths ?? 0,
     assists: player.stats.assists ?? 0,

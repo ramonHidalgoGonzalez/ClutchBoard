@@ -51,6 +51,13 @@ export function createMockMatches(count = 60, puuid?: string): MatchPerformance[
       outcome: (isWin ? "win" : "loss") as "win" | "loss",
       roundsWon: isWin ? 13 : 8 + (index % 4),
       roundsLost: isWin ? 7 + (index % 4) : 13,
+      roundsPlayed: (isWin ? 13 : 8 + (index % 4)) + (isWin ? 7 + (index % 4) : 13),
+      abilityCasts: {
+        grenadeCasts: 5 + (index % 4),
+        ability1Casts: 8 + (index % 6),
+        ability2Casts: 3 + (index % 3),
+        ultimateCasts: 1 + (index % 2),
+      },
       kills,
       deaths,
       assists,
