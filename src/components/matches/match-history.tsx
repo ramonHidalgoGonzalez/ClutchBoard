@@ -84,6 +84,7 @@ function SummaryTile({
   icon,
   accent,
   image,
+  imagePosition = "bg-center",
 }: {
   label: string
   value: string
@@ -91,12 +92,13 @@ function SummaryTile({
   icon?: React.ReactNode
   accent?: string
   image?: string | null
+  imagePosition?: string
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4">
       {image ? (
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-25"
+          className={`absolute inset-0 bg-cover ${imagePosition} opacity-25`}
           style={{ backgroundImage: `url(${image})` }}
           aria-hidden="true"
         />
@@ -186,6 +188,7 @@ export function MatchHistory({ matches, summary, bestMap, topAgent, lastSyncedAt
           value={topAgent?.agentName ?? "--"}
           sub={topAgent ? `${topAgent.matches} partidas` : undefined}
           image={topAgent?.agentImageUrl}
+          imagePosition="bg-top"
         />
       </div>
 
@@ -280,8 +283,8 @@ export function MatchHistory({ matches, summary, bestMap, topAgent, lastSyncedAt
                   </td>
                   <td className="px-4 py-3 text-zinc-300">{match.queueName || match.queueId}</td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <MapThumbnail name={match.mapName} imageUrl={match.mapImageUrl} iconUrl={match.mapIconUrl} size="sm" />
+                    <div className="flex items-center gap-2.5">
+                      <MapThumbnail name={match.mapName} imageUrl={match.mapImageUrl} iconUrl={match.mapIconUrl} size="md" />
                       <span className="text-white">{match.mapName}</span>
                     </div>
                   </td>

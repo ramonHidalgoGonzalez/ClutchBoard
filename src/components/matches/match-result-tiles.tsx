@@ -35,15 +35,17 @@ export function MatchResultTiles({
       {matches.map((match) => {
         const result = resultLabel(match.outcome)
         const bg = background === "agent" ? match.agentImageUrl : match.mapImageUrl
+        // Agent cutouts read best anchored to the top; map splashes centered.
+        const bgPosition = background === "agent" ? "bg-top" : "bg-center"
 
         return (
           <Link
             key={match.matchId}
             href={`/matches/${match.matchId}`}
-            className={`relative overflow-hidden rounded-2xl border border-white/10 border-l-2 ${result.edge} bg-black/30 p-3`}
+            className={`relative min-h-[120px] overflow-hidden rounded-2xl border border-white/10 border-l-2 ${result.edge} bg-black/30 p-3`}
           >
             <div
-              className="absolute inset-0 bg-cover bg-center opacity-30"
+              className={`absolute inset-0 bg-cover ${bgPosition} opacity-40`}
               style={bg ? { backgroundImage: `url(${bg})` } : undefined}
               aria-hidden="true"
             />

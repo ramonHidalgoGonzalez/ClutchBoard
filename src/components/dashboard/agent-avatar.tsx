@@ -13,6 +13,8 @@ type AgentAvatarProps = {
   iconUrl?: string | null
   size?: "sm" | "md" | "lg" | "xl"
   className?: string
+  /** "bust" zooms onto head/torso (avatars); "full" shows the whole portrait. */
+  framing?: "bust" | "full"
 }
 
 const SIZE_CLASS = {
@@ -42,10 +44,23 @@ function initials(value?: string) {
     .toUpperCase()
 }
 
-export function AgentAvatar({ name, imageUrl, iconUrl, size = "md", className }: AgentAvatarProps) {
+export function AgentAvatar({
+  name,
+  imageUrl,
+  iconUrl,
+  size = "md",
+  className,
+  framing = "bust",
+}: AgentAvatarProps) {
   const [failed, setFailed] = useState(false)
   const src = !failed ? imageUrl || iconUrl : null
   const label = name || "Unknown Agent"
+  // Portraits are full-body with transparent margins; zoom onto the upper body
+  // so the character fills the frame instead of floating small and centered.
+  const imgStyle =
+    framing === "bust"
+      ? { transform: "scale(1.45)", transformOrigin: "top center" }
+      : undefined
 
   return (
     <div
@@ -59,7 +74,17 @@ export function AgentAvatar({ name, imageUrl, iconUrl, size = "md", className }:
       {src ? (
         // Use native <img> for all agent media to avoid Next/Image domain and SVG issues
         // eslint-disable-next-line jsx-a11y/alt-text
-        <img src={src} alt={label} className="absolute inset-0 h-full w-full object-cover" onError={() => setFailed(true)} />
+        <img
+          src={src}
+          alt={label}
+          style={imgStyle}
+          className={
+            framing === "bust"
+              ? "absolute inset-0 h-full w-full object-cover object-top"
+              : "absolute inset-0 h-full w-full object-contain object-bottom"
+          }
+          onError={() => setFailed(true)}
+        />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-black/10 text-xs font-semibold text-white">
           {name ? initials(name) : <UserRound className="size-4" />}

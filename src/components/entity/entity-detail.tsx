@@ -58,6 +58,13 @@ export function EntityDetail({
   const delta = splitDelta(matches)
   const percentile = acsPercentile(matches, allMatches)
   const heroAspect = kind === "agent" ? "aspect-[3/4]" : "aspect-[16/10]"
+  // Agent portraits are near-square full-body cutouts → cover the tall panel
+  // anchored at the head so the character reads large (legs may crop, like the
+  // reference). Map splashes are landscape → cover centered.
+  const heroBgClass =
+    kind === "agent"
+      ? "absolute inset-0 bg-cover bg-top"
+      : "absolute inset-0 bg-cover bg-center"
 
   return (
     <div className="space-y-5">
@@ -74,7 +81,7 @@ export function EntityDetail({
           <div className={`relative ${heroAspect} overflow-hidden rounded-2xl border border-white/10`}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#fb718555,transparent_60%),linear-gradient(135deg,#0f172a,#1e1b4b)]" />
             <div
-              className="absolute inset-0 bg-cover bg-center"
+              className={heroBgClass}
               style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
               aria-hidden="true"
             />
