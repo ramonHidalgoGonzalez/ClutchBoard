@@ -74,9 +74,10 @@ export function RecentMatchesTable({ matches }: { matches: MatchPerformance[] })
                   <div className="flex items-center gap-2.5">
                     <AgentAvatar
                       name={match.agentName}
-                      imageUrl={match.agentImageUrl}
+                      imageUrl={match.agentAvatarUrl ?? match.agentImageUrl}
                       iconUrl={match.agentIconUrl}
                       size="md"
+                      framing="avatar"
                       ringClassName={roleRingClass(match.agentName)}
                     />
                     <span className="font-medium text-white">{match.agentName}</span>

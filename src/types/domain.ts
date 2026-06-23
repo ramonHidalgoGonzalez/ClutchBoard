@@ -28,6 +28,10 @@ export type MatchPerformance = {
   agentName: string
   agentImageUrl?: string | null
   agentIconUrl?: string | null
+  agentSlug?: string | null
+  agentAvatarUrl?: string | null
+  agentPortraitUrl?: string | null
+  agentBannerUrl?: string | null
   outcome: "win" | "loss" | "draw" | "unknown"
   roundsWon: number
   roundsLost: number

@@ -369,9 +369,10 @@ export function MatchHistory({
                     <div className="flex items-center gap-3">
                       <AgentAvatar
                         name={match.agentName}
-                        imageUrl={match.agentImageUrl}
+                        imageUrl={match.agentAvatarUrl ?? match.agentImageUrl}
                         iconUrl={match.agentIconUrl}
                         size="md"
+                        framing="avatar"
                         ringClassName={roleRingClass(match.agentName)}
                       />
                       <span className="font-medium text-white">{match.agentName}</span>
@@ -447,9 +448,10 @@ export function MatchHistory({
                 <div className="flex items-center gap-3">
                   <AgentAvatar
                     name={match.agentName}
-                    imageUrl={match.agentImageUrl}
+                    imageUrl={match.agentAvatarUrl ?? match.agentImageUrl}
                     iconUrl={match.agentIconUrl}
                     size="lg"
+                    framing="avatar"
                     ringClassName={roleRingClass(match.agentName)}
                   />
                   <div>

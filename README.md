@@ -288,3 +288,37 @@ Riot documents that VALORANT apps working with personal player data must use `RS
 - RSO token refresh and revocable multi-device sessions
 - Richer attacker/defender-side segmentation if official payloads support it
 - Finer coaching models built around sessions, agent changes, and competitive windows
+
+## Agent assets
+
+Agent imagery is served from optimized local WebP files so the UI never depends
+on the network at build time and no assets are scraped at runtime:
+
+```
+public/valorant/agents/
+  avatars/<slug>.webp     # 48x48 head/torso crop (tables, cards)
+  portraits/<slug>.webp   # 240x320 card portrait (agent pages, hero cards)
+```
+
+The slug is `normalizeAgentSlug(displayName)` (e.g. `KAY/O` -> `kayo`). The
+mapping lives in `src/server/valorant/content/agent-assets.ts`
+(`agent-asset-map.generated.ts` is generated, do not edit by hand). Resolution
+order at runtime: `agentAvatarUrl`/`agentPortraitUrl` (local WebP) ->
+`agentImageUrl` (content) -> initials fallback. Unmapped/new agents fall back to
+the legacy bundled portrait, never a broken image.
+
+### Regenerating assets
+
+```bash
+# Reprocess the bundled source PNGs into optimized WebP + mapping
+npm run sync:valorant-agents
+
+# Or process an extracted Riot Public Content Catalog (no network in build):
+#   1. Download the official VALORANT Public Content Catalog
+#   2. Extract it locally
+#   3. Point --source at the agent images directory
+npm run sync:valorant-agents -- --source /path/to/catalog/agents
+```
+
+The script uses the already-installed `sharp` (no new dependency) and is run
+manually — Vercel builds only serve the committed files.

@@ -14,6 +14,7 @@ import { WinrateDonut } from "@/components/stats/winrate-donut"
 import { Card, CardContent } from "@/components/ui/card"
 import { lastN, summarizeMatches } from "@/analytics/entity-stats"
 import { resolveAgentRole } from "@/lib/agent-roles"
+import { resolveAgentVisual } from "@/server/valorant/content/agent-assets"
 import { env } from "@/lib/env"
 import { toSlug } from "@/lib/slug"
 import { getCurrentSession } from "@/server/auth/session"
@@ -221,7 +222,7 @@ export default async function DashboardPage() {
                     kind="agent"
                     eyebrow="Agente más jugado"
                     name={topAgent.agentName}
-                    imageUrl={topAgent.agentImageUrl}
+                    imageUrl={resolveAgentVisual(topAgent.agentName).portrait}
                     winRate={topAgent.winRate}
                     matches={topAgent.matches}
                     href={`/agents/${toSlug(topAgent.agentName)}`}

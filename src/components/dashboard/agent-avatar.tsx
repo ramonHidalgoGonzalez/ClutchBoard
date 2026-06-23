@@ -14,8 +14,12 @@ type AgentAvatarProps = {
   className?: string
   /** Tailwind border class (e.g. role-tinted) applied to the container. */
   ringClassName?: string
-  /** "bust" zooms onto head/torso (avatars); "full" shows the whole portrait. */
-  framing?: "bust" | "full"
+  /**
+   * "avatar": pre-cropped square asset, shown 1:1 (object-cover, no zoom).
+   * "bust": zoom onto head/torso of a full-body portrait.
+   * "full": show the whole portrait (contain).
+   */
+  framing?: "avatar" | "bust" | "full"
 }
 
 const SIZE_CLASS = {
@@ -58,12 +62,18 @@ export function AgentAvatar({
   const [failed, setFailed] = useState(false)
   const src = !failed ? imageUrl || iconUrl : null
   const label = name || "Unknown Agent"
-  // Portraits are full-body with transparent margins; zoom onto the upper body
-  // so the character fills the frame instead of floating small and centered.
+  // Full-body portraits need a zoom onto the upper body; pre-cropped avatars
+  // are shown as-is.
   const imgStyle =
     framing === "bust"
       ? { transform: "scale(1.45)", transformOrigin: "top center" }
       : undefined
+  const imgClass =
+    framing === "full"
+      ? "absolute inset-0 h-full w-full object-contain object-bottom"
+      : framing === "bust"
+        ? "absolute inset-0 h-full w-full object-cover object-top"
+        : "absolute inset-0 h-full w-full object-cover object-center"
 
   return (
     <div
@@ -76,17 +86,7 @@ export function AgentAvatar({
       aria-label={label}
     >
       {src ? (
-        <img
-          src={src}
-          alt={label}
-          style={imgStyle}
-          className={
-            framing === "bust"
-              ? "absolute inset-0 h-full w-full object-cover object-top"
-              : "absolute inset-0 h-full w-full object-contain object-bottom"
-          }
-          onError={() => setFailed(true)}
-        />
+        <img src={src} alt={label} style={imgStyle} className={imgClass} onError={() => setFailed(true)} />
       ) : (
         <div
           className={cn(

@@ -16,6 +16,7 @@ import {
   winrateBy,
 } from "@/analytics/entity-stats"
 import { toSlug } from "@/lib/slug"
+import { resolveAgentVisual } from "@/server/valorant/content/agent-assets"
 import type { AgentBreakdown, MatchPerformance } from "@/types/domain"
 
 function perRoundSeries(matches: MatchPerformance[], pick: (m: MatchPerformance) => number) {
@@ -41,6 +42,7 @@ export function AgentPoolCard({
   const roleInfo = resolveRole(role)
   const RoleGlyph = roleInfo.icon
   const slug = toSlug(agent.agentName || agent.agentId || "agent")
+  const visual = resolveAgentVisual(agent.agentName)
   const mapRows = winrateBy(matches, (m) => ({
     key: m.mapId || m.mapName,
     name: m.mapName,
@@ -57,9 +59,10 @@ export function AgentPoolCard({
             <Link href={`/agents/${slug}`} className="shrink-0">
               <AgentAvatar
                 name={agent.agentName}
-                imageUrl={agent.agentImageUrl}
+                imageUrl={visual.avatar}
                 iconUrl={agent.agentIconUrl}
                 size="xl"
+                framing="avatar"
                 className="ring-2 ring-rose-500/50"
               />
             </Link>

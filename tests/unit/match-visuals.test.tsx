@@ -100,6 +100,12 @@ describe("AgentAvatar", () => {
     expect(screen.queryByAltText("Breach")).not.toBeInTheDocument()
     expect(screen.getByText("B")).toBeInTheDocument()
   })
+
+  it("renders the provided local webp avatar", () => {
+    render(<AgentAvatar name="Jett" imageUrl="/valorant/agents/avatars/jett.webp" framing="avatar" />)
+    const img = screen.getByAltText("Jett") as HTMLImageElement
+    expect(img.getAttribute("src")).toBe("/valorant/agents/avatars/jett.webp")
+  })
 })
 
 describe("MatchHistory visuals", () => {

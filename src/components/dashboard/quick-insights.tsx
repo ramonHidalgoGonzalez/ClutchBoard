@@ -2,6 +2,7 @@ import { TrendingDown, TrendingUp } from "lucide-react"
 
 import { AgentAvatar } from "@/components/dashboard/agent-avatar"
 import { MapThumbnail } from "@/components/dashboard/map-thumbnail"
+import { resolveAgentVisual } from "@/server/valorant/content/agent-assets"
 import type { AgentBreakdown, MapBreakdown } from "@/types/domain"
 
 type QuickInsightsProps = {
@@ -64,9 +65,10 @@ export function QuickInsights({ bestMap, worstMap, consistentAgent, trend }: Qui
           thumb={
             <AgentAvatar
               name={consistentAgent.agentName}
-              imageUrl={consistentAgent.agentImageUrl}
+              imageUrl={resolveAgentVisual(consistentAgent.agentName).avatar}
               iconUrl={consistentAgent.agentIconUrl}
               size="md"
+              framing="avatar"
             />
           }
           title={consistentAgent.agentName}

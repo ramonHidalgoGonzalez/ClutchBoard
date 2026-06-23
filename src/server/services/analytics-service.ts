@@ -17,6 +17,7 @@ import type {
   RecentComparison,
 } from "@/types/domain"
 import { getContentCatalog, resolveAgentContent, resolveMapContent } from "@/server/services/content-service"
+import { resolveAgentVisual } from "@/server/valorant/content/agent-assets"
 
 function applyMatchFilters(matches: MatchPerformance[], filter?: MatchFilter) {
   const periodDays = filter?.periodDays ?? 60
@@ -197,12 +198,19 @@ function enrichMatchesWithContent(matches: MatchPerformance[], catalog: Awaited<
   return matches.map((match) => {
     const agentContent = resolveAgentContent(catalog, match.agentId, match.agentName)
     const mapContent = resolveMapContent(catalog, match.mapId, match.mapName)
+    const agentName = agentContent?.displayName || match.agentName || "Unknown Agent"
+    // characterId -> displayName -> slug -> local optimized asset (with fallback).
+    const visual = resolveAgentVisual(agentName)
 
     return {
       ...match,
-      agentName: agentContent?.displayName || match.agentName || "Unknown Agent",
+      agentName,
       agentImageUrl: agentContent?.fullPortraitUrl || match.agentImageUrl || null,
       agentIconUrl: agentContent?.displayIconUrl || match.agentIconUrl || null,
+      agentSlug: visual.slug,
+      agentAvatarUrl: visual.avatar,
+      agentPortraitUrl: visual.portrait,
+      agentBannerUrl: visual.banner,
       mapName: mapContent?.displayName || match.mapName || "Unknown Map",
       mapImageUrl: mapContent?.splashUrl || match.mapImageUrl || null,
       mapIconUrl: mapContent?.listViewIconUrl || match.mapIconUrl || null,
