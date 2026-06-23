@@ -25,7 +25,7 @@ type AgentAvatarProps = {
 const SIZE_CLASS = {
   xs: "size-7", // 28
   sm: "size-9", // 36
-  md: "size-12", // 48
+  md: "size-14", // 56 (table)
   lg: "size-[72px]", // 72
   xl: "size-24", // 96
 }
@@ -73,7 +73,7 @@ export function AgentAvatar({
       ? "absolute inset-0 h-full w-full object-contain object-bottom"
       : framing === "bust"
         ? "absolute inset-0 h-full w-full object-cover object-top"
-        : "absolute inset-0 h-full w-full object-cover object-center"
+        : "absolute inset-0 h-full w-full object-cover object-[center_top]"
 
   return (
     <div

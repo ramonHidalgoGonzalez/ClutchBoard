@@ -13,7 +13,14 @@ export type AgentVisual = {
   slug: string
   avatar: string
   portrait: string
+  hero: string
   banner: string | null
+}
+
+export type AgentVisuals = {
+  avatarUrl: string
+  portraitUrl: string
+  heroUrl: string
 }
 
 /**
@@ -45,12 +52,26 @@ export function resolveAgentVisual(name?: string | null): AgentVisual {
   const safeName = name ?? ""
   const slug = normalizeAgentSlug(safeName)
   const entry = agentAssetMap[slug]
+  // The legacy bundled PNG is a full-body cutout — ideal as a hero image
+  // (whole character, no face crop) and as a fallback for avatar/portrait.
   const legacy = `/game-assets/agents/${toSlug(safeName)}.png`
 
   return {
     slug,
     avatar: entry?.avatar ?? legacy,
     portrait: entry?.portrait ?? legacy,
+    hero: legacy,
     banner: entry?.banner ?? null,
   }
+}
+
+/**
+ * Context-specific agent imagery. Never reuse one URL across contexts:
+ *  - avatarUrl: square head/torso crop (tables)
+ *  - portraitUrl: tall card portrait (agent cards)
+ *  - heroUrl: full-body cutout (hero cards, shown object-contain, no crop)
+ */
+export function getAgentVisuals(name?: string | null): AgentVisuals {
+  const visual = resolveAgentVisual(name)
+  return { avatarUrl: visual.avatar, portraitUrl: visual.portrait, heroUrl: visual.hero }
 }

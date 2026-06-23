@@ -222,7 +222,7 @@ export default async function DashboardPage() {
                     kind="agent"
                     eyebrow="Agente más jugado"
                     name={topAgent.agentName}
-                    imageUrl={resolveAgentVisual(topAgent.agentName).portrait}
+                    imageUrl={resolveAgentVisual(topAgent.agentName).hero}
                     winRate={topAgent.winRate}
                     matches={topAgent.matches}
                     href={`/agents/${toSlug(topAgent.agentName)}`}

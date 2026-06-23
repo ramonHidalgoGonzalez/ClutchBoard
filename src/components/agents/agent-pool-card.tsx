@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 
-import { AgentAvatar } from "@/components/dashboard/agent-avatar"
 import { LastMatchesStrip } from "@/components/dashboard/last-matches-strip"
 import { resolveRole } from "@/components/agents/role-icon"
 import { StatPod } from "@/components/stats/stat-pod"
@@ -56,14 +55,16 @@ export function AgentPoolCard({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
           {/* Identity */}
           <div className="flex items-start gap-4">
-            <Link href={`/agents/${slug}`} className="shrink-0">
-              <AgentAvatar
-                name={agent.agentName}
-                imageUrl={visual.avatar}
-                iconUrl={agent.agentIconUrl}
-                size="xl"
-                framing="avatar"
-                className="ring-2 ring-rose-500/50"
+            <Link
+              href={`/agents/${slug}`}
+              className="relative h-32 w-24 shrink-0 overflow-hidden rounded-2xl border border-white/15 shadow-[0_12px_30px_rgba(15,23,42,0.45)] ring-2 ring-rose-500/40"
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#fb718555,transparent_60%),linear-gradient(160deg,#1e293b,#0b1020)]" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={visual.portrait}
+                alt={agent.agentName}
+                className="absolute inset-0 h-full w-full object-cover object-top"
               />
             </Link>
             <div className="min-w-0">

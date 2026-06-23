@@ -15,7 +15,7 @@ type MapThumbnailProps = {
 const SIZE_CLASS = {
   xs: "h-8 w-12", // 48x32
   sm: "h-10 w-16", // 64x40
-  md: "h-[52px] w-[84px]", // 84x52
+  md: "h-[60px] w-[104px]", // 104x60 (table)
   lg: "h-[90px] w-40", // 160x90
 }
 

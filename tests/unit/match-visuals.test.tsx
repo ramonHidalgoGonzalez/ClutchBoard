@@ -75,8 +75,8 @@ describe("MapThumbnail", () => {
   it("renders the image at the md default size", () => {
     const { container } = render(<MapThumbnail name="Haven" imageUrl="https://x/haven.png" />)
     const root = container.firstChild as HTMLElement
-    expect(root.className).toContain("h-[52px]")
-    expect(root.className).toContain("w-[84px]")
+    expect(root.className).toContain("h-[60px]")
+    expect(root.className).toContain("w-[104px]")
     expect(screen.getByAltText("Haven")).toBeInTheDocument()
   })
 
@@ -91,7 +91,9 @@ describe("AgentAvatar", () => {
   it("renders the portrait at the md default size", () => {
     const { container } = render(<AgentAvatar name="Sova" imageUrl="https://x/sova.png" />)
     const root = container.firstChild as HTMLElement
-    expect(root.className).toContain("size-12")
+    expect(root.className).toContain("size-14")
+    // Not forced into a small circle — uses a rounded-xl card.
+    expect(root.className).toContain("rounded-xl")
     expect(screen.getByAltText("Sova")).toBeInTheDocument()
   })
 
