@@ -24,14 +24,16 @@ export type MatchPerformance = {
   mapName: string
   mapImageUrl?: string | null
   mapIconUrl?: string | null
+  mapThumbImageUrl?: string | null
+  mapBannerImageUrl?: string | null
+  mapCardImageUrl?: string | null
   agentId: string
   agentName: string
   agentImageUrl?: string | null
   agentIconUrl?: string | null
-  agentSlug?: string | null
-  agentAvatarUrl?: string | null
-  agentPortraitUrl?: string | null
-  agentBannerUrl?: string | null
+  agentTableImageUrl?: string | null
+  agentCardImageUrl?: string | null
+  agentHeroImageUrl?: string | null
   outcome: "win" | "loss" | "draw" | "unknown"
   roundsWon: number
   roundsLost: number

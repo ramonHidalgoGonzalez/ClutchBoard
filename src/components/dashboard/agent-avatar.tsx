@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type CSSProperties } from "react"
 
 import { UserRound } from "lucide-react"
 
@@ -14,6 +14,8 @@ type AgentAvatarProps = {
   className?: string
   /** Tailwind border class (e.g. role-tinted) applied to the container. */
   ringClassName?: string
+  /** Optional CSS object-position override (from asset-crop-overrides). */
+  objectPosition?: string
   /**
    * "avatar": pre-cropped square asset, shown 1:1 (object-cover, no zoom).
    * "bust": zoom onto head/torso of a full-body portrait.
@@ -58,16 +60,19 @@ export function AgentAvatar({
   className,
   ringClassName,
   framing = "bust",
+  objectPosition,
 }: AgentAvatarProps) {
   const [failed, setFailed] = useState(false)
   const src = !failed ? imageUrl || iconUrl : null
   const label = name || "Unknown Agent"
   // Full-body portraits need a zoom onto the upper body; pre-cropped avatars
-  // are shown as-is.
-  const imgStyle =
+  // are shown as-is. An explicit objectPosition override wins when provided.
+  const imgStyle: CSSProperties | undefined =
     framing === "bust"
-      ? { transform: "scale(1.45)", transformOrigin: "top center" }
-      : undefined
+      ? { transform: "scale(1.45)", transformOrigin: "top center", objectPosition }
+      : objectPosition
+        ? { objectPosition }
+        : undefined
   const imgClass =
     framing === "full"
       ? "absolute inset-0 h-full w-full object-contain object-bottom"

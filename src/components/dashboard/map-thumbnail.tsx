@@ -10,6 +10,8 @@ type MapThumbnailProps = {
   iconUrl?: string | null
   size?: "xs" | "sm" | "md" | "lg"
   className?: string
+  /** Optional CSS object-position override (from asset-crop-overrides). */
+  objectPosition?: string
 }
 
 const SIZE_CLASS = {
@@ -26,7 +28,7 @@ function shortLabel(name?: string) {
   return name.split(" ")[0]
 }
 
-export function MapThumbnail({ name, imageUrl, iconUrl, size = "md", className }: MapThumbnailProps) {
+export function MapThumbnail({ name, imageUrl, iconUrl, size = "md", className, objectPosition }: MapThumbnailProps) {
   const [failed, setFailed] = useState(false)
   const src = !failed ? imageUrl || iconUrl : null
   const label = name || "Unknown Map"
@@ -47,6 +49,7 @@ export function MapThumbnail({ name, imageUrl, iconUrl, size = "md", className }
           <img
             src={src}
             alt={label}
+            style={objectPosition ? { objectPosition } : undefined}
             className="absolute inset-0 h-full w-full object-cover object-center"
             onError={() => setFailed(true)}
           />

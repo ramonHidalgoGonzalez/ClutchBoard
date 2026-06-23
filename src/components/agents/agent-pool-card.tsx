@@ -15,7 +15,7 @@ import {
   winrateBy,
 } from "@/analytics/entity-stats"
 import { toSlug } from "@/lib/slug"
-import { resolveAgentVisual } from "@/server/valorant/content/agent-assets"
+import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
 import type { AgentBreakdown, MatchPerformance } from "@/types/domain"
 
 function perRoundSeries(matches: MatchPerformance[], pick: (m: MatchPerformance) => number) {
@@ -41,7 +41,7 @@ export function AgentPoolCard({
   const roleInfo = resolveRole(role)
   const RoleGlyph = roleInfo.icon
   const slug = toSlug(agent.agentName || agent.agentId || "agent")
-  const visual = resolveAgentVisual(agent.agentName)
+  const agentImg = getAgentAssets(agent.agentName)
   const mapRows = winrateBy(matches, (m) => ({
     key: m.mapId || m.mapName,
     name: m.mapName,
@@ -62,7 +62,7 @@ export function AgentPoolCard({
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#fb718555,transparent_60%),linear-gradient(160deg,#1e293b,#0b1020)]" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={visual.portrait}
+                src={agentImg.card ?? agent.agentImageUrl ?? undefined}
                 alt={agent.agentName}
                 className="absolute inset-0 h-full w-full object-cover object-top"
               />

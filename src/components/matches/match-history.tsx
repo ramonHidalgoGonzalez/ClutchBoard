@@ -8,6 +8,7 @@ import { AgentAvatar } from "@/components/dashboard/agent-avatar"
 import { MapThumbnail } from "@/components/dashboard/map-thumbnail"
 import { WinrateDonut } from "@/components/stats/winrate-donut"
 import { roleRingClass } from "@/lib/agent-roles"
+import { getAgentCropPosition, getMapCropPosition } from "@/server/valorant/assets/asset-crop-overrides"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -374,7 +375,13 @@ export function MatchHistory({
                   <td className="truncate px-4 py-4 text-zinc-300">{match.queueName || match.queueId}</td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
-                      <MapThumbnail name={match.mapName} imageUrl={match.mapImageUrl} iconUrl={match.mapIconUrl} size="md" />
+                      <MapThumbnail
+                        name={match.mapName}
+                        imageUrl={match.mapThumbImageUrl ?? match.mapImageUrl}
+                        iconUrl={match.mapIconUrl}
+                        size="md"
+                        objectPosition={getMapCropPosition(match.mapName, "thumb")}
+                      />
                       <span className="min-w-0 truncate font-medium text-white">{match.mapName}</span>
                     </div>
                   </td>
@@ -382,11 +389,12 @@ export function MatchHistory({
                     <div className="flex items-center gap-3">
                       <AgentAvatar
                         name={match.agentName}
-                        imageUrl={match.agentAvatarUrl ?? match.agentImageUrl}
+                        imageUrl={match.agentTableImageUrl ?? match.agentImageUrl}
                         iconUrl={match.agentIconUrl}
                         size="md"
                         framing="avatar"
                         ringClassName={roleRingClass(match.agentName)}
+                        objectPosition={getAgentCropPosition(match.agentName, "table")}
                       />
                       <span className="min-w-0 truncate font-medium text-white">{match.agentName}</span>
                     </div>
@@ -439,7 +447,11 @@ export function MatchHistory({
               <div className="relative h-28 w-full">
                 <div
                   className="absolute inset-0 bg-cover bg-center"
-                  style={match.mapImageUrl ? { backgroundImage: `url(${match.mapImageUrl})` } : undefined}
+                  style={
+                    match.mapBannerImageUrl ?? match.mapImageUrl
+                      ? { backgroundImage: `url(${match.mapBannerImageUrl ?? match.mapImageUrl})` }
+                      : undefined
+                  }
                   aria-hidden="true"
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,9,11,0.2),rgba(9,9,11,0.85))]" />
@@ -463,7 +475,7 @@ export function MatchHistory({
                 <div className="flex items-center gap-3">
                   <AgentAvatar
                     name={match.agentName}
-                    imageUrl={match.agentAvatarUrl ?? match.agentImageUrl}
+                    imageUrl={match.agentTableImageUrl ?? match.agentImageUrl}
                     iconUrl={match.agentIconUrl}
                     size="lg"
                     framing="avatar"

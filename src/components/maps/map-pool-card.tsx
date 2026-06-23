@@ -14,6 +14,7 @@ import {
   summarizeMatches,
 } from "@/analytics/entity-stats"
 import { toSlug } from "@/lib/slug"
+import { getMapAssets } from "@/server/valorant/assets/map-assets"
 import type { MapBreakdown, MatchPerformance } from "@/types/domain"
 
 export function MapPoolCard({
@@ -27,6 +28,7 @@ export function MapPoolCard({
   allMatches: MatchPerformance[]
   isBest?: boolean
 }) {
+  const mapImg = getMapAssets(map.mapName)
   const summary = summarizeMatches(matches)
   const delta = splitDelta(matches)
   const percentile = acsPercentile(matches, allMatches)
@@ -44,7 +46,11 @@ export function MapPoolCard({
             <div className="absolute inset-0 bg-[linear-gradient(135deg,#0f172a,#164e63)]" />
             <div
               className="absolute inset-0 bg-cover bg-center"
-              style={map.mapImageUrl ? { backgroundImage: `url(${map.mapImageUrl})` } : undefined}
+              style={
+                mapImg.card ?? map.mapImageUrl
+                  ? { backgroundImage: `url(${mapImg.card ?? map.mapImageUrl})` }
+                  : undefined
+              }
               aria-hidden="true"
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_40%,rgba(9,9,11,0.9))]" />

@@ -14,7 +14,7 @@
     "prisma:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "sync:valorant-agents": "tsx scripts/sync-valorant-agent-assets.ts"
+    "prepare:valorant-assets": "tsx scripts/prepare-valorant-assets.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

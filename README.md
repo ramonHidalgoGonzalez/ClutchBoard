@@ -289,36 +289,47 @@ Riot documents that VALORANT apps working with personal player data must use `RS
 - Richer attacker/defender-side segmentation if official payloads support it
 - Finer coaching models built around sessions, agent changes, and competitive windows
 
-## Agent assets
+## Curated local assets (agents + maps)
 
-Agent imagery is served from optimized local WebP files so the UI never depends
-on the network at build time and no assets are scraped at runtime:
+Imagery is curated per visual context as optimized local WebP, so the UI never
+depends on the network at build time and nothing is scraped at runtime:
 
 ```
 public/valorant/agents/
-  avatars/<slug>.webp     # 48x48 head/torso crop (tables, cards)
-  portraits/<slug>.webp   # 240x320 card portrait (agent pages, hero cards)
+  table/<slug>.webp    # 112px square head/torso crop (table avatars 56px)
+  card/<slug>.webp     # 240x320 portrait (agent cards / detail)
+  hero/<slug>.webp     # full-body cutout (dashboard hero card)
+public/valorant/maps/
+  thumb/<slug>.webp    # 224x128 thumbnail (table)
+  banner/<slug>.webp   # 1280x480 banner (hero cards)
+  card/<slug>.webp     # 960x540 card background
 ```
 
-The slug is `normalizeAgentSlug(displayName)` (e.g. `KAY/O` -> `kayo`). The
-mapping lives in `src/server/valorant/content/agent-assets.ts`
-(`agent-asset-map.generated.ts` is generated, do not edit by hand). Resolution
-order at runtime: `agentAvatarUrl`/`agentPortraitUrl` (local WebP) ->
-`agentImageUrl` (content) -> initials fallback. Unmapped/new agents fall back to
-the legacy bundled portrait, never a broken image.
+Slugs: `normalizeAgentSlug` (`KAY/O` -> `kayo`) and `normalizeMapSlug`
+(`Haven` -> `haven`). Mappings live in `src/server/valorant/assets/`
+(`*-asset-map.generated.ts` are generated — do not edit by hand). Resolvers
+`getAgentAssets(name)` / `getMapAssets(name)` return `{...} | null` per context.
+
+Resolution order per context (set during match enrichment):
+- table → `agentTableImageUrl` (local) → remote icon/portrait → initials
+- card → `agentCardImageUrl` (local) → remote portrait → fallback
+- hero → `agentHeroImageUrl` (local) → remote portrait → fallback
+- map thumb/banner/card → local → remote splash → fallback
+
+Optional per-asset `object-position` tweaks live in
+`src/server/valorant/assets/asset-crop-overrides.ts` (empty by default).
 
 ### Regenerating assets
 
 ```bash
-# Reprocess the bundled source PNGs into optimized WebP + mapping
-npm run sync:valorant-agents
+# Reprocess the bundled source PNGs into the curated WebP set + mappings
+npm run prepare:valorant-assets
 
 # Or process an extracted Riot Public Content Catalog (no network in build):
-#   1. Download the official VALORANT Public Content Catalog
-#   2. Extract it locally
-#   3. Point --source at the agent images directory
-npm run sync:valorant-agents -- --source /path/to/catalog/agents
+#   1. Download the official VALORANT Public Content Catalog and extract it
+#   2. Point --agents / --maps at the extracted image directories
+npm run prepare:valorant-assets -- --agents /path/to/agents --maps /path/to/maps
 ```
 
-The script uses the already-installed `sharp` (no new dependency) and is run
-manually — Vercel builds only serve the committed files.
+Uses the already-installed `sharp` (no new dependency) and is run manually —
+Vercel builds only serve the committed files.

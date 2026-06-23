@@ -1,83 +1,58 @@
-import {
-  getAgentAssets,
-  getAgentVisuals,
-  normalizeAgentSlug,
-  resolveAgentVisual,
-} from "@/server/valorant/content/agent-assets"
-import { getMapVisuals } from "@/server/valorant/content/map-assets"
+import { getAgentAssets, normalizeAgentSlug } from "@/server/valorant/assets/agent-assets"
+import { getMapAssets, normalizeMapSlug } from "@/server/valorant/assets/map-assets"
 
-describe("normalizeAgentSlug", () => {
-  it("removes slashes and special characters", () => {
+describe("slugs", () => {
+  it("normalizeAgentSlug removes slashes and special characters", () => {
     expect(normalizeAgentSlug("KAY/O")).toBe("kayo")
+    expect(normalizeAgentSlug("Breach")).toBe("breach")
+    expect(normalizeAgentSlug("Brimstone")).toBe("brimstone")
+    expect(normalizeAgentSlug("Deadlock")).toBe("deadlock")
   })
 
-  it("lowercases simple names", () => {
-    expect(normalizeAgentSlug("Jett")).toBe("jett")
-    expect(normalizeAgentSlug("Deadlock")).toBe("deadlock")
-    expect(normalizeAgentSlug("Brimstone")).toBe("brimstone")
-    expect(normalizeAgentSlug("Clove")).toBe("clove")
-    expect(normalizeAgentSlug("Tejo")).toBe("tejo")
+  it("normalizeMapSlug lowercases and strips paths/extensions", () => {
+    expect(normalizeMapSlug("Haven")).toBe("haven")
+    expect(normalizeMapSlug("Icebox")).toBe("icebox")
+    expect(normalizeMapSlug("Pearl")).toBe("pearl")
+    expect(normalizeMapSlug("/Game/Maps/Triad/Triad")).toBe("triad")
+    expect(normalizeMapSlug("ascent.png")).toBe("ascent")
   })
 })
 
 describe("getAgentAssets", () => {
-  it("returns the local optimized asset for a known agent", () => {
-    const jett = getAgentAssets("Jett")
-    expect(jett).not.toBeNull()
-    expect(jett?.avatar).toBe("/valorant/agents/avatars/jett.webp")
-    expect(jett?.portrait).toBe("/valorant/agents/portraits/jett.webp")
+  it("returns curated local paths by context for a known agent", () => {
+    const a = getAgentAssets("Breach")
+    expect(a.table).toBe("/valorant/agents/table/breach.webp")
+    expect(a.card).toBe("/valorant/agents/card/breach.webp")
+    expect(a.hero).toBe("/valorant/agents/hero/breach.webp")
+    // contexts must be distinct (no single image reused everywhere)
+    expect(a.table).not.toBe(a.hero)
   })
 
-  it("resolves by slug and by display name equally", () => {
-    expect(getAgentAssets("kayo")?.avatar).toBe("/valorant/agents/avatars/kayo.webp")
-    expect(getAgentAssets("KAY/O")?.avatar).toBe("/valorant/agents/avatars/kayo.webp")
+  it("resolves by display name with special characters", () => {
+    expect(getAgentAssets("KAY/O").table).toBe("/valorant/agents/table/kayo.webp")
   })
 
-  it("returns null for an unknown agent", () => {
-    expect(getAgentAssets("Definitely Not An Agent")).toBeNull()
-  })
-})
-
-describe("resolveAgentVisual", () => {
-  it("maps characterName -> slug -> local asset", () => {
-    const visual = resolveAgentVisual("Sova")
-    expect(visual.slug).toBe("sova")
-    expect(visual.avatar).toBe("/valorant/agents/avatars/sova.webp")
-    expect(visual.portrait).toBe("/valorant/agents/portraits/sova.webp")
-    expect(visual.banner).toBeNull()
-  })
-
-  it("falls back to the legacy bundled portrait when unmapped", () => {
-    const visual = resolveAgentVisual("Brand New Agent")
-    expect(visual.avatar).toBe("/game-assets/agents/brand-new-agent.png")
-    expect(visual.banner).toBeNull()
+  it("returns nulls for an unknown agent (caller falls back)", () => {
+    const a = getAgentAssets("Definitely Not An Agent")
+    expect(a.table).toBeNull()
+    expect(a.card).toBeNull()
+    expect(a.hero).toBeNull()
   })
 })
 
-describe("getAgentVisuals", () => {
-  it("returns distinct context-specific URLs (avatar != hero)", () => {
-    const v = getAgentVisuals("Jett")
-    expect(v.avatarUrl).toBe("/valorant/agents/avatars/jett.webp")
-    expect(v.portraitUrl).toBe("/valorant/agents/portraits/jett.webp")
-    // hero uses the full-body cutout, not the cropped avatar
-    expect(v.heroUrl).toBe("/game-assets/agents/jett.png")
-    expect(v.heroUrl).not.toBe(v.avatarUrl)
-  })
-})
-
-describe("getMapVisuals", () => {
-  it("prioritizes splash for thumbnail/banner/hero", () => {
-    const v = getMapVisuals({
-      mapImageUrl: "https://cdn/haven/splash.png",
-      mapIconUrl: "https://cdn/haven/icon.png",
-    })
-    expect(v.thumbnailUrl).toBe("https://cdn/haven/splash.png")
-    expect(v.bannerUrl).toBe("https://cdn/haven/splash.png")
-    expect(v.heroUrl).toBe("https://cdn/haven/splash.png")
+describe("getMapAssets", () => {
+  it("returns curated local paths by context for a known map", () => {
+    const m = getMapAssets("Haven")
+    expect(m.thumb).toBe("/valorant/maps/thumb/haven.webp")
+    expect(m.banner).toBe("/valorant/maps/banner/haven.webp")
+    expect(m.card).toBe("/valorant/maps/card/haven.webp")
+    expect(m.thumb).not.toBe(m.banner)
   })
 
-  it("falls back to the icon, then null", () => {
-    expect(getMapVisuals({ mapIconUrl: "/icon.png" }).thumbnailUrl).toBe("/icon.png")
-    expect(getMapVisuals({}).thumbnailUrl).toBeNull()
+  it("returns nulls for an unknown map", () => {
+    const m = getMapAssets("Nonexistent Map")
+    expect(m.thumb).toBeNull()
+    expect(m.banner).toBeNull()
+    expect(m.card).toBeNull()
   })
 })

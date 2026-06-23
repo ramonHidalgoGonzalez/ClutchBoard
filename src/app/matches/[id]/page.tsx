@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { requireSession } from "@/server/auth/session"
 import { getMatchById } from "@/server/services/match-service"
-import { resolveAgentVisual } from "@/server/valorant/content/agent-assets"
+import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
 
 export default async function MatchDetailPage({
   params,
@@ -109,7 +109,7 @@ export default async function MatchDetailPage({
                           <div className="flex items-center gap-2">
                             <AgentAvatar
                               name={row.agentName}
-                              imageUrl={resolveAgentVisual(row.agentName).avatar}
+                              imageUrl={getAgentAssets(row.agentName).table ?? row.agentImageUrl}
                               iconUrl={row.agentIconUrl}
                               size="md"
                               framing="avatar"

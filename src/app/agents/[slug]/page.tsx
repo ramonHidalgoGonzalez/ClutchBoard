@@ -6,7 +6,7 @@ import { EntityDetail } from "@/components/entity/entity-detail"
 import { winrateBy } from "@/analytics/entity-stats"
 import { env } from "@/lib/env"
 import { toSlug } from "@/lib/slug"
-import { resolveAgentVisual } from "@/server/valorant/content/agent-assets"
+import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
 import { getCurrentSession } from "@/server/auth/session"
 import { getContentCatalog, resolveAgentContent } from "@/server/services/content-service"
 import { getImprovementData } from "@/server/services/improvement-service"
@@ -52,7 +52,7 @@ export default async function AgentDetailPage({
       <EntityDetail
         kind="agent"
         name={agent.agentName}
-        imageUrl={resolveAgentVisual(agent.agentName).portrait}
+        imageUrl={getAgentAssets(agent.agentName).card ?? agent.agentImageUrl}
         subtitle={resolveRole(role).label}
         matches={matches}
         allMatches={analytics.filteredMatches}

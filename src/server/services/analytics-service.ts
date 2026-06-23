@@ -17,7 +17,8 @@ import type {
   RecentComparison,
 } from "@/types/domain"
 import { getContentCatalog, resolveAgentContent, resolveMapContent } from "@/server/services/content-service"
-import { resolveAgentVisual } from "@/server/valorant/content/agent-assets"
+import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
+import { getMapAssets } from "@/server/valorant/assets/map-assets"
 
 function applyMatchFilters(matches: MatchPerformance[], filter?: MatchFilter) {
   const periodDays = filter?.periodDays ?? 60
@@ -199,21 +200,30 @@ function enrichMatchesWithContent(matches: MatchPerformance[], catalog: Awaited<
     const agentContent = resolveAgentContent(catalog, match.agentId, match.agentName)
     const mapContent = resolveMapContent(catalog, match.mapId, match.mapName)
     const agentName = agentContent?.displayName || match.agentName || "Unknown Agent"
-    // characterId -> displayName -> slug -> local optimized asset (with fallback).
-    const visual = resolveAgentVisual(agentName)
+    const mapName = mapContent?.displayName || match.mapName || "Unknown Map"
+    // characterId -> displayName -> slug -> curated local asset (per context).
+    const agent = getAgentAssets(agentName)
+    const map = getMapAssets(mapName)
+    const agentRemote = agentContent?.fullPortraitUrl || match.agentImageUrl || null
+    const agentIcon = agentContent?.displayIconUrl || match.agentIconUrl || null
+    const mapSplash = mapContent?.splashUrl || match.mapImageUrl || null
+    const mapIcon = mapContent?.listViewIconUrl || match.mapIconUrl || null
 
     return {
       ...match,
       agentName,
-      agentImageUrl: agentContent?.fullPortraitUrl || match.agentImageUrl || null,
-      agentIconUrl: agentContent?.displayIconUrl || match.agentIconUrl || null,
-      agentSlug: visual.slug,
-      agentAvatarUrl: visual.avatar,
-      agentPortraitUrl: visual.portrait,
-      agentBannerUrl: visual.banner,
-      mapName: mapContent?.displayName || match.mapName || "Unknown Map",
-      mapImageUrl: mapContent?.splashUrl || match.mapImageUrl || null,
-      mapIconUrl: mapContent?.listViewIconUrl || match.mapIconUrl || null,
+      agentImageUrl: agentRemote,
+      agentIconUrl: agentIcon,
+      // Local curated first, then remote content, then null (visual fallback).
+      agentTableImageUrl: agent.table ?? agentIcon ?? agentRemote,
+      agentCardImageUrl: agent.card ?? agentRemote,
+      agentHeroImageUrl: agent.hero ?? agentRemote,
+      mapName,
+      mapImageUrl: mapSplash,
+      mapIconUrl: mapIcon,
+      mapThumbImageUrl: map.thumb ?? mapSplash,
+      mapBannerImageUrl: map.banner ?? mapSplash,
+      mapCardImageUrl: map.card ?? mapSplash,
     }
   })
 }

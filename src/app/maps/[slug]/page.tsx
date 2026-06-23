@@ -5,6 +5,7 @@ import { EntityDetail } from "@/components/entity/entity-detail"
 import { winrateBy } from "@/analytics/entity-stats"
 import { env } from "@/lib/env"
 import { toSlug } from "@/lib/slug"
+import { getMapAssets } from "@/server/valorant/assets/map-assets"
 import { getCurrentSession } from "@/server/auth/session"
 import { getImprovementData } from "@/server/services/improvement-service"
 
@@ -49,7 +50,7 @@ export default async function MapDetailPage({
       <EntityDetail
         kind="map"
         name={map.mapName}
-        imageUrl={map.mapImageUrl}
+        imageUrl={getMapAssets(map.mapName).banner ?? map.mapImageUrl}
         subtitle="Mapa"
         matches={matches}
         allMatches={analytics.filteredMatches}

@@ -45,10 +45,16 @@ const baseMatch: MatchPerformance = {
   mapName: "Haven",
   mapImageUrl: "https://media.valorant-api.com/maps/haven/splash.png",
   mapIconUrl: "https://media.valorant-api.com/maps/haven/icon.png",
+  mapThumbImageUrl: "/valorant/maps/thumb/haven.webp",
+  mapBannerImageUrl: "/valorant/maps/banner/haven.webp",
+  mapCardImageUrl: "/valorant/maps/card/haven.webp",
   agentId: "agent-sova",
   agentName: "Sova",
   agentImageUrl: "https://media.valorant-api.com/agents/sova/portrait.png",
   agentIconUrl: "https://media.valorant-api.com/agents/sova/icon.png",
+  agentTableImageUrl: "/valorant/agents/table/sova.webp",
+  agentCardImageUrl: "/valorant/agents/card/sova.webp",
+  agentHeroImageUrl: "/valorant/agents/hero/sova.webp",
   outcome: "win",
   roundsWon: 13,
   roundsLost: 9,
@@ -120,6 +126,16 @@ describe("MatchHistory visuals", () => {
     expect(screen.getAllByText("Haven").length).toBeGreaterThan(0)
   })
 
+  it("uses the curated table agent image and thumb map image", () => {
+    render(
+      <MatchHistory matches={[baseMatch]} summary={summary} recentVsPrevious={recentVsPrevious} />,
+    )
+    const agents = screen.getAllByAltText("Sova") as HTMLImageElement[]
+    expect(agents.some((img) => img.getAttribute("src")?.includes("/valorant/agents/table/"))).toBe(true)
+    const maps = screen.getAllByAltText("Haven") as HTMLImageElement[]
+    expect(maps.some((img) => img.getAttribute("src")?.includes("/valorant/maps/thumb/"))).toBe(true)
+  })
+
   it("renders KDA and score on a single line (no broken wraps)", () => {
     render(
       <MatchHistory matches={[baseMatch]} summary={summary} recentVsPrevious={recentVsPrevious} />,
@@ -152,7 +168,17 @@ describe("MatchHistory visuals", () => {
   it("does not crash when imagery is missing", () => {
     render(
       <MatchHistory
-        matches={[{ ...baseMatch, mapImageUrl: null, mapIconUrl: null, agentImageUrl: null, agentIconUrl: null, agentAvatarUrl: null }]}
+        matches={[
+          {
+            ...baseMatch,
+            mapImageUrl: null,
+            mapIconUrl: null,
+            mapThumbImageUrl: null,
+            agentImageUrl: null,
+            agentIconUrl: null,
+            agentTableImageUrl: null,
+          },
+        ]}
         summary={summary}
         recentVsPrevious={recentVsPrevious}
       />,

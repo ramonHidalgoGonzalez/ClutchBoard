@@ -14,7 +14,8 @@ import { WinrateDonut } from "@/components/stats/winrate-donut"
 import { Card, CardContent } from "@/components/ui/card"
 import { lastN, summarizeMatches } from "@/analytics/entity-stats"
 import { resolveAgentRole } from "@/lib/agent-roles"
-import { resolveAgentVisual } from "@/server/valorant/content/agent-assets"
+import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
+import { getMapAssets } from "@/server/valorant/assets/map-assets"
 import { env } from "@/lib/env"
 import { toSlug } from "@/lib/slug"
 import { getCurrentSession } from "@/server/auth/session"
@@ -210,7 +211,7 @@ export default async function DashboardPage() {
                     kind="map"
                     eyebrow="Mejor mapa"
                     name={bestMap.mapName}
-                    imageUrl={bestMap.mapImageUrl}
+                    imageUrl={getMapAssets(bestMap.mapName).banner ?? bestMap.mapImageUrl}
                     winRate={bestMap.winRate}
                     matches={bestMap.matches}
                     star
@@ -222,7 +223,7 @@ export default async function DashboardPage() {
                     kind="agent"
                     eyebrow="Agente más jugado"
                     name={topAgent.agentName}
-                    imageUrl={resolveAgentVisual(topAgent.agentName).hero}
+                    imageUrl={getAgentAssets(topAgent.agentName).hero ?? topAgent.agentImageUrl}
                     winRate={topAgent.winRate}
                     matches={topAgent.matches}
                     href={`/agents/${toSlug(topAgent.agentName)}`}

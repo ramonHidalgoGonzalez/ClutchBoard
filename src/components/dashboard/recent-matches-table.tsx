@@ -66,7 +66,7 @@ export function RecentMatchesTable({ matches }: { matches: MatchPerformance[] })
                 </td>
                 <td className="px-3 py-3.5">
                   <div className="flex items-center gap-2.5">
-                    <MapThumbnail name={match.mapName} imageUrl={match.mapImageUrl} iconUrl={match.mapIconUrl} size="md" />
+                    <MapThumbnail name={match.mapName} imageUrl={match.mapThumbImageUrl ?? match.mapImageUrl} iconUrl={match.mapIconUrl} size="md" />
                     <span className="font-medium text-white">{match.mapName}</span>
                   </div>
                 </td>
@@ -74,7 +74,7 @@ export function RecentMatchesTable({ matches }: { matches: MatchPerformance[] })
                   <div className="flex items-center gap-2.5">
                     <AgentAvatar
                       name={match.agentName}
-                      imageUrl={match.agentAvatarUrl ?? match.agentImageUrl}
+                      imageUrl={match.agentTableImageUrl ?? match.agentImageUrl}
                       iconUrl={match.agentIconUrl}
                       size="md"
                       framing="avatar"
