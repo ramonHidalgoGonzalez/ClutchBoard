@@ -39,6 +39,7 @@ export type MatchPerformance = {
   roundsLost: number
   roundsPlayed?: number
   abilityCasts?: Record<string, number> | null
+  competitiveTier?: number | null
   kills: number
   deaths: number
   assists: number

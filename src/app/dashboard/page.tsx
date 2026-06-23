@@ -8,6 +8,8 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import { EntityHeroMini } from "@/components/dashboard/entity-hero-mini"
 import { QuickInsights } from "@/components/dashboard/quick-insights"
 import { MatchHistoryRow } from "@/components/matches/match-history-row"
+import { RankBadge } from "@/components/ranked/rank-badge"
+import { buildRankedOverview } from "@/server/valorant/analytics/ranked"
 import { RolePerformance, type RoleRow } from "@/components/dashboard/role-performance"
 import { ResultsDonut } from "@/components/dashboard/results-donut"
 import { WinrateDonut } from "@/components/stats/winrate-donut"
@@ -121,6 +123,7 @@ export default async function DashboardPage() {
     .sort((a, b) => b.consistencyScore - a.consistencyScore)[0]
 
   const roleRows = buildRoleRows(matches, catalog)
+  const rankedOverview = buildRankedOverview(matches)
   const playerName = session?.gameName ?? "jugador"
 
   return (
@@ -252,6 +255,39 @@ export default async function DashboardPage() {
             </div>
 
             <div className="space-y-5">
+              <Card className="glass-panel text-white">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <RankBadge tierId={rankedOverview.currentTierId} size={56} />
+                      <div>
+                        <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-zinc-400">
+                          <Trophy className="size-3.5 text-amber-300" /> Ranked
+                        </p>
+                        <p className="text-xl font-extrabold text-violet-200">
+                          {rankedOverview.currentTierName ?? "Sin rango"}
+                        </p>
+                        <p className="text-xs text-zinc-400">
+                          Peak: {rankedOverview.peakTierName ?? "—"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-white">
+                        {rankedOverview.winrate === null ? "—" : `${rankedOverview.winrate.toFixed(0)}%`}
+                      </p>
+                      <p className="text-[11px] text-zinc-500">{rankedOverview.rankedMatches} ranked</p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/ranked"
+                    className="mt-4 block rounded-xl border border-rose-500/30 bg-rose-500/15 py-2 text-center text-sm font-semibold text-rose-200 hover:bg-rose-500/25"
+                  >
+                    Ver ranked
+                  </Link>
+                </CardContent>
+              </Card>
+
               <Card className="glass-panel text-white">
                 <CardContent className="space-y-3 p-5">
                   <p className="text-sm font-semibold text-zinc-300">Insights rápidos</p>

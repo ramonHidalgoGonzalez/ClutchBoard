@@ -6,6 +6,8 @@ import { winrateBy } from "@/analytics/entity-stats"
 import { env } from "@/lib/env"
 import { toSlug } from "@/lib/slug"
 import { getMapAssets } from "@/server/valorant/assets/map-assets"
+import { RankedEntityCard } from "@/components/ranked/ranked-entity-card"
+import { buildRankedAgentStats, buildRankedOverview } from "@/server/valorant/analytics/ranked"
 import { getCurrentSession } from "@/server/auth/session"
 import { getImprovementData } from "@/server/services/improvement-service"
 
@@ -45,6 +47,17 @@ export default async function MapDetailPage({
     .sort((a, b) => b.winRate - a.winRate)[0]
   const isBest = bestMap && (map.mapId || map.mapName) === (bestMap.mapId || bestMap.mapName)
 
+  const rankedAgents = buildRankedAgentStats(matches)
+  const rankedCard = (
+    <RankedEntityCard
+      title={`Rendimiento ranked en ${map.mapName}`}
+      overview={buildRankedOverview(matches)}
+      splitNoun="agente"
+      bestName={rankedAgents[0]?.name ?? null}
+      worstName={rankedAgents.length > 1 ? rankedAgents[rankedAgents.length - 1]?.name : null}
+    />
+  )
+
   return (
     <AppShell title={map.mapName} subtitle="Perfil de mapa" connected>
       <EntityDetail
@@ -60,6 +73,7 @@ export default async function MapDetailPage({
         highlight={isBest ? { label: "Mejor mapa" } : null}
         backHref="/maps"
         backLabel="Volver a mapas"
+        ranked={rankedCard}
       />
     </AppShell>
   )

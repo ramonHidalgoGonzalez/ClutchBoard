@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 
 import { AgentWinrateLine } from "@/components/agents/agent-winrate-line"
+import { RankedEntityCard } from "@/components/ranked/ranked-entity-card"
 import { resolveRole } from "@/components/agents/role-icon"
 import { MapThumbnail } from "@/components/dashboard/map-thumbnail"
 import { WinrateDonut } from "@/components/stats/winrate-donut"
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils"
 import { toSlug } from "@/lib/slug"
 import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
 import type { AgentProfile, CompareRow } from "@/server/valorant/analytics/agent-profile"
+import type { RankedOverview } from "@/server/valorant/analytics/ranked"
 import type { MatchPerformance } from "@/types/domain"
 
 function fmt(value: number | null, kind: "ratio" | "percent" | "int") {
@@ -53,12 +55,14 @@ export function AgentDetail({
   profile,
   isTop,
   now,
+  ranked,
 }: {
   name: string
   role?: string | null
   profile: AgentProfile
   isTop: boolean
   now: number
+  ranked: { overview: RankedOverview; bestMap?: string | null; worstMap?: string | null }
 }) {
   const roleInfo = resolveRole(role)
   const RoleGlyph = roleInfo.icon
@@ -119,6 +123,14 @@ export function AgentDetail({
           </div>
         </div>
       </section>
+
+      <RankedEntityCard
+        title={`Rendimiento ranked con ${name}`}
+        overview={ranked.overview}
+        splitNoun="mapa"
+        bestName={ranked.bestMap}
+        worstName={ranked.worstMap}
+      />
 
       {/* Row 2 */}
       <div className="grid gap-5 xl:grid-cols-3">

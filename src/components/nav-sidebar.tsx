@@ -11,6 +11,7 @@ import {
   Settings,
   Swords,
   TrendingUp,
+  Trophy,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -22,6 +23,7 @@ const primaryItems = [
   { href: "/maps", label: "Maps", icon: MapIcon },
   { href: "/improvement", label: "Improvement", icon: TrendingUp },
   { href: "/comparisons", label: "Comparativas", icon: BarChart3 },
+  { href: "/ranked", label: "Ranked", icon: Trophy },
   { href: "/notas", label: "Notas de partida", icon: NotebookPen },
 ]
 

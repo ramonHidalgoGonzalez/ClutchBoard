@@ -31,6 +31,7 @@ type EntityDetailProps = {
   highlight?: { label: string } | null
   backHref: string
   backLabel: string
+  ranked?: React.ReactNode
 }
 
 function trendData(matches: MatchPerformance[]): TrendDatum[] {
@@ -53,6 +54,7 @@ export function EntityDetail({
   highlight,
   backHref,
   backLabel,
+  ranked,
 }: EntityDetailProps) {
   const summary = summarizeMatches(matches)
   const delta = splitDelta(matches)
@@ -135,6 +137,8 @@ export function EntityDetail({
           </div>
         </CardContent>
       </Card>
+
+      {ranked}
 
       {/* Time + breakdown + combat detail */}
       <div className="grid gap-5 lg:grid-cols-3">
