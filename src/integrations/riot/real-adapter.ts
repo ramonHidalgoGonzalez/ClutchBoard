@@ -160,9 +160,33 @@ export async function getMatchById(matchId: string) {
   return riotMatchSchema.parse(await client.platformRequest(platform, `/val/match/v1/matches/${matchId}`))
 }
 
+// Normalized matches are expensive (matchlist + N match fetches). Cache them
+// per puuid so navigating between pages doesn't refetch every time. Busted on
+// explicit sync.
+const MATCHES_CACHE_TTL_MS = 3 * 60 * 1000
+const matchesCache = new Map<string, { expiresAt: number; value: MatchPerformance[] }>()
+
+export function bustMatchesCache(puuid?: string) {
+  if (!puuid) {
+    matchesCache.clear()
+    return
+  }
+  for (const key of matchesCache.keys()) {
+    if (key.startsWith(`${puuid}:`)) {
+      matchesCache.delete(key)
+    }
+  }
+}
+
 export async function getNormalizedMatches(puuid?: string, maxMatches = 50): Promise<MatchPerformance[]> {
   if (!puuid) {
     throw new Error("A PUUID is required to request Riot match history.")
+  }
+
+  const cacheKey = `${puuid}:${maxMatches}`
+  const cached = matchesCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value
   }
 
   const matchList = await getMatchListByPuuid(puuid)
@@ -170,7 +194,7 @@ export async function getNormalizedMatches(puuid?: string, maxMatches = 50): Pro
   const matches = await Promise.all(ids.map((id) => getMatchById(id)))
   const contentLookups = await getCachedContentLookups()
 
-  return matches
+  const normalized = matches
     .map((match) =>
       mapRiotMatchToPerformance(match, puuid, {
         resolveAgentName: (characterId) => contentLookups.agentById.get(normalizeContentKey(characterId))?.name,
@@ -186,6 +210,9 @@ export async function getNormalizedMatches(puuid?: string, maxMatches = 50): Pro
       ...match,
       sessionIndex: Math.floor(index / 4) + 1,
     }))
+
+  matchesCache.set(cacheKey, { expiresAt: Date.now() + MATCHES_CACHE_TTL_MS, value: normalized })
+  return normalized
 }
 
 export async function getSafeMatchDetailShape(matchId: string) {
