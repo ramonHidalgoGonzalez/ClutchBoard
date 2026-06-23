@@ -17,7 +17,8 @@ export const mockAccountProfile: AccountProfile = {
   source: "mock-demo",
 }
 
-export function createMockMatches(count = 48): MatchPerformance[] {
+export function createMockMatches(count = 60, puuid?: string): MatchPerformance[] {
+  const puuidPrefix = puuid ? `${puuid.slice(0, 6)}-` : ""
   return Array.from({ length: count }, (_, index) => {
     const dayOffset = index
     const agentName = agents[index % agents.length]
@@ -37,7 +38,7 @@ export function createMockMatches(count = 48): MatchPerformance[] {
     const acsEstimate = Math.round(damage / 1.15 + kills * 4 - deaths * 1.5)
 
     return {
-      matchId: `mock-match-${count - index}`,
+      matchId: `${puuidPrefix}mock-match-${count - index}`,
       startedAt: subDays(new Date(), dayOffset).toISOString(),
       durationSeconds: 1_880 + (index % 6) * 45,
       queueId: queueName.toLowerCase(),

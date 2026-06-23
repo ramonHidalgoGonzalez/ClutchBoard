@@ -160,7 +160,7 @@ export async function getMatchById(matchId: string) {
   return riotMatchSchema.parse(await client.platformRequest(platform, `/val/match/v1/matches/${matchId}`))
 }
 
-export async function getNormalizedMatches(puuid?: string, maxMatches = 20): Promise<MatchPerformance[]> {
+export async function getNormalizedMatches(puuid?: string, maxMatches = 50): Promise<MatchPerformance[]> {
   if (!puuid) {
     throw new Error("A PUUID is required to request Riot match history.")
   }

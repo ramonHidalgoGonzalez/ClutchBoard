@@ -21,7 +21,7 @@ import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
 import { getMapAssets } from "@/server/valorant/assets/map-assets"
 
 function applyMatchFilters(matches: MatchPerformance[], filter?: MatchFilter) {
-  const periodDays = filter?.periodDays ?? 60
+  const periodDays = filter?.periodDays ?? 90
   const threshold = Date.now() - periodDays * 24 * 60 * 60 * 1000
 
   return matches.filter((match) => {

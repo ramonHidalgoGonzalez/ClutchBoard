@@ -161,7 +161,7 @@ export function MatchHistory({
   const [agent, setAgent] = useState("all")
   const [map, setMap] = useState("all")
   const [sort, setSort] = useState("date-desc")
-  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(20)
+  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(50)
   const [page, setPage] = useState(1)
 
   const queues = useMemo(() => uniqueBy(matches, (m) => m.queueName || m.queueId), [matches])
