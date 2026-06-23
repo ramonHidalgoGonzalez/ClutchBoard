@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { AppShell } from "@/components/app-shell"
-import { AgentPoolCard } from "@/components/agents/agent-pool-card"
+import { VisualAgentCard } from "@/components/agents/visual-agent-card"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { SectionHeader } from "@/components/dashboard/section-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -35,9 +35,6 @@ export default async function AgentsPage({
     return b.matches - a.matches
   })
 
-  const topAgentKey = [...analytics.agentStats].sort((a, b) => b.matches - a.matches)[0]
-  const topKey = topAgentKey?.agentId || topAgentKey?.agentName
-
   return (
     <AppShell title="Agents" subtitle="Analítica por agente" connected>
       <div className="space-y-5">
@@ -67,21 +64,19 @@ export default async function AgentsPage({
         ) : null}
 
         {agents.length ? (
-          <div className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {agents.map((agent) => {
               const agentMatches = analytics.filteredMatches.filter(
                 (m) => (m.agentId || m.agentName) === (agent.agentId || agent.agentName),
               )
               const role = resolveAgentContent(catalog, agent.agentId, agent.agentName)?.role
-              const isTop = (agent.agentId || agent.agentName) === topKey
 
               return (
-                <AgentPoolCard
+                <VisualAgentCard
                   key={agent.agentId || agent.agentName}
                   agent={agent}
                   matches={agentMatches}
                   role={role}
-                  isTop={isTop}
                 />
               )
             })}

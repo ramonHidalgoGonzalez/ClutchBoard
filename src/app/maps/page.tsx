@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 
 import { AppShell } from "@/components/app-shell"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { MapPoolCard } from "@/components/maps/map-pool-card"
+import { VisualMapCard } from "@/components/maps/visual-map-card"
 import { SectionHeader } from "@/components/dashboard/section-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { env } from "@/lib/env"
@@ -30,10 +30,11 @@ export default async function MapsPage({
     return b.matches - a.matches
   })
 
-  const bestMap = [...analytics.mapStats]
-    .filter((map) => (map.sampleSize ?? 0) >= 4)
-    .sort((a, b) => b.winRate - a.winRate)[0]
+  const sampled = analytics.mapStats.filter((map) => (map.sampleSize ?? 0) >= 4)
+  const bestMap = [...sampled].sort((a, b) => b.winRate - a.winRate)[0]
+  const worstMap = [...sampled].sort((a, b) => a.winRate - b.winRate)[0]
   const bestKey = bestMap?.mapId || bestMap?.mapName
+  const worstKey = worstMap?.mapId || worstMap?.mapName
 
   return (
     <AppShell title="Maps" subtitle="Analítica por mapa" connected>
@@ -57,21 +58,21 @@ export default async function MapsPage({
         />
 
         {maps.length ? (
-          <div className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {maps.map((map) => {
               const mapMatches = analytics.filteredMatches.filter(
                 (m) => (m.mapId || m.mapName) === (map.mapId || map.mapName),
               )
-              const isBest = (map.mapId || map.mapName) === bestKey
+              const key = map.mapId || map.mapName
+              const badge =
+                key === bestKey
+                  ? { label: "Mejor mapa", best: true }
+                  : key === worstKey
+                    ? { label: "Peor mapa", best: false }
+                    : null
 
               return (
-                <MapPoolCard
-                  key={map.mapId || map.mapName}
-                  map={map}
-                  matches={mapMatches}
-                  allMatches={analytics.filteredMatches}
-                  isBest={isBest}
-                />
+                <VisualMapCard key={map.mapId || map.mapName} map={map} matches={mapMatches} badge={badge} />
               )
             })}
           </div>

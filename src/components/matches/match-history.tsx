@@ -5,10 +5,9 @@ import Link from "next/link"
 import { ChevronLeft, ChevronRight, Crosshair, Search, Star, Target, Trophy } from "lucide-react"
 
 import { AgentAvatar } from "@/components/dashboard/agent-avatar"
-import { MapThumbnail } from "@/components/dashboard/map-thumbnail"
+import { MatchHistoryRow } from "@/components/matches/match-history-row"
 import { WinrateDonut } from "@/components/stats/winrate-donut"
 import { roleRingClass } from "@/lib/agent-roles"
-import { getAgentCropPosition, getMapCropPosition } from "@/server/valorant/assets/asset-crop-overrides"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -320,116 +319,11 @@ export function MatchHistory({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="hidden overflow-x-auto rounded-2xl border border-white/10 lg:block">
-        <table className="w-full min-w-[1180px] table-fixed text-sm">
-          <colgroup>
-            <col className="w-[120px]" />
-            <col className="w-[120px]" />
-            <col className="w-[140px]" />
-            <col className="w-[190px]" />
-            <col className="w-[170px]" />
-            <col className="w-[90px]" />
-            <col className="w-[110px]" />
-            <col className="w-[80px]" />
-            <col className="w-[80px]" />
-            <col className="w-[90px]" />
-            <col className="w-[60px]" />
-          </colgroup>
-          <thead>
-            <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-[0.12em] text-zinc-500">
-              <th className="px-4 py-3 font-medium">Resultado</th>
-              <th className="px-4 py-3 font-medium">Fecha</th>
-              <th className="px-4 py-3 font-medium">Cola</th>
-              <th className="px-4 py-3 font-medium">Mapa</th>
-              <th className="px-4 py-3 font-medium">Agente</th>
-              <th className="px-4 py-3 font-medium">Score</th>
-              <th className="px-4 py-3 font-medium">KDA</th>
-              <th className="px-4 py-3 font-medium">ACS</th>
-              <th className="px-4 py-3 font-medium">HS%</th>
-              <th className="px-4 py-3 font-medium">Duración</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {paged.map((match) => {
-              const meta = resultMeta(match.outcome)
-              const when = formatDateTime(match.startedAt)
-              return (
-                <tr key={match.matchId} className="border-b border-white/[0.06] transition-colors hover:bg-white/[0.07]">
-                  <td className="py-4 pl-4 pr-3">
-                    <div className="flex items-center gap-3">
-                      <span className={cn("h-12 w-1.5 rounded-full", meta.bar)} />
-                      <div className="whitespace-nowrap">
-                        <p className={cn("text-xs font-bold", meta.tone)}>{meta.label}</p>
-                        <p className="text-base font-semibold text-white">
-                          {`${match.roundsWon ?? 0} - ${match.roundsLost ?? 0}`}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-zinc-300">
-                    <p>{when.date}</p>
-                    <p className="text-xs text-zinc-500">{when.time}</p>
-                  </td>
-                  <td className="truncate px-4 py-4 text-zinc-300">{match.queueName || match.queueId}</td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <MapThumbnail
-                        name={match.mapName}
-                        imageUrl={match.mapThumbImageUrl ?? match.mapImageUrl}
-                        iconUrl={match.mapIconUrl}
-                        size="md"
-                        objectPosition={getMapCropPosition(match.mapName, "thumb")}
-                      />
-                      <span className="min-w-0 truncate font-medium text-white">{match.mapName}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <AgentAvatar
-                        name={match.agentName}
-                        imageUrl={match.agentTableImageUrl ?? match.agentImageUrl}
-                        iconUrl={match.agentIconUrl}
-                        size="md"
-                        framing="avatar"
-                        ringClassName={roleRingClass(match.agentName)}
-                        objectPosition={getAgentCropPosition(match.agentName, "table")}
-                      />
-                      <span className="min-w-0 truncate font-medium text-white">{match.agentName}</span>
-                    </div>
-                  </td>
-                  <td className={cn("whitespace-nowrap px-4 py-4 font-semibold", meta.tone)}>
-                    {`${match.roundsWon ?? 0} - ${match.roundsLost ?? 0}`}
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="whitespace-nowrap">
-                      <p className="font-semibold text-white">
-                        {`${match.kills} / ${match.deaths} / ${match.assists}`}
-                      </p>
-                      <p className="text-xs text-zinc-500">{kdaRatio(match)}</p>
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4 font-semibold text-white">{match.acsEstimate ?? "--"}</td>
-                  <td className="whitespace-nowrap px-4 py-4 text-zinc-300">
-                    {Number.isFinite(match.headshotPct) ? `${match.headshotPct.toFixed(1)}%` : "--"}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-zinc-400">
-                    {match.durationSeconds ? `${Math.round(match.durationSeconds / 60)} min` : "--"}
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <Link
-                      href={`/matches/${match.matchId}`}
-                      className="inline-flex size-8 items-center justify-center rounded-lg border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-white"
-                    >
-                      <ChevronRight className="size-4" />
-                    </Link>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+      {/* Match rows (desktop) — tracker cards, not a table */}
+      <div className="hidden flex-col gap-2.5 lg:flex">
+        {paged.map((match) => (
+          <MatchHistoryRow key={match.matchId} match={match} />
+        ))}
       </div>
 
       {/* Mobile cards */}

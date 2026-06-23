@@ -7,11 +7,12 @@ import { DashboardTrendChart } from "@/components/dashboard/dashboard-trend-char
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { EntityHeroMini } from "@/components/dashboard/entity-hero-mini"
 import { QuickInsights } from "@/components/dashboard/quick-insights"
-import { RecentMatchesTable } from "@/components/dashboard/recent-matches-table"
+import { MatchHistoryRow } from "@/components/matches/match-history-row"
 import { RolePerformance, type RoleRow } from "@/components/dashboard/role-performance"
 import { ResultsDonut } from "@/components/dashboard/results-donut"
 import { WinrateDonut } from "@/components/stats/winrate-donut"
 import { Card, CardContent } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import { lastN, summarizeMatches } from "@/analytics/entity-stats"
 import { resolveAgentRole } from "@/lib/agent-roles"
 import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
@@ -53,14 +54,15 @@ function Tile({
   right?: React.ReactNode
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4">
-      <div className="flex items-start justify-between gap-2">
+    <div className="premium-card relative overflow-hidden p-5">
+      <div className={cn("pointer-events-none absolute -right-6 -top-8 size-24 rounded-full opacity-20 blur-2xl", accent.replace("text-", "bg-"))} />
+      <div className="relative flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
             <span className={accent}>{icon}</span>
             {label}
           </p>
-          <p className="mt-2 truncate text-2xl font-bold text-white">{value}</p>
+          <p className="mt-2 truncate text-3xl font-extrabold text-white">{value}</p>
           {sub ? <div className="mt-0.5 text-xs text-zinc-400">{sub}</div> : null}
         </div>
         {right ? <div className="shrink-0">{right}</div> : null}
@@ -234,7 +236,11 @@ export default async function DashboardPage() {
               <Card className="glass-panel text-white">
                 <CardContent className="space-y-3 p-5">
                   <p className="text-sm font-semibold text-zinc-300">Últimas partidas</p>
-                  <RecentMatchesTable matches={lastN(matches, 5)} />
+                  <div className="space-y-2.5">
+                    {lastN(matches, 5).map((m) => (
+                      <MatchHistoryRow key={m.matchId} match={m} compact />
+                    ))}
+                  </div>
                   <Link
                     href="/matches"
                     className="block pt-1 text-center text-sm font-semibold text-rose-300 hover:text-rose-200"
