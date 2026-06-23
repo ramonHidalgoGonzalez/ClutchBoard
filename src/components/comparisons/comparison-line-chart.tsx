@@ -2,26 +2,24 @@
 
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
-import type { RecentTrendPoint } from "@/server/valorant/analytics/comparisons"
+import type { RecentTrendLine } from "@/server/valorant/analytics/comparisons"
 
-export function ComparisonLineChart({ data }: { data: RecentTrendPoint[] }) {
+export function ComparisonLineChart({
+  data,
+  recentLabel,
+  previousLabel,
+}: {
+  data: RecentTrendLine[]
+  recentLabel: string
+  previousLabel: string
+}) {
   return (
-    <div className="h-72 w-full min-w-0">
+    <div className="h-64 w-full min-w-0">
       <ResponsiveContainer>
         <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
           <CartesianGrid stroke="rgba(255,255,255,0.07)" vertical={false} />
           <XAxis dataKey="label" stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} />
-          <YAxis yAxisId="acs" stroke="#f43f5e" fontSize={11} tickLine={false} axisLine={false} width={40} />
-          <YAxis
-            yAxisId="kda"
-            orientation="right"
-            stroke="#a855f7"
-            fontSize={11}
-            tickLine={false}
-            axisLine={false}
-            width={36}
-            domain={[0, "auto"]}
-          />
+          <YAxis stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} width={40} />
           <Tooltip
             contentStyle={{
               background: "rgba(9,9,11,0.95)",
@@ -31,8 +29,24 @@ export function ComparisonLineChart({ data }: { data: RecentTrendPoint[] }) {
             labelStyle={{ color: "#a1a1aa" }}
           />
           <Legend wrapperStyle={{ fontSize: 12, color: "#d4d4d8" }} iconType="circle" />
-          <Line yAxisId="acs" type="monotone" dataKey="acs" name="ACS" stroke="#f43f5e" strokeWidth={2.5} dot={false} />
-          <Line yAxisId="kda" type="monotone" dataKey="kda" name="KDA" stroke="#a855f7" strokeWidth={2.5} dot={false} />
+          <Line
+            type="monotone"
+            dataKey="recent"
+            name={recentLabel}
+            stroke="#34d399"
+            strokeWidth={2.5}
+            dot={{ r: 3, fill: "#34d399" }}
+            connectNulls
+          />
+          <Line
+            type="monotone"
+            dataKey="previous"
+            name={previousLabel}
+            stroke="#71717a"
+            strokeWidth={2.5}
+            dot={{ r: 3, fill: "#71717a" }}
+            connectNulls
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>

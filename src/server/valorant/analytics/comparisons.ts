@@ -62,12 +62,12 @@ export type WinsLossesComparison = {
   topLossMaps: Array<{ name: string; losses: number; games: number }>
 }
 
-export type RecentTrendPoint = { label: string; acs: number; kda: number }
+export type RecentTrendLine = { label: string; recent: number | null; previous: number | null }
 
 export type RecentTrendComparison = {
   available: boolean
   windowSize: number
-  series: RecentTrendPoint[]
+  lines: RecentTrendLine[]
   metrics: ComparisonMetric[]
 }
 
@@ -325,15 +325,17 @@ export function buildRecentTrendComparison(matches: MatchPerformance[], windowSi
   const ordered = chronological(matches)
   const recent = ordered.slice(-windowSize)
   const previous = ordered.slice(-windowSize * 2, -windowSize)
-  const series: RecentTrendPoint[] = ordered.slice(-windowSize * 2).map((m, index) => ({
-    label: `${index + 1}`,
-    acs: Math.round(m.acsEstimate ?? 0),
-    kda: Number((((m.kills ?? 0) + (m.assists ?? 0)) / Math.max(1, m.deaths ?? 0)).toFixed(2)),
+  const acs = (m: MatchPerformance | undefined) => (m ? Math.round(m.acsEstimate ?? 0) : null)
+  // Overlay the two windows on a shared 1..N index for a recent-vs-previous chart.
+  const lines: RecentTrendLine[] = Array.from({ length: windowSize }, (_, i) => ({
+    label: `${i + 1}`,
+    recent: acs(recent[i]),
+    previous: acs(previous[i]),
   }))
   return {
     available: recent.length > 0 && previous.length > 0,
     windowSize,
-    series,
+    lines,
     metrics: metricsFor(aggregate(recent), aggregate(previous)),
   }
 }

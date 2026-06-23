@@ -133,12 +133,13 @@ describe("buildWinsLossesComparison", () => {
 })
 
 describe("buildRecentTrendComparison", () => {
-  it("returns chronologically ordered points", () => {
+  it("splits recent vs previous windows into index-aligned lines", () => {
     const matches = Array.from({ length: 10 }, (_, i) => mk({ acsEstimate: 200 + i }))
     const cmp = buildRecentTrendComparison(matches, 5)
     expect(cmp.available).toBe(true)
-    expect(cmp.series.length).toBe(10)
-    expect(cmp.series[0].acs).toBeLessThan(cmp.series[cmp.series.length - 1].acs)
+    expect(cmp.lines.length).toBe(5)
+    // recent window (last 5: ACS 205-209) is higher than the previous (200-204)
+    expect(cmp.lines[0].recent).toBeGreaterThan(cmp.lines[0].previous as number)
   })
 })
 
