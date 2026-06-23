@@ -1,29 +1,24 @@
-import { tierStyle, tierSub } from "@/lib/valorant-ranks"
+import { getRankAsset, tierStyle } from "@/lib/valorant-ranks"
 import { cn } from "@/lib/utils"
 
-/** Gradient rank badge (used until real rank icons are shipped). */
+/** Rank badge using the local rank icon, with a gradient fallback behind it. */
 export function RankBadge({ tierId, size = 80, className }: { tierId?: number | null; size?: number; className?: string }) {
   const style = tierStyle(tierId)
-  const sub = tierSub(tierId)
+  const src = getRankAsset(tierId)
+
   return (
     <div
-      className={cn("relative grid place-items-center rounded-2xl border border-white/15", className)}
-      style={{
-        width: size,
-        height: size,
-        background: `radial-gradient(circle at 30% 25%, ${style.accent}55, transparent 60%), linear-gradient(150deg, ${style.from}, ${style.to})`,
-        boxShadow: `0 12px 36px -12px ${style.from}aa`,
-      }}
+      className={cn("relative grid place-items-center", className)}
+      style={{ width: size, height: size }}
       aria-hidden="true"
     >
       <div
-        className="size-1/2 rotate-45 rounded-[18%] border-2"
-        style={{ borderColor: style.accent, background: `linear-gradient(150deg, ${style.from}, ${style.to})` }}
+        className="absolute inset-[14%] rounded-full opacity-50 blur-md"
+        style={{ background: `radial-gradient(circle, ${style.accent}, transparent 70%)` }}
       />
-      {sub ? (
-        <span className="absolute text-sm font-extrabold text-white" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>
-          {sub}
-        </span>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt="" className="relative h-full w-full object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.5)]" />
       ) : null}
     </div>
   )
