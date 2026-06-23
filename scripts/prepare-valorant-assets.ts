@@ -99,6 +99,18 @@ function findSource(dir: string, slug: string, file: string) {
   return null
 }
 
+// Hand-curated overrides with ABSOLUTE priority, dropped into
+// source-assets/valorant/<kind>/<context>/<slug>.<ext> (e.g. a real agent
+// selection icon). When present, used instead of the auto-derived crop.
+const MANUAL_ROOT = path.join(ROOT, "source-assets", "valorant")
+function manualSource(kind: "agents" | "maps", context: string, slug: string) {
+  for (const ext of ["png", "webp", "jpg", "jpeg"]) {
+    const full = path.join(MANUAL_ROOT, kind, context, `${slug}.${ext}`)
+    if (existsSync(full)) return full
+  }
+  return null
+}
+
 async function buildAgents() {
   for (const sub of ["table", "card", "hero"]) {
     mkdirSync(out("agents", sub), { recursive: true })
@@ -117,24 +129,34 @@ async function buildAgents() {
     const width = meta.width ?? 0
     const height = meta.height ?? 0
 
-    // table (square, head/torso) — generated at 2x (112) for crispness at 56px.
-    const side = Math.max(1, Math.round(Math.min(width, height) * 0.6))
-    const left = Math.max(0, Math.round((width - side) / 2))
-    const top = Math.max(0, Math.round(height * 0.05))
-    await sharp(src)
-      .extract({ left, top, width: Math.min(side, width - left), height: Math.min(side, height - top) })
-      .resize(112, 112, { fit: "cover", position: "top" })
-      .webp({ quality: 84 })
-      .toFile(out("agents", "table", `${slug}.webp`))
+    // table — selection-style icon (head + bust). Prefer a hand-curated icon;
+    // otherwise crop tightly onto the upper body of the full-body source so it
+    // reads as a clean 56px icon, not a shrunken full body.
+    const tableManual = manualSource("agents", "table", slug)
+    if (tableManual) {
+      await sharp(tableManual)
+        .resize(112, 112, { fit: "cover", position: "centre" })
+        .webp({ quality: 88 })
+        .toFile(out("agents", "table", `${slug}.webp`))
+    } else {
+      const side = Math.max(1, Math.round(Math.min(width, height) * 0.46))
+      const left = Math.max(0, Math.round((width - side) / 2))
+      const top = Math.max(0, Math.round(height * 0.03))
+      await sharp(src)
+        .extract({ left, top, width: Math.min(side, width - left), height: Math.min(side, height - top) })
+        .resize(112, 112, { fit: "cover", position: "top" })
+        .webp({ quality: 86 })
+        .toFile(out("agents", "table", `${slug}.webp`))
+    }
 
     // card (tall portrait)
-    await sharp(src)
+    await sharp(manualSource("agents", "card", slug) ?? src)
       .resize(240, 320, { fit: "cover", position: "top" })
       .webp({ quality: 86 })
       .toFile(out("agents", "card", `${slug}.webp`))
 
     // hero (full-body cutout, transparency preserved, shown object-contain)
-    await sharp(src)
+    await sharp(manualSource("agents", "hero", slug) ?? src)
       .resize(600, 600, { fit: "inside", withoutEnlargement: true })
       .webp({ quality: 88 })
       .toFile(out("agents", "hero", `${slug}.webp`))
@@ -177,9 +199,10 @@ async function buildMaps() {
       continue
     }
 
-    await sharp(src).resize(224, 128, { fit: "cover", position: "center" }).webp({ quality: 84 }).toFile(out("maps", "thumb", `${slug}.webp`))
-    await sharp(src).resize(1280, 480, { fit: "cover", position: "center" }).webp({ quality: 84 }).toFile(out("maps", "banner", `${slug}.webp`))
-    await sharp(src).resize(960, 540, { fit: "cover", position: "center" }).webp({ quality: 84 }).toFile(out("maps", "card", `${slug}.webp`))
+    const thumbSrc = manualSource("maps", "thumb", slug) ?? src
+    await sharp(thumbSrc).resize(224, 128, { fit: "cover", position: "centre" }).webp({ quality: 86 }).toFile(out("maps", "thumb", `${slug}.webp`))
+    await sharp(src).resize(1280, 480, { fit: "cover", position: "centre" }).webp({ quality: 84 }).toFile(out("maps", "banner", `${slug}.webp`))
+    await sharp(src).resize(960, 540, { fit: "cover", position: "centre" }).webp({ quality: 84 }).toFile(out("maps", "card", `${slug}.webp`))
 
     entries.push({ slug, name: map.name })
     console.log(`✓ map ${map.name} -> ${slug}`)

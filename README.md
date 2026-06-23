@@ -296,7 +296,7 @@ depends on the network at build time and nothing is scraped at runtime:
 
 ```
 public/valorant/agents/
-  table/<slug>.webp    # 112px square head/torso crop (table avatars 56px)
+  table/<slug>.webp    # 112px selection-style head/bust icon (table avatars 56px)
   card/<slug>.webp     # 240x320 portrait (agent cards / detail)
   hero/<slug>.webp     # full-body cutout (dashboard hero card)
 public/valorant/maps/
@@ -304,6 +304,12 @@ public/valorant/maps/
   banner/<slug>.webp   # 1280x480 banner (hero cards)
   card/<slug>.webp     # 960x540 card background
 ```
+
+The `table` icon is a tight head/bust crop (selection-icon style), never a
+shrunken full body. Drop a hand-curated icon in
+`source-assets/valorant/agents/table/<slug>.png` to override it with absolute
+priority (see `source-assets/README.md`) — useful for back-facing source art
+(e.g. Jett).
 
 Slugs: `normalizeAgentSlug` (`KAY/O` -> `kayo`) and `normalizeMapSlug`
 (`Haven` -> `haven`). Mappings live in `src/server/valorant/assets/`

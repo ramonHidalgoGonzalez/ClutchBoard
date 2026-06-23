@@ -26,6 +26,11 @@ describe("getAgentAssets", () => {
     expect(a.hero).toBe("/valorant/agents/hero/breach.webp")
     // contexts must be distinct (no single image reused everywhere)
     expect(a.table).not.toBe(a.hero)
+    expect(a.table).not.toBe(a.card)
+    expect(a.card).not.toBe(a.hero)
+    // table is the selection-icon path, hero is the full-body path
+    expect(a.table).toContain("/agents/table/")
+    expect(a.hero).toContain("/agents/hero/")
   })
 
   it("resolves by display name with special characters", () => {

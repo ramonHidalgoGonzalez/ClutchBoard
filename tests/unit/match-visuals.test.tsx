@@ -132,6 +132,9 @@ describe("MatchHistory visuals", () => {
     )
     const agents = screen.getAllByAltText("Sova") as HTMLImageElement[]
     expect(agents.some((img) => img.getAttribute("src")?.includes("/valorant/agents/table/"))).toBe(true)
+    // Compact views must NOT use the full-body hero/card assets.
+    expect(agents.every((img) => !img.getAttribute("src")?.includes("/agents/hero/"))).toBe(true)
+    expect(agents.every((img) => !img.getAttribute("src")?.includes("/agents/card/"))).toBe(true)
     const maps = screen.getAllByAltText("Haven") as HTMLImageElement[]
     expect(maps.some((img) => img.getAttribute("src")?.includes("/valorant/maps/thumb/"))).toBe(true)
   })
