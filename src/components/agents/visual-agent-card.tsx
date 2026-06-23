@@ -46,7 +46,7 @@ export function VisualAgentCard({
           <img
             src={img.hero ?? img.card ?? agent.agentImageUrl ?? undefined}
             alt={agent.agentName}
-            className="absolute inset-x-0 bottom-0 mx-auto h-[132%] object-contain object-bottom drop-shadow-2xl transition-transform duration-300 group-hover:scale-105"
+            className="absolute inset-0 h-full w-full object-cover object-[center_top] transition-transform duration-300 group-hover:scale-105"
           />
         ) : null}
         <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(9,9,11,0.92))]" />
