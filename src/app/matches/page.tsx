@@ -35,6 +35,7 @@ export default async function MatchesPage() {
           summary={analytics.summary}
           bestMap={bestMap ?? null}
           topAgent={topAgent ?? null}
+          recentVsPrevious={analytics.recentVsPrevious}
           lastSyncedAt={lastSyncedAt}
         />
       ) : (

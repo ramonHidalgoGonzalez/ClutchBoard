@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import Link from "next/link"
-import { ChevronRight, Crosshair, Search, Star, Target, Trophy } from "lucide-react"
+import { ChevronLeft, ChevronRight, Crosshair, Search, Star, Target, Trophy } from "lucide-react"
 
 import { AgentAvatar } from "@/components/dashboard/agent-avatar"
 import { MapThumbnail } from "@/components/dashboard/map-thumbnail"
+import { WinrateDonut } from "@/components/stats/winrate-donut"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -20,6 +21,7 @@ import type {
   AnalyticsSummary,
   MapBreakdown,
   MatchPerformance,
+  RecentComparison,
 } from "@/types/domain"
 
 type MatchHistoryProps = {
@@ -27,6 +29,7 @@ type MatchHistoryProps = {
   summary: AnalyticsSummary
   bestMap?: MapBreakdown | null
   topAgent?: AgentBreakdown | null
+  recentVsPrevious?: RecentComparison | null
   lastSyncedAt?: string
 }
 
@@ -43,7 +46,7 @@ const SORT_OPTIONS = [
   { value: "kda-desc", label: "KDA (mayor)" },
 ]
 
-const LIMITS = [10, 20, 50, 0] as const
+const PAGE_SIZES = [10, 20, 50, 0] as const
 
 function formatDateTime(value: string) {
   const date = new Date(value)
@@ -77,6 +80,20 @@ function uniqueBy(matches: MatchPerformance[], pick: (m: MatchPerformance) => st
   return Array.from(new Set(matches.map(pick).filter(Boolean))).sort()
 }
 
+function deltaChip(delta?: number, suffix = "") {
+  if (typeof delta !== "number" || !Number.isFinite(delta) || Math.abs(delta) < 0.05) {
+    return null
+  }
+  const positive = delta > 0
+  const rounded = Math.abs(delta) >= 10 ? Math.round(Math.abs(delta)) : Math.abs(delta).toFixed(2)
+  return (
+    <span className={positive ? "text-xs font-semibold text-emerald-400" : "text-xs font-semibold text-rose-400"}>
+      {positive ? "▲" : "▼"} {rounded}
+      {suffix}
+    </span>
+  )
+}
+
 function SummaryTile({
   label,
   value,
@@ -85,14 +102,16 @@ function SummaryTile({
   accent,
   image,
   imagePosition = "bg-center",
+  right,
 }: {
   label: string
   value: string
-  sub?: string
-  icon?: React.ReactNode
+  sub?: ReactNode
+  icon?: ReactNode
   accent?: string
   image?: string | null
   imagePosition?: string
+  right?: ReactNode
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -103,30 +122,52 @@ function SummaryTile({
           aria-hidden="true"
         />
       ) : null}
-      <div className="relative">
-        <div className="flex items-center justify-between">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-400">{label}</p>
-          {icon ? <span className={accent}>{icon}</span> : null}
+      <div className="relative flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
+            {icon ? <span className={accent}>{icon}</span> : null}
+            {label}
+          </p>
+          <p className="mt-2 truncate text-2xl font-bold text-white">{value}</p>
+          {sub ? <div className="mt-0.5 text-xs text-zinc-400">{sub}</div> : null}
         </div>
-        <p className="mt-2 text-2xl font-bold text-white">{value}</p>
-        {sub ? <p className="text-xs text-emerald-300">{sub}</p> : null}
+        {right ? <div className="shrink-0">{right}</div> : null}
       </div>
     </div>
   )
 }
 
-export function MatchHistory({ matches, summary, bestMap, topAgent, lastSyncedAt }: MatchHistoryProps) {
+function pageWindow(current: number, count: number) {
+  if (count <= 7) {
+    return Array.from({ length: count }, (_, i) => i + 1)
+  }
+  const pages = new Set<number>([1, count, current, current - 1, current + 1])
+  return Array.from(pages)
+    .filter((p) => p >= 1 && p <= count)
+    .sort((a, b) => a - b)
+}
+
+export function MatchHistory({
+  matches,
+  summary,
+  bestMap,
+  topAgent,
+  recentVsPrevious,
+}: MatchHistoryProps) {
   const [query, setQuery] = useState("")
   const [result, setResult] = useState("all")
   const [queue, setQueue] = useState("all")
   const [agent, setAgent] = useState("all")
   const [map, setMap] = useState("all")
   const [sort, setSort] = useState("date-desc")
-  const [limit, setLimit] = useState<(typeof LIMITS)[number]>(20)
+  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(20)
+  const [page, setPage] = useState(1)
 
   const queues = useMemo(() => uniqueBy(matches, (m) => m.queueName || m.queueId), [matches])
   const agents = useMemo(() => uniqueBy(matches, (m) => m.agentName), [matches])
   const maps = useMemo(() => uniqueBy(matches, (m) => m.mapName), [matches])
+  const wins = useMemo(() => matches.filter((m) => m.outcome === "win").length, [matches])
+  const losses = useMemo(() => matches.filter((m) => m.outcome === "loss").length, [matches])
 
   const filtered = useMemo(() => {
     const text = query.trim().toLowerCase()
@@ -155,8 +196,20 @@ export function MatchHistory({ matches, summary, bestMap, topAgent, lastSyncedAt
       }
     })
 
-    return limit ? rows.slice(0, limit) : rows
-  }, [matches, query, result, queue, agent, map, sort, limit])
+    return rows
+  }, [matches, query, result, queue, agent, map, sort])
+
+  // Reset to first page whenever the result set or page size changes.
+  useEffect(() => {
+    setPage(1)
+  }, [query, result, queue, agent, map, sort, pageSize])
+
+  const total = filtered.length
+  const size = pageSize === 0 ? Math.max(1, total) : pageSize
+  const pageCount = Math.max(1, Math.ceil(total / size))
+  const safePage = Math.min(page, pageCount)
+  const start = (safePage - 1) * size
+  const paged = filtered.slice(start, start + size)
 
   return (
     <div className="space-y-5">
@@ -165,22 +218,41 @@ export function MatchHistory({ matches, summary, bestMap, topAgent, lastSyncedAt
         <SummaryTile
           label="Partidas"
           value={String(summary.totalMatches)}
-          icon={<Crosshair className="size-4" />}
+          sub={`Últimos ${summary.totalMatches}`}
+          icon={<Crosshair className="size-3.5" />}
           accent="text-indigo-300"
         />
         <SummaryTile
           label="Winrate"
           value={`${summary.winRate.toFixed(1)}%`}
-          icon={<Trophy className="size-4" />}
+          icon={<Trophy className="size-3.5" />}
           accent="text-emerald-300"
+          right={<WinrateDonut value={summary.winRate} />}
+          sub={`${wins} Victorias / ${losses} Derrotas`}
         />
-        <SummaryTile label="KDA promedio" value={summary.averageKda.toFixed(2)} accent="text-sky-300" />
-        <SummaryTile label="ACS promedio" value={summary.averageAcs.toFixed(0)} icon={<Star className="size-4" />} accent="text-amber-300" />
-        <SummaryTile label="HS% promedio" value={`${summary.averageHsPercent.toFixed(1)}%`} icon={<Target className="size-4" />} accent="text-rose-300" />
+        <SummaryTile
+          label="KDA promedio"
+          value={summary.averageKda.toFixed(2)}
+          accent="text-sky-300"
+          sub={deltaChip(recentVsPrevious?.kdaDelta)}
+        />
+        <SummaryTile
+          label="ACS promedio"
+          value={summary.averageAcs.toFixed(0)}
+          icon={<Star className="size-3.5" />}
+          accent="text-amber-300"
+          sub={deltaChip(recentVsPrevious?.acsDelta)}
+        />
+        <SummaryTile
+          label="HS% promedio"
+          value={`${summary.averageHsPercent.toFixed(1)}%`}
+          icon={<Target className="size-3.5" />}
+          accent="text-rose-300"
+        />
         <SummaryTile
           label="Mejor mapa"
           value={bestMap?.mapName ?? "--"}
-          sub={bestMap ? `${bestMap.winRate.toFixed(0)}% WR` : undefined}
+          sub={bestMap ? `${bestMap.winRate.toFixed(0)}% Winrate` : undefined}
           image={bestMap?.mapImageUrl}
         />
         <SummaryTile
@@ -226,14 +298,14 @@ export function MatchHistory({ matches, summary, bestMap, topAgent, lastSyncedAt
         <FilterSelect value={sort} onChange={setSort} placeholder="Ordenar por" options={SORT_OPTIONS} />
 
         <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-black/30 p-1">
-          {LIMITS.map((value) => (
+          {PAGE_SIZES.map((value) => (
             <button
               key={value}
               type="button"
-              onClick={() => setLimit(value)}
+              onClick={() => setPageSize(value)}
               className={cn(
                 "rounded-lg px-3 py-1 text-xs font-semibold transition",
-                limit === value ? "bg-rose-500/80 text-white" : "text-zinc-400 hover:text-zinc-200",
+                pageSize === value ? "bg-rose-600 text-white" : "text-zinc-400 hover:text-zinc-200",
               )}
             >
               {value === 0 ? "Todas" : value}
@@ -261,7 +333,7 @@ export function MatchHistory({ matches, summary, bestMap, topAgent, lastSyncedAt
             </tr>
           </thead>
           <tbody>
-            {filtered.map((match) => {
+            {paged.map((match) => {
               const meta = resultMeta(match.outcome)
               const when = formatDateTime(match.startedAt)
               return (
@@ -327,15 +399,14 @@ export function MatchHistory({ matches, summary, bestMap, topAgent, lastSyncedAt
 
       {/* Mobile cards */}
       <div className="space-y-3 lg:hidden">
-        {filtered.map((match) => {
+        {paged.map((match) => {
           const meta = resultMeta(match.outcome)
           const when = formatDateTime(match.startedAt)
           return (
             <Link
               key={match.matchId}
               href={`/matches/${match.matchId}`}
-              className="relative block overflow-hidden rounded-2xl border border-white/10 border-l-2 bg-white/5 p-4"
-              style={{ borderLeftColor: "transparent" }}
+              className="relative block overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4"
             >
               <span className={cn("absolute inset-y-0 left-0 w-1", meta.bar)} />
               <div className="flex items-center justify-between">
@@ -380,18 +451,66 @@ export function MatchHistory({ matches, summary, bestMap, topAgent, lastSyncedAt
         })}
       </div>
 
-      {filtered.length === 0 ? (
+      {total === 0 ? (
         <p className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm text-zinc-400">
           No hay partidas que coincidan con los filtros.
         </p>
-      ) : null}
-
-      {lastSyncedAt ? (
-        <p className="text-right text-xs text-zinc-600">
-          Mostrando {filtered.length} de {matches.length} partidas
-        </p>
-      ) : null}
+      ) : (
+        <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+          <p className="text-sm text-zinc-500">
+            Mostrando {start + 1} a {Math.min(total, start + size)} de {total} partidas
+          </p>
+          {pageCount > 1 ? (
+            <div className="flex items-center gap-1">
+              <PagerButton disabled={safePage <= 1} onClick={() => setPage(safePage - 1)}>
+                <ChevronLeft className="size-4" />
+              </PagerButton>
+              {pageWindow(safePage, pageCount).map((p, index, arr) => (
+                <span key={p} className="flex items-center">
+                  {index > 0 && p - arr[index - 1] > 1 ? (
+                    <span className="px-1 text-zinc-600">…</span>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setPage(p)}
+                    className={cn(
+                      "size-8 rounded-lg text-sm font-semibold transition",
+                      p === safePage ? "bg-rose-600 text-white" : "text-zinc-400 hover:bg-white/10 hover:text-white",
+                    )}
+                  >
+                    {p}
+                  </button>
+                </span>
+              ))}
+              <PagerButton disabled={safePage >= pageCount} onClick={() => setPage(safePage + 1)}>
+                <ChevronRight className="size-4" />
+              </PagerButton>
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
+  )
+}
+
+function PagerButton({
+  children,
+  disabled,
+  onClick,
+}: {
+  children: ReactNode
+  disabled?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex size-8 items-center justify-center rounded-lg border border-white/10 text-zinc-400 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {children}
+    </button>
   )
 }
 

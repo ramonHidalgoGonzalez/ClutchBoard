@@ -1,78 +1,121 @@
 import Link from "next/link"
-import Image from "next/image"
 
-import { Activity, Bot, Compass, LayoutDashboard, Map, Settings, Shield } from "lucide-react"
+import {
+  BarChart3,
+  Bot,
+  Crown,
+  LayoutDashboard,
+  Map as MapIcon,
+  NotebookPen,
+  Settings,
+  Swords,
+  TrendingUp,
+} from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
-const items = [
+const primaryItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/matches", label: "Matches", icon: Activity },
+  { href: "/matches", label: "Matches", icon: Swords },
   { href: "/agents", label: "Agents", icon: Bot },
-  { href: "/maps", label: "Maps", icon: Map },
-  { href: "/improvement", label: "Mejora", icon: Compass },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/maps", label: "Maps", icon: MapIcon },
+  { href: "/improvement", label: "Improvement", icon: TrendingUp },
+  { href: "/comparativas", label: "Comparativas", icon: BarChart3 },
+  { href: "/notas", label: "Notas de partida", icon: NotebookPen },
 ]
 
-export function NavSidebar({ pathname, mobile = false }: { pathname: string; mobile?: boolean }) {
+const secondaryItems = [{ href: "/settings", label: "Configuración", icon: Settings }]
+
+type NavSidebarProps = {
+  pathname: string
+  mobile?: boolean
+  profile?: { name: string; connected: boolean }
+}
+
+function isActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
+
+function NavLink({ pathname, href, label, icon: Icon }: { pathname: string; href: string; label: string; icon: typeof Bot }) {
+  const active = isActive(pathname, href)
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+        active
+          ? "bg-rose-600/90 text-white shadow-[0_8px_24px_rgba(244,63,94,0.35)]"
+          : "text-zinc-400 hover:bg-white/5 hover:text-white",
+      )}
+    >
+      <Icon className="size-4 shrink-0" />
+      {label}
+    </Link>
+  )
+}
+
+export function NavSidebar({ pathname, mobile = false, profile }: NavSidebarProps) {
+  const initial = (profile?.name ?? "?").charAt(0).toUpperCase()
+
   return (
     <aside
       className={cn(
-        "w-72 border-r border-white/10 bg-black/30 px-5 py-6 backdrop-blur",
-        mobile ? "block h-full" : "hidden xl:block",
+        "flex w-72 flex-col border-r border-white/10 bg-black/40 px-4 py-5 backdrop-blur",
+        mobile ? "h-full" : "hidden xl:flex",
       )}
     >
-      <div className="mb-8 space-y-3">
-        <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-200">
-          Riot-compliant tracker
-        </Badge>
-        <div className="flex items-start gap-3">
-          <Image
-            src="/brand/clutchboard-mark.svg"
-            alt="Clutchboard logo"
-            width={40}
-            height={40}
-            className="rounded-xl"
-            priority
-          />
-          <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-zinc-500">Clutchboard</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Personal Command Center</h2>
-          </div>
+      {/* Brand */}
+      <div className="flex items-center gap-2.5 px-1">
+        <div className="flex size-9 items-center justify-center rounded-xl bg-rose-600 text-lg font-black text-white shadow-[0_8px_24px_rgba(244,63,94,0.4)]">
+          C
+        </div>
+        <span className="text-lg font-extrabold tracking-tight text-white">
+          CLUTCH<span className="text-rose-500">BOARD</span>
+        </span>
+      </div>
+
+      {/* Profile */}
+      <div className="mt-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[radial-gradient(circle_at_top,#fb7185,transparent_60%),linear-gradient(135deg,#1e293b,#0ea5e9)] text-base font-bold text-white">
+          {initial}
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-white">{profile?.name ?? "Invitado"}</p>
+          <p className="flex items-center gap-1.5 text-xs text-zinc-400">
+            <span
+              className={cn(
+                "size-1.5 rounded-full",
+                profile?.connected ? "bg-emerald-400" : "bg-zinc-500",
+              )}
+            />
+            {profile?.connected ? "Conectado a Riot" : "Sin conexión"}
+          </p>
         </div>
       </div>
 
-      <nav className="space-y-2">
-        {items.map((item) => {
-          const Icon = item.icon
-          const active = pathname === item.href
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition",
-                active
-                  ? "bg-white text-black shadow-[0_0_40px_rgba(255,70,85,0.15)]"
-                  : "text-zinc-300 hover:bg-white/5 hover:text-white",
-              )}
-            >
-              <Icon className="size-4" />
-              {item.label}
-            </Link>
-          )
-        })}
+      {/* Navigation */}
+      <nav className="mt-6 space-y-1">
+        {primaryItems.map((item) => (
+          <NavLink key={item.href} pathname={pathname} {...item} />
+        ))}
+        <div className="my-3 border-t border-white/10" />
+        {secondaryItems.map((item) => (
+          <NavLink key={item.href} pathname={pathname} {...item} />
+        ))}
       </nav>
 
-      <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-4">
-        <div className="flex items-center gap-3 text-sm text-zinc-200">
-          <Shield className="size-4 text-emerald-300" />
-          Credenciales y tokens solo en servidor
+      {/* Premium */}
+      <div className="mt-auto rounded-2xl border border-rose-500/20 bg-[linear-gradient(160deg,rgba(244,63,94,0.12),rgba(0,0,0,0.2))] p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-white">
+          <Crown className="size-4 text-amber-300" /> Premium
         </div>
-        <p className="mt-2 text-sm text-zinc-400">
-          La app separa datos oficiales de Riot y métricas derivadas para que el análisis sea explicable.
-        </p>
+        <p className="mt-1 text-xs text-zinc-400">Desbloquea análisis avanzados y mucho más.</p>
+        <Link
+          href="/settings"
+          className="mt-3 block rounded-xl bg-rose-600 py-2 text-center text-sm font-semibold text-white transition hover:bg-rose-500"
+        >
+          Ver planes
+        </Link>
       </div>
     </aside>
   )
