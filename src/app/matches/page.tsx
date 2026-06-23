@@ -1,46 +1,48 @@
+import { redirect } from "next/navigation"
+
 import { AppShell } from "@/components/app-shell"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { SectionHeader } from "@/components/dashboard/section-header"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { MatchTable } from "@/features/matches/match-table"
-import { requireSession } from "@/server/auth/session"
-import { getMatchesData } from "@/server/services/match-service"
+import { MatchHistory } from "@/components/matches/match-history"
+import { env } from "@/lib/env"
+import { getCurrentSession } from "@/server/auth/session"
+import { getImprovementData } from "@/server/services/improvement-service"
 
-export default async function MatchesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ periodDays?: string; queue?: string }>
-}) {
-  const session = await requireSession()
-  const params = await searchParams
-  const periodDays = Number(params.periodDays ?? "60")
-  const queue = params.queue
-  const { matches } = await getMatchesData(
-    session.puuid,
-    Number.isFinite(periodDays) ? Math.max(7, Math.min(periodDays, 180)) : 60,
-    queue,
-  )
+export default async function MatchesPage() {
+  const session = await getCurrentSession()
+  if (!session && !env.enableMockRiot) {
+    redirect("/login")
+  }
+
+  const { analytics } = await getImprovementData(session?.puuid)
+  const matches = analytics.filteredMatches
+
+  const bestMap = [...analytics.mapStats]
+    .filter((map) => (map.sampleSize ?? 0) >= 4)
+    .sort((a, b) => b.winRate - a.winRate)[0]
+  const topAgent = [...analytics.agentStats].sort((a, b) => b.matches - a.matches)[0]
+  const lastSyncedAt = new Date().toISOString()
 
   return (
-    <AppShell title="Matches" subtitle="Historial, filtros y comparativas" connected lastSyncedAt={new Date().toISOString()}>
-      <Card className="glass-panel text-white">
-        <CardHeader>
-          <SectionHeader
-            title="Historial reciente"
-            description="Post-match analytics personal. No scouting pre-game ni exposicion de datos sensibles."
-          />
-        </CardHeader>
-        <CardContent>
-          {matches.length ? (
-            <MatchTable matches={matches} />
-          ) : (
-            <EmptyState
-              title="No hay partidas para mostrar"
-              description="Cuando Riot sincronice nuevas partidas, apareceran aqui con sus metricas clave."
-            />
-          )}
-        </CardContent>
-      </Card>
+    <AppShell
+      title="Historial de partidas"
+      subtitle="Post-match analytics personal. No scouting pre-game."
+      connected
+      lastSyncedAt={lastSyncedAt}
+    >
+      {matches.length ? (
+        <MatchHistory
+          matches={matches}
+          summary={analytics.summary}
+          bestMap={bestMap ?? null}
+          topAgent={topAgent ?? null}
+          lastSyncedAt={lastSyncedAt}
+        />
+      ) : (
+        <EmptyState
+          title="No hay partidas para mostrar"
+          description="Cuando Riot sincronice nuevas partidas, aparecerán aquí con sus métricas clave."
+        />
+      )}
     </AppShell>
   )
 }

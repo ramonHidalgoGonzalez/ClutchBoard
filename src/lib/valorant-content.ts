@@ -49,7 +49,9 @@ export function cleanMapName(value: string) {
     return trimmed
   }
 
-  return last.replace(/[_-]+/g, " ").trim() || "Unknown Map"
+  // Drop a trailing image extension (mock catalogs key maps by asset path).
+  const withoutExt = last.replace(/\.(png|jpe?g|webp|gif|svg)$/i, "")
+  return withoutExt.replace(/[_-]+/g, " ").trim() || "Unknown Map"
 }
 
 export function buildMapLookupKeys(...values: Array<string | null | undefined>) {

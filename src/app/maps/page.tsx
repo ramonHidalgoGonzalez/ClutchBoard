@@ -1,9 +1,12 @@
+import { redirect } from "next/navigation"
+
 import { AppShell } from "@/components/app-shell"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { MapHeroCard } from "@/components/dashboard/map-hero-card"
+import { MapPoolCard } from "@/components/maps/map-pool-card"
 import { SectionHeader } from "@/components/dashboard/section-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { requireSession } from "@/server/auth/session"
+import { env } from "@/lib/env"
+import { getCurrentSession } from "@/server/auth/session"
 import { getImprovementData } from "@/server/services/improvement-service"
 
 export default async function MapsPage({
@@ -11,10 +14,14 @@ export default async function MapsPage({
 }: {
   searchParams: Promise<{ order?: string }>
 }) {
-  const session = await requireSession()
+  const session = await getCurrentSession()
+  if (!session && !env.enableMockRiot) {
+    redirect("/login")
+  }
+
   const params = await searchParams
   const order = params.order ?? "matches"
-  const { analytics } = await getImprovementData(session.puuid)
+  const { analytics } = await getImprovementData(session?.puuid)
 
   const maps = [...analytics.mapStats].sort((a, b) => {
     if (order === "winrate") {
@@ -23,15 +30,17 @@ export default async function MapsPage({
     return b.matches - a.matches
   })
 
-  const bestMap = maps.filter((map) => (map.sampleSize ?? 0) >= 4).sort((a, b) => b.winRate - a.winRate)[0]
-  const worstMap = maps.filter((map) => (map.sampleSize ?? 0) >= 4).sort((a, b) => a.winRate - b.winRate)[0]
+  const bestMap = [...analytics.mapStats]
+    .filter((map) => (map.sampleSize ?? 0) >= 4)
+    .sort((a, b) => b.winRate - a.winRate)[0]
+  const bestKey = bestMap?.mapId || bestMap?.mapName
 
   return (
-    <AppShell title="Maps" subtitle="Analitica por mapa" connected>
+    <AppShell title="Maps" subtitle="Analítica por mapa" connected>
       <div className="space-y-5">
         <SectionHeader
           title="Rendimiento por mapa"
-          description="Metricas post-match por battleground con miniaturas oficiales cuando estan disponibles."
+          description="Métricas post-match por battleground. Haz clic en un mapa para ver el perfil completo."
           actions={
             <form>
               <Select name="order" defaultValue={order}>
@@ -47,27 +56,29 @@ export default async function MapsPage({
           }
         />
 
-        {bestMap || worstMap ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-emerald-300/25 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-              Mejor mapa: {bestMap ? `${bestMap.mapName} (${bestMap.winRate.toFixed(1)}%)` : "Datos insuficientes"}
-            </div>
-            <div className="rounded-2xl border border-rose-300/25 bg-rose-500/10 p-4 text-sm text-rose-100">
-              Peor mapa: {worstMap ? `${worstMap.mapName} (${worstMap.winRate.toFixed(1)}%)` : "Datos insuficientes"}
-            </div>
-          </div>
-        ) : null}
-
         {maps.length ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {maps.map((map) => (
-              <MapHeroCard key={map.mapName} map={map} />
-            ))}
+          <div className="space-y-5">
+            {maps.map((map) => {
+              const mapMatches = analytics.filteredMatches.filter(
+                (m) => (m.mapId || m.mapName) === (map.mapId || map.mapName),
+              )
+              const isBest = (map.mapId || map.mapName) === bestKey
+
+              return (
+                <MapPoolCard
+                  key={map.mapId || map.mapName}
+                  map={map}
+                  matches={mapMatches}
+                  allMatches={analytics.filteredMatches}
+                  isBest={isBest}
+                />
+              )
+            })}
           </div>
         ) : (
           <EmptyState
             title="Sin datos de mapas"
-            description="Necesitamos mas partidas para calcular fortalezas y debilidades por mapa."
+            description="Necesitamos más partidas para calcular fortalezas y debilidades por mapa."
           />
         )}
       </div>

@@ -1,21 +1,29 @@
+import { redirect } from "next/navigation"
+
 import { AppShell } from "@/components/app-shell"
-import { AgentPortraitCard } from "@/components/dashboard/agent-portrait-card"
+import { AgentPoolCard } from "@/components/agents/agent-pool-card"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { SectionHeader } from "@/components/dashboard/section-header"
-import { getImprovementData } from "@/server/services/improvement-service"
-import { getCurrentSession } from "@/server/auth/session"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { env } from "@/lib/env"
+import { getCurrentSession } from "@/server/auth/session"
+import { getContentCatalog, resolveAgentContent } from "@/server/services/content-service"
+import { getImprovementData } from "@/server/services/improvement-service"
 
 export default async function AgentsPage({
   searchParams,
 }: {
   searchParams: Promise<{ order?: string }>
 }) {
-  const params = await searchParams
   const session = await getCurrentSession()
-  const puuid = session?.puuid
-  const { analytics } = await getImprovementData(puuid)
+  if (!session && !env.enableMockRiot) {
+    redirect("/login")
+  }
+
+  const params = await searchParams
   const order = params.order ?? "matches"
+  const { analytics } = await getImprovementData(session?.puuid)
+  const catalog = await getContentCatalog()
 
   const agents = [...analytics.agentStats].sort((a, b) => {
     if (order === "winrate") {
@@ -27,12 +35,15 @@ export default async function AgentsPage({
     return b.matches - a.matches
   })
 
+  const topAgentKey = [...analytics.agentStats].sort((a, b) => b.matches - a.matches)[0]
+  const topKey = topAgentKey?.agentId || topAgentKey?.agentName
+
   return (
-    <AppShell title="Agents" subtitle="Analitica por agente" connected>
+    <AppShell title="Agents" subtitle="Analítica por agente" connected>
       <div className="space-y-5">
         <SectionHeader
           title="Pool de agentes"
-          description="Rendimiento real por agente con soporte de imagen oficial cuando Riot la expone."
+          description="Rendimiento real por agente. Haz clic en un agente para ver su perfil completo."
           actions={
             <form>
               <Select name="order" defaultValue={order}>
@@ -56,16 +67,29 @@ export default async function AgentsPage({
         ) : null}
 
         {agents.length ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="space-y-5">
             {agents.map((agent) => {
-              const agentMatches = analytics.filteredMatches.filter((m) => (m.agentName || m.agentId) === (agent.agentName || agent.agentId))
-              return <AgentPortraitCard key={agent.agentName} agent={agent} matches={agentMatches.slice(0, 5)} />
+              const agentMatches = analytics.filteredMatches.filter(
+                (m) => (m.agentId || m.agentName) === (agent.agentId || agent.agentName),
+              )
+              const role = resolveAgentContent(catalog, agent.agentId, agent.agentName)?.role
+              const isTop = (agent.agentId || agent.agentName) === topKey
+
+              return (
+                <AgentPoolCard
+                  key={agent.agentId || agent.agentName}
+                  agent={agent}
+                  matches={agentMatches}
+                  role={role}
+                  isTop={isTop}
+                />
+              )
             })}
           </div>
         ) : (
           <EmptyState
             title="Sin datos de agentes"
-            description="Juega mas partidas para ver analitica por agente y recomendaciones de coach."
+            description="Juega más partidas para ver analítica por agente y recomendaciones de coach."
           />
         )}
       </div>

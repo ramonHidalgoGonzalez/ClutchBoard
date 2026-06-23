@@ -47,7 +47,7 @@ function buildContentLookups(content: RiotContentDto): ContentLookups {
     }
 
     const record = {
-      name: map.displayName ?? resolveCanonicalMapName(map.mapUrl ?? map.assetPath ?? map.name),
+      name: map.displayName ?? resolveCanonicalMapName(map.mapUrl ?? map.name),
       imageUrl: map.splash ?? null,
       iconUrl: map.listViewIcon ?? null,
     }

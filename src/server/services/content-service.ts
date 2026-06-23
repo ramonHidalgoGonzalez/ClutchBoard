@@ -72,8 +72,9 @@ function toMapContent(index: number, entry: {
   mapUrl?: string | null
   coordinates?: string | null
 }): MapContent {
-  const displayName =
-    entry.displayName || resolveCanonicalMapName(entry.mapUrl || entry.assetPath || entry.name)
+  // Display name comes from the human-readable name; the asset path is only a
+  // lookup key (it can be an internal codename or, in mocks, an image path).
+  const displayName = entry.displayName || resolveCanonicalMapName(entry.mapUrl || entry.name)
 
   return {
     id: entry.id,
