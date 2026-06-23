@@ -84,7 +84,7 @@ describe("VisualAgentCard", () => {
   it("renders a visual card with portrait, name and stats", () => {
     render(<VisualAgentCard agent={agent} matches={[match()]} role="Duelist" />)
     const img = screen.getByAltText("Jett") as HTMLImageElement
-    expect(img.getAttribute("src")).toContain("/valorant/agents/card/jett.webp")
+    expect(img.getAttribute("src")).toContain("/valorant/agents/hero/jett.webp")
     expect(screen.getByText("Jett")).toBeInTheDocument()
     expect(screen.getByText("63%")).toBeInTheDocument() // winrate rounded
     expect(screen.getByText("comfort")).toBeInTheDocument()

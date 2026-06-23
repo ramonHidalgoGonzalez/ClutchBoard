@@ -36,17 +36,17 @@ export function VisualAgentCard({
       href={`/agents/${slug}`}
       className="premium-card group relative flex flex-col overflow-hidden transition-transform duration-300 hover:-translate-y-0.5"
     >
-      <div className="relative h-48 overflow-hidden">
+      <div className="relative h-56 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#fb718533,transparent_55%),linear-gradient(160deg,#1e293b,#0b1020)]" />
-        {img.card ?? agent.agentImageUrl ? (
+        {img.hero ?? img.card ?? agent.agentImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={img.card ?? agent.agentImageUrl ?? undefined}
+            src={img.hero ?? img.card ?? agent.agentImageUrl ?? undefined}
             alt={agent.agentName}
-            className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
+            className="absolute inset-x-0 bottom-0 mx-auto h-[122%] object-contain object-bottom drop-shadow-2xl transition-transform duration-300 group-hover:scale-105"
           />
         ) : null}
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgba(9,9,11,0.92))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(9,9,11,0.92))]" />
         <div className="absolute right-3 top-3 flex flex-col items-end gap-1">
           {agent.comfortPick ? (
             <Badge className="border-emerald-400/30 bg-emerald-500/20 text-emerald-100">comfort</Badge>
