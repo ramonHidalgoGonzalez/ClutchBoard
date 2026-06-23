@@ -1,3 +1,5 @@
+import { cache } from "react"
+
 import {
   calculateAverageAcs,
   calculateAverageDamage,
@@ -236,15 +238,19 @@ function enrichMatchesWithContent(
   })
 }
 
-/** All synced matches, enriched with content + act metadata (no scope filter). */
-export async function getEnrichedMatches(puuid?: string): Promise<MatchPerformance[]> {
+/**
+ * All synced matches, enriched with content + act metadata (no scope filter).
+ * Wrapped in React cache() so multiple callers in the same request (page +
+ * insights + acts) share one fetch+enrich instead of recomputing per caller.
+ */
+export const getEnrichedMatches = cache(async (puuid?: string): Promise<MatchPerformance[]> => {
   const rawMatches = env.enableMockRiot
     ? await riotAdapter.getNormalizedMatches()
     : await riotAdapter.getNormalizedMatches(puuid)
   const catalog = await getContentCatalog()
   const acts = await getActsCatalog()
   return enrichMatchesWithContent(rawMatches, catalog, acts)
-}
+})
 
 /** Build the analytics payload from an already-enriched (and scoped) match set. */
 export function buildScopedAnalytics(filteredMatches: MatchPerformance[], periodDays = 60): AnalyticsPayload {

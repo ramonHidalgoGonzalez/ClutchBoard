@@ -1,9 +1,15 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import dynamic from "next/dynamic"
 import { Activity, BarChart3, GitCompare, Map as MapIcon, Swords } from "lucide-react"
 
-import { ComparisonLineChart } from "@/components/comparisons/comparison-line-chart"
+import { ChartSkeleton } from "@/components/charts/chart-skeleton"
+
+const ComparisonLineChart = dynamic(
+  () => import("@/components/comparisons/comparison-line-chart").then((m) => m.ComparisonLineChart),
+  { ssr: false, loading: () => <ChartSkeleton height={280} /> },
+)
 import { ComparisonMetricCard } from "@/components/comparisons/comparison-metric-card"
 import { VersusPanel } from "@/components/comparisons/versus-panel"
 import { WinsLossesPanel } from "@/components/comparisons/wins-losses-panel"

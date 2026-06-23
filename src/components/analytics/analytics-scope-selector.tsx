@@ -1,8 +1,10 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { CalendarRange } from "lucide-react"
+import { CalendarRange, Loader2 } from "lucide-react"
+
+import { cn } from "@/lib/utils"
 
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -39,6 +41,7 @@ export function AnalyticsScopeSelector({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const applied = useRef(false)
+  const [isPending, startTransition] = useTransition()
 
   // Restore the last chosen scope when arriving without an explicit one.
   useEffect(() => {
@@ -63,14 +66,23 @@ export function AnalyticsScopeSelector({
       // ignore
     }
     const params = new URLSearchParams(serializeScope(next))
-    router.push(`${pathname}?${params.toString()}`)
+    startTransition(() => router.push(`${pathname}?${params.toString()}`))
   }
 
   return (
     <div className="flex items-center gap-2">
-      <CalendarRange className="size-4 text-zinc-500" />
+      {isPending ? (
+        <Loader2 className="size-4 animate-spin text-sky-400" />
+      ) : (
+        <CalendarRange className="size-4 text-zinc-500" />
+      )}
       <Select value={scopeToKey(scope)} onValueChange={(v) => navigate(keyToScope(v))}>
-        <SelectTrigger className="w-56 border-white/15 bg-black/30 text-zinc-100">
+        <SelectTrigger
+          className={cn(
+            "w-56 border-white/15 bg-black/30 text-zinc-100 transition-opacity",
+            isPending && "opacity-60",
+          )}
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

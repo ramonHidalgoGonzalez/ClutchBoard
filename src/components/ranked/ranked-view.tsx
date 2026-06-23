@@ -1,12 +1,21 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Activity, Clock, Crosshair, Star, Target, TrendingUp, Trophy } from "lucide-react"
 
 import { RankBadge } from "@/components/ranked/rank-badge"
-import { RankDistributionDonut } from "@/components/ranked/rank-distribution-donut"
-import { RankedProgressionChart } from "@/components/ranked/ranked-progression-chart"
+import { ChartSkeleton, DonutSkeleton } from "@/components/charts/chart-skeleton"
+
+const RankedProgressionChart = dynamic(
+  () => import("@/components/ranked/ranked-progression-chart").then((m) => m.RankedProgressionChart),
+  { ssr: false, loading: () => <ChartSkeleton height={220} /> },
+)
+const RankDistributionDonut = dynamic(
+  () => import("@/components/ranked/rank-distribution-donut").then((m) => m.RankDistributionDonut),
+  { ssr: false, loading: () => <DonutSkeleton /> },
+)
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { AgentAvatar } from "@/components/dashboard/agent-avatar"
 import { MapThumbnail } from "@/components/dashboard/map-thumbnail"

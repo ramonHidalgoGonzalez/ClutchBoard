@@ -4,7 +4,7 @@ import { Crosshair, Shield, Star, Swords, Target, Trophy } from "lucide-react"
 
 import { AppShell } from "@/components/app-shell"
 import { getLocale, getTranslations } from "@/i18n/get-dictionary"
-import { DashboardTrendChart } from "@/components/dashboard/dashboard-trend-chart"
+import { LazyResultsDonut, LazyTrendChart } from "@/components/dashboard/lazy-charts"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { EntityHeroMini } from "@/components/dashboard/entity-hero-mini"
 import { QuickInsights } from "@/components/dashboard/quick-insights"
@@ -14,7 +14,6 @@ import { AnalyticsScopeSelector } from "@/components/analytics/analytics-scope-s
 import { buildRankedOverview } from "@/server/valorant/analytics/ranked"
 import { getScopeLabel, resolveScopeFromSearchParams } from "@/server/valorant/analytics/scope-filter"
 import { RolePerformance, type RoleRow } from "@/components/dashboard/role-performance"
-import { ResultsDonut } from "@/components/dashboard/results-donut"
 import { WinrateDonut } from "@/components/stats/winrate-donut"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -211,7 +210,7 @@ export default async function DashboardPage({
                   <CardContent className="space-y-3 p-5">
                     <p className="text-sm font-semibold text-zinc-300">Tendencia de rendimiento (60 días)</p>
                     {analytics.trend.length >= 2 ? (
-                      <DashboardTrendChart data={analytics.trend} />
+                      <LazyTrendChart data={analytics.trend} />
                     ) : (
                       <p className="py-10 text-center text-sm text-zinc-500">
                         Necesitas más partidas para la tendencia.
@@ -222,7 +221,7 @@ export default async function DashboardPage({
                 <Card className="glass-panel text-white">
                   <CardContent className="space-y-4 p-5">
                     <p className="text-sm font-semibold text-zinc-300">Distribución de resultados</p>
-                    <ResultsDonut wins={wins} losses={losses} draws={draws} />
+                    <LazyResultsDonut wins={wins} losses={losses} draws={draws} />
                   </CardContent>
                 </Card>
               </div>
