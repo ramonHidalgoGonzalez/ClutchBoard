@@ -37,16 +37,16 @@ export function EntityHeroMini({ kind, eyebrow, name, imageUrl, winRate, matches
     return (
       <Link href={href} className="group relative block h-44 overflow-hidden rounded-2xl border border-white/10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_left,#1e1b4b,#0b1020_70%)]" />
+        {/* Left scrim sits BELOW the character so the artwork stays bright. */}
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,10,18,0.92)_0%,rgba(8,10,18,0.5)_32%,rgba(8,10,18,0)_62%)]" />
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imageUrl}
             alt={name}
-            className="agent-hero-image absolute bottom-0 right-0 h-[125%] w-[55%] transition-transform duration-300 group-hover:scale-105"
+            className="agent-hero-image absolute bottom-0 right-0 h-[115%] max-w-[58%] transition-transform duration-300 group-hover:scale-105"
           />
         ) : null}
-        {/* light left scrim so the character stays bright on the right */}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,10,18,0.92)_0%,rgba(8,10,18,0.45)_45%,rgba(8,10,18,0.12)_100%)]" />
         <Overlay winRate={winRate} matches={matches} eyebrow={eyebrow} name={name} star={star} />
       </Link>
     )
