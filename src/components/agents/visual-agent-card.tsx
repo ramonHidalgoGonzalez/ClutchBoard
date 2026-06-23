@@ -3,6 +3,7 @@ import Link from "next/link"
 import { resolveRole } from "@/components/agents/role-icon"
 import { Badge } from "@/components/ui/badge"
 import { summarizeMatches } from "@/analytics/entity-stats"
+import { resolveAgentRole } from "@/lib/agent-roles"
 import { toSlug } from "@/lib/slug"
 import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
 import type { AgentBreakdown, MatchPerformance } from "@/types/domain"
@@ -27,7 +28,9 @@ export function VisualAgentCard({
 }) {
   const slug = toSlug(agent.agentName || agent.agentId || "agent")
   const img = getAgentAssets(agent.agentName)
-  const roleInfo = resolveRole(role)
+  // Official content has no role → fall back to the static agent→role map.
+  const roleLabel = resolveAgentRole(agent.agentName, role)
+  const roleInfo = resolveRole(roleLabel ?? "Agente")
   const RoleGlyph = roleInfo.icon
   const summary = summarizeMatches(matches)
 
@@ -43,7 +46,7 @@ export function VisualAgentCard({
           <img
             src={img.hero ?? img.card ?? agent.agentImageUrl ?? undefined}
             alt={agent.agentName}
-            className="absolute inset-x-0 bottom-0 mx-auto h-[122%] object-contain object-bottom drop-shadow-2xl transition-transform duration-300 group-hover:scale-105"
+            className="absolute inset-x-0 bottom-0 mx-auto h-[132%] object-contain object-bottom drop-shadow-2xl transition-transform duration-300 group-hover:scale-105"
           />
         ) : null}
         <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(9,9,11,0.92))]" />
