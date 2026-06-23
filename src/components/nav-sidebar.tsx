@@ -21,7 +21,7 @@ const primaryItems = [
   { href: "/agents", label: "Agents", icon: Bot },
   { href: "/maps", label: "Maps", icon: MapIcon },
   { href: "/improvement", label: "Improvement", icon: TrendingUp },
-  { href: "/comparativas", label: "Comparativas", icon: BarChart3 },
+  { href: "/comparisons", label: "Comparativas", icon: BarChart3 },
   { href: "/notas", label: "Notas de partida", icon: NotebookPen },
 ]
 
