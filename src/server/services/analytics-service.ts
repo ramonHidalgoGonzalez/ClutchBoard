@@ -18,7 +18,8 @@ import type {
   MatchPerformance,
   RecentComparison,
 } from "@/types/domain"
-import { getActsCatalog, getContentCatalog, resolveAgentContent, resolveMapContent } from "@/server/services/content-service"
+import { getContentCatalog, resolveAgentContent, resolveMapContent } from "@/server/services/content-service"
+import { classifyMatchAct, formatActLabel, getActsById, getValorantActs, type ValorantAct } from "@/server/valorant/content/acts"
 import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
 import { getMapAssets } from "@/server/valorant/assets/map-assets"
 
@@ -200,12 +201,15 @@ function buildSampleWarnings(matches: MatchPerformance[], mapStats: MapBreakdown
 function enrichMatchesWithContent(
   matches: MatchPerformance[],
   catalog: Awaited<ReturnType<typeof getContentCatalog>>,
-  acts?: Map<string, { id: string; name: string; isActive: boolean }>,
+  actsById?: Map<string, ValorantAct>,
+  actsList?: ValorantAct[],
 ) {
+  const byId = actsById ?? new Map<string, ValorantAct>()
   return matches.map((match) => {
     const agentContent = resolveAgentContent(catalog, match.agentId, match.agentName)
     const mapContent = resolveMapContent(catalog, match.mapId, match.mapName)
-    const actMeta = match.seasonId && acts ? acts.get(match.seasonId.trim().toLowerCase()) : undefined
+    const actMeta = classifyMatchAct(match.seasonId, match.startedAt, byId, actsList)
+    const seasonId = match.seasonId?.trim() || null
     const agentName = agentContent?.displayName || match.agentName || "Unknown Agent"
     const mapName = mapContent?.displayName || match.mapName || "Unknown Map"
     // characterId -> displayName -> slug -> curated local asset (per context).
@@ -231,8 +235,10 @@ function enrichMatchesWithContent(
       mapThumbImageUrl: map.thumb ?? mapSplash,
       mapBannerImageUrl: map.banner ?? mapSplash,
       mapCardImageUrl: map.card ?? mapSplash,
-      actId: match.seasonId ?? null,
-      actName: actMeta?.name ?? null,
+      actId: actMeta?.id ?? seasonId,
+      actName: actMeta?.actName ?? null,
+      actLabel: actMeta ? formatActLabel(actMeta, "es") : null,
+      episodeName: actMeta?.episodeName ?? null,
       isCurrentAct: actMeta?.isActive ?? false,
     }
   })
@@ -248,8 +254,8 @@ export const getEnrichedMatches = cache(async (puuid?: string): Promise<MatchPer
     ? await riotAdapter.getNormalizedMatches()
     : await riotAdapter.getNormalizedMatches(puuid)
   const catalog = await getContentCatalog()
-  const acts = await getActsCatalog()
-  return enrichMatchesWithContent(rawMatches, catalog, acts)
+  const [actsById, actsList] = await Promise.all([getActsById(), getValorantActs()])
+  return enrichMatchesWithContent(rawMatches, catalog, actsById, actsList)
 })
 
 /** Build the analytics payload from an already-enriched (and scoped) match set. */

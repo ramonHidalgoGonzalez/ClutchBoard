@@ -43,6 +43,7 @@ export type MatchPerformance = {
   seasonId?: string | null
   actId?: string | null
   actName?: string | null
+  actLabel?: string | null
   episodeName?: string | null
   isCurrentAct?: boolean
   kills: number

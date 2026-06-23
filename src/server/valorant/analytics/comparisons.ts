@@ -190,6 +190,36 @@ function winRateSplits(
     .sort((a, b) => b.winRate - a.winRate)
 }
 
+// ---- Act vs Act (competitive only) ----
+
+export type ActComparison = {
+  available: boolean
+  aGames: number
+  bGames: number
+  metrics: ComparisonMetric[]
+}
+
+function isCompetitive(m: MatchPerformance): boolean {
+  return (m.queueId || m.queueName || "").toLowerCase().includes("competitive")
+}
+
+export function buildActComparison(
+  matches: MatchPerformance[],
+  actIdA: string,
+  actIdB: string,
+): ActComparison {
+  const ranked = matches.filter(isCompetitive)
+  const a = ranked.filter((m) => m.actId === actIdA)
+  const b = ranked.filter((m) => m.actId === actIdB)
+  return {
+    available: a.length > 0 && b.length > 0,
+    aGames: a.length,
+    bGames: b.length,
+    // "current" = act A, "previous" = act B, so deltas read A vs B.
+    metrics: metricsFor(aggregate(a), aggregate(b)),
+  }
+}
+
 // ---- Period: recent N vs previous N (by count or by day window) ----
 
 export type PeriodMode = "last5" | "last10" | "last20" | "days7" | "days30"

@@ -34,6 +34,7 @@ export async function getImprovementData(puuid?: string, scope: AnalyticsScope =
       ? buildCompleteMapBreakdown(matches, filterStandardMaps(content.maps.map((item) => ({ name: item.displayName }))))
       : analytics.mapStats,
     matches,
+    allMatches: enriched,
     content,
     analytics,
     acts,

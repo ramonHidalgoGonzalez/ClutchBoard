@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   serializeScope,
+  NO_ACT_ID,
   type AnalyticsScope,
   type ScopeActOption,
 } from "@/server/valorant/analytics/scope-filter"
@@ -24,8 +25,12 @@ function scopeToKey(scope: AnalyticsScope): string {
 function keyToScope(key: string): AnalyticsScope {
   if (key.startsWith("act:")) return { type: "act", actId: key.slice(4) }
   if (key.startsWith("last:")) return { type: "last_matches", count: Number(key.slice(5)) as 10 | 20 | 50 | 100 }
-  if (key === "current_act" || key === "previous_acts" || key === "all") return { type: key }
+  if (key === "current_act" || key === "previous_acts" || key === "all" || key === "no_act") return { type: key }
   return { type: "all" }
+}
+
+function actOptionKey(actId: string): string {
+  return actId === NO_ACT_ID ? "no_act" : `act:${actId}`
 }
 
 export function AnalyticsScopeSelector({
@@ -90,12 +95,13 @@ export function AnalyticsScopeSelector({
           <SelectItem value="all">Todas las partidas sincronizadas</SelectItem>
           <SelectItem value="previous_acts">Actos anteriores</SelectItem>
           <SelectSeparator />
+          <SelectItem value="last:10">Últimas 10</SelectItem>
           <SelectItem value="last:20">Últimas 20</SelectItem>
           <SelectItem value="last:50">Últimas 50</SelectItem>
           <SelectItem value="last:100">Últimas 100</SelectItem>
           {acts.length ? <SelectSeparator /> : null}
           {acts.map((a) => (
-            <SelectItem key={a.actId} value={`act:${a.actId}`}>
+            <SelectItem key={a.actId} value={actOptionKey(a.actId)}>
               {a.label}
               {a.isCurrent ? " · actual" : ""} ({a.games})
             </SelectItem>

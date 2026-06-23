@@ -54,7 +54,15 @@ const METRIC_ICON: Record<string, typeof Crosshair> = {
   duration: Clock,
 }
 
-export function RankedView({ matches, now }: { matches: MatchPerformance[]; now: number }) {
+export function RankedView({
+  matches,
+  now,
+  rankLabel = "Rango actual",
+}: {
+  matches: MatchPerformance[]
+  now: number
+  rankLabel?: string
+}) {
   const [tab, setTab] = useState("act")
   const [progMode, setProgMode] = useState<"index" | "date">("index")
 
@@ -117,7 +125,7 @@ export function RankedView({ matches, now }: { matches: MatchPerformance[]; now:
           <div className="flex items-center gap-4">
             <RankBadge tierId={overview.currentTierId} size={96} />
             <div>
-              <p className="text-[11px] uppercase tracking-[0.14em] text-zinc-400">Rango actual</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-zinc-400">{rankLabel}</p>
               <p className="text-2xl font-extrabold text-violet-200">{overview.currentTierName ?? "Rango no disponible"}</p>
               <p className="mt-1 text-xs text-zinc-400">{overview.rrAvailable ? `${overview.rr} / 100 RR` : "RR no disponible"}</p>
               <div className="mt-3 flex gap-4 text-sm">

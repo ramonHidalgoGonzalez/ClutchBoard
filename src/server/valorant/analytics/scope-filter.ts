@@ -9,7 +9,10 @@ export type AnalyticsScope =
   | { type: "current_act" }
   | { type: "previous_acts" }
   | { type: "act"; actId: string }
+  | { type: "no_act" }
   | { type: "last_matches"; count: LastCount }
+
+export const NO_ACT_ID = "__no_act__"
 
 export type ScopeActOption = { actId: string; label: string; isCurrent: boolean; games: number }
 
@@ -24,6 +27,7 @@ export function resolveScopeFromSearchParams(sp: Record<string, string | string[
   if (scope === "all") return { type: "all" }
   if (scope === "current_act") return { type: "current_act" }
   if (scope === "previous_acts") return { type: "previous_acts" }
+  if (scope === "no_act") return { type: "no_act" }
   if (scope === "act") {
     const actId = get("actId")
     if (actId) return { type: "act", actId }
@@ -42,6 +46,8 @@ export function serializeScope(scope: AnalyticsScope): Record<string, string> {
       return { scope: "act", actId: scope.actId }
     case "last_matches":
       return { scope: "last_matches", count: String(scope.count) }
+    case "no_act":
+      return { scope: "no_act" }
     default:
       return { scope: scope.type }
   }
@@ -68,6 +74,8 @@ export function filterMatchesByScope(matches: MatchPerformance[], scope: Analyti
     }
     case "act":
       return matches.filter((m) => m.actId === scope.actId)
+    case "no_act":
+      return matches.filter((m) => !m.actId)
     case "last_matches":
       return recentFirst(matches).slice(0, scope.count)
     default:
@@ -98,20 +106,25 @@ export function getAvailableActScopes(matches: MatchPerformance[]): ScopeActOpti
     seen.add(m.actId)
     result.push({
       actId: m.actId,
-      label: m.actName || "Sin acto detectado",
+      label: m.actLabel || m.actName || "Sin acto detectado",
       isCurrent: m.actId === cur,
       games: groups.get(m.actId)?.length ?? 0,
     })
+  }
+  // Trailing bucket for matches whose act could not be detected.
+  const noAct = matches.filter((m) => !m.actId).length
+  if (noAct > 0) {
+    result.push({ actId: NO_ACT_ID, label: "Sin acto detectado", isCurrent: false, games: noAct })
   }
   return result
 }
 
 const STATIC_LABELS: Record<Locale, Record<string, string>> = {
-  es: { all: "Todas las partidas sincronizadas", current_act: "Acto actual", previous_acts: "Actos anteriores", last: "Últimas {n}" },
-  en: { all: "All synced matches", current_act: "Current act", previous_acts: "Previous acts", last: "Last {n}" },
-  pt: { all: "Todas as partidas sincronizadas", current_act: "Ato atual", previous_acts: "Atos anteriores", last: "Últimas {n}" },
-  fr: { all: "Toutes les parties synchronisées", current_act: "Acte actuel", previous_acts: "Actes précédents", last: "{n} dernières" },
-  de: { all: "Alle synchronisierten Spiele", current_act: "Aktueller Akt", previous_acts: "Vorherige Akte", last: "Letzte {n}" },
+  es: { all: "Todas las partidas sincronizadas", current_act: "Acto actual", previous_acts: "Actos anteriores", no_act: "Sin acto detectado", last: "Últimas {n}" },
+  en: { all: "All synced matches", current_act: "Current act", previous_acts: "Previous acts", no_act: "No act detected", last: "Last {n}" },
+  pt: { all: "Todas as partidas sincronizadas", current_act: "Ato atual", previous_acts: "Atos anteriores", no_act: "Sem ato detectado", last: "Últimas {n}" },
+  fr: { all: "Toutes les parties synchronisées", current_act: "Acte actuel", previous_acts: "Actes précédents", no_act: "Aucun acte détecté", last: "{n} dernières" },
+  de: { all: "Alle synchronisierten Spiele", current_act: "Aktueller Akt", previous_acts: "Vorherige Akte", no_act: "Kein Akt erkannt", last: "Letzte {n}" },
 }
 
 export function getScopeLabel(scope: AnalyticsScope, locale: Locale, acts: ScopeActOption[]): string {
@@ -123,6 +136,8 @@ export function getScopeLabel(scope: AnalyticsScope, locale: Locale, acts: Scope
       return L.current_act
     case "previous_acts":
       return L.previous_acts
+    case "no_act":
+      return L.no_act
     case "last_matches":
       return L.last.replace("{n}", String(scope.count))
     case "act":

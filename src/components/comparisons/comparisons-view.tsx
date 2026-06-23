@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import dynamic from "next/dynamic"
-import { Activity, BarChart3, GitCompare, Map as MapIcon, Swords } from "lucide-react"
+import { Activity, BarChart3, GitCompare, Layers, Map as MapIcon, Swords } from "lucide-react"
 
 import { ChartSkeleton } from "@/components/charts/chart-skeleton"
 
@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import {
+  buildActComparison,
   buildAgentComparison,
   buildMapComparison,
   buildPeriodComparison,
@@ -26,9 +27,18 @@ import {
   type ComparisonMetric,
   type PeriodMode,
 } from "@/server/valorant/analytics/comparisons"
+import type { ScopeActOption } from "@/server/valorant/analytics/scope-filter"
 import type { MatchPerformance } from "@/types/domain"
 
-type Props = { matches: MatchPerformance[]; agents: string[]; maps: string[]; now: number }
+type Props = {
+  matches: MatchPerformance[]
+  /** Full unscoped synced set — act-vs-act compares across acts regardless of the page scope. */
+  allMatches: MatchPerformance[]
+  agents: string[]
+  maps: string[]
+  acts: ScopeActOption[]
+  now: number
+}
 
 const PERIOD_OPTIONS: Array<{ value: PeriodMode; label: string }> = [
   { value: "last5", label: "Últimas 5 partidas" },
@@ -40,6 +50,7 @@ const PERIOD_OPTIONS: Array<{ value: PeriodMode; label: string }> = [
 
 const TABS = [
   { id: "period", label: "Periodo", icon: BarChart3 },
+  { id: "acts", label: "Acto vs Acto", icon: Layers },
   { id: "agents", label: "Agentes", icon: Swords },
   { id: "maps", label: "Mapas", icon: MapIcon },
   { id: "winloss", label: "Victorias vs Derrotas", icon: GitCompare },
@@ -77,14 +88,21 @@ function metric(metrics: ComparisonMetric[], key: string) {
   return metrics.find((m) => m.key === key)
 }
 
-export function ComparisonsView({ matches, agents, maps, now }: Props) {
+export function ComparisonsView({ matches, allMatches, agents, maps, acts, now }: Props) {
+  // Only acts with synced games are comparable.
+  const actOptions = acts.filter((a) => a.games > 0)
   const [active, setActive] = useState("period")
   const [periodMode, setPeriodMode] = useState<PeriodMode>("last20")
   const [agentA, setAgentA] = useState(agents[0] ?? "")
   const [agentB, setAgentB] = useState(agents[1] ?? agents[0] ?? "")
   const [mapA, setMapA] = useState(maps[0] ?? "")
   const [mapB, setMapB] = useState(maps[1] ?? maps[0] ?? "")
+  const [actA, setActA] = useState(actOptions[0]?.actId ?? "")
+  const [actB, setActB] = useState(actOptions[1]?.actId ?? actOptions[0]?.actId ?? "")
   const [trendWindow, setTrendWindow] = useState("10")
+
+  const actCmp = useMemo(() => buildActComparison(allMatches, actA, actB), [allMatches, actA, actB])
+  const actLabel = (id: string) => actOptions.find((a) => a.actId === id)?.label ?? "—"
 
   const period = useMemo(() => buildPeriodComparison(matches, periodMode, now), [matches, periodMode, now])
   const agentCmp = useMemo(() => buildAgentComparison(matches, agentA, agentB), [matches, agentA, agentB])
@@ -161,6 +179,51 @@ export function ComparisonsView({ matches, agents, maps, now }: Props) {
           </div>
         ) : (
           <EmptyState title="Sin datos en este periodo" description="No hay partidas suficientes en ambos bloques." />
+        )}
+      </section>
+
+      {/* Acto vs Acto (ranked) */}
+      <section id="cmp-acts" className="premium-card p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-zinc-300">Acto vs Acto</h3>
+            <p className="text-xs text-zinc-500">
+              {actLabel(actA)} <span className="text-rose-400">VS</span> {actLabel(actB)}
+            </p>
+          </div>
+          {actOptions.length >= 2 ? (
+            <div className="flex items-center gap-2">
+              <PlainSelect
+                value={actA}
+                onChange={setActA}
+                options={actOptions.map((a) => ({ value: a.actId, label: a.label }))}
+                className="w-48 border-white/15 bg-black/30 text-zinc-100"
+              />
+              <PlainSelect
+                value={actB}
+                onChange={setActB}
+                options={actOptions.map((a) => ({ value: a.actId, label: a.label }))}
+                className="w-48 border-white/15 bg-black/30 text-zinc-100"
+              />
+            </div>
+          ) : null}
+        </div>
+        {actOptions.length < 2 ? (
+          <EmptyState
+            title="Necesitas dos actos"
+            description="Necesitas partidas sincronizadas en al menos dos actos para comparar actos."
+          />
+        ) : actCmp.available ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {actCmp.metrics.map((m) => (
+              <ComparisonMetricCard key={m.key} metric={m} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="Sin partidas competitive en ambos actos"
+            description="Elige dos actos con partidas ranked sincronizadas."
+          />
         )}
       </section>
 

@@ -21,7 +21,7 @@ export default async function ComparisonsPage({
   }
 
   const scope = resolveScopeFromSearchParams(await searchParams)
-  const { analytics, acts, syncedTotal } = await getImprovementData(session?.puuid, scope)
+  const { analytics, acts, syncedTotal, allMatches } = await getImprovementData(session?.puuid, scope)
   const matches = analytics.filteredMatches
   const agents = analytics.agentStats.map((a) => a.agentName).filter(Boolean)
   const maps = analytics.mapStats.map((m) => m.mapName).filter(Boolean)
@@ -43,7 +43,14 @@ export default async function ComparisonsPage({
           description="Cambia el filtro de acto o sincroniza más partidas para comparar."
         />
       ) : (
-        <ComparisonsView matches={matches} agents={agents} maps={maps} now={new Date().getTime()} />
+        <ComparisonsView
+          matches={matches}
+          allMatches={allMatches}
+          agents={agents}
+          maps={maps}
+          acts={acts}
+          now={new Date().getTime()}
+        />
       )}
     </AppShell>
   )

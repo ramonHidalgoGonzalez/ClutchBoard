@@ -102,6 +102,21 @@ describe("getAvailableActScopes", () => {
     expect(acts.map((a) => a.actId)).toEqual(["a3", "a2", "a1"])
     expect(acts[0]).toMatchObject({ isCurrent: true, games: 30, label: "Acto 3" })
   })
+
+  it("appends a 'Sin acto detectado' bucket when some matches lack an act", () => {
+    const withUnknown = [...matches, { ...mk(1, "", false, ""), actId: null }]
+    const acts = getAvailableActScopes(withUnknown)
+    const noAct = acts.find((a) => a.label === "Sin acto detectado")
+    expect(noAct?.games).toBe(1)
+  })
+})
+
+describe("no_act scope", () => {
+  it("filters matches without a detected act", () => {
+    const withUnknown = [...matches, { ...mk(1, "", false, ""), actId: null }]
+    expect(filterMatchesByScope(withUnknown, { type: "no_act" }).length).toBe(1)
+    expect(resolveScopeFromSearchParams({ scope: "no_act" })).toEqual({ type: "no_act" })
+  })
 })
 
 describe("resolveScopeFromSearchParams", () => {

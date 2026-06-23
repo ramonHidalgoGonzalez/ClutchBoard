@@ -36,7 +36,15 @@ export type RiotContentDto = {
     mapUrl?: string | null
     coordinates?: string | null
   }>
-  acts: Array<{ id: string; name: string; type: string; isActive: boolean }>
+  acts: Array<{
+    id: string
+    name: string
+    type?: string
+    isActive: boolean
+    localizedNames?: Record<string, string> | null
+    startTime?: string | null
+    endTime?: string | null
+  }>
 }
 
 export type RiotMatchListDto = {
