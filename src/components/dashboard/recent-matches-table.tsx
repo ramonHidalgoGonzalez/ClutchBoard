@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react"
 
 import { AgentAvatar } from "@/components/dashboard/agent-avatar"
 import { MapThumbnail } from "@/components/dashboard/map-thumbnail"
+import { roleRingClass } from "@/lib/agent-roles"
 import { cn } from "@/lib/utils"
 import type { MatchPerformance } from "@/types/domain"
 
@@ -50,48 +51,54 @@ export function RecentMatchesTable({ matches }: { matches: MatchPerformance[] })
             const w = when(match.startedAt)
             const ratio = ((match.kills + match.assists) / Math.max(1, match.deaths)).toFixed(2)
             return (
-              <tr key={match.matchId} className="border-t border-white/5 hover:bg-white/5">
-                <td className="px-3 py-2.5">
+              <tr key={match.matchId} className="border-t border-white/[0.06] transition-colors hover:bg-white/[0.07]">
+                <td className="px-3 py-3.5">
                   <div className="flex items-center gap-2.5">
-                    <span className={cn("h-8 w-1 rounded-full", m.bar)} />
+                    <span className={cn("h-9 w-1.5 rounded-full", m.bar)} />
                     <span className={cn("rounded-md border border-current/20 px-2 py-0.5 text-[11px] font-bold", m.tone)}>
                       {m.label}
                     </span>
                   </div>
                 </td>
-                <td className="px-3 py-2.5 text-zinc-300">
+                <td className="px-3 py-3.5 text-zinc-300">
                   <p>{w.d}</p>
                   <p className="text-xs text-zinc-500">{w.t}</p>
                 </td>
-                <td className="px-3 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <MapThumbnail name={match.mapName} imageUrl={match.mapImageUrl} iconUrl={match.mapIconUrl} size="sm" />
-                    <span className="text-white">{match.mapName}</span>
+                <td className="px-3 py-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <MapThumbnail name={match.mapName} imageUrl={match.mapImageUrl} iconUrl={match.mapIconUrl} size="md" />
+                    <span className="font-medium text-white">{match.mapName}</span>
                   </div>
                 </td>
-                <td className="px-3 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <AgentAvatar name={match.agentName} imageUrl={match.agentImageUrl} iconUrl={match.agentIconUrl} size="sm" />
-                    <span className="text-white">{match.agentName}</span>
+                <td className="px-3 py-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <AgentAvatar
+                      name={match.agentName}
+                      imageUrl={match.agentImageUrl}
+                      iconUrl={match.agentIconUrl}
+                      size="md"
+                      ringClassName={roleRingClass(match.agentName)}
+                    />
+                    <span className="font-medium text-white">{match.agentName}</span>
                   </div>
                 </td>
-                <td className={cn("px-3 py-2.5 font-semibold", m.tone)}>
+                <td className={cn("px-3 py-3.5 font-semibold", m.tone)}>
                   {match.roundsWon ?? 0} - {match.roundsLost ?? 0}
                 </td>
-                <td className="px-3 py-2.5">
+                <td className="px-3 py-3.5">
                   <p className="text-white">
                     {match.kills} / {match.deaths} / {match.assists}
                   </p>
                   <p className="text-xs text-zinc-500">{ratio}</p>
                 </td>
-                <td className="px-3 py-2.5 font-semibold text-white">{match.acsEstimate ?? "--"}</td>
-                <td className="px-3 py-2.5 text-zinc-300">
+                <td className="px-3 py-3.5 font-semibold text-white">{match.acsEstimate ?? "--"}</td>
+                <td className="px-3 py-3.5 text-zinc-300">
                   {Number.isFinite(match.headshotPct) ? `${match.headshotPct.toFixed(1)}%` : "--"}
                 </td>
-                <td className="px-3 py-2.5 text-zinc-400">
+                <td className="px-3 py-3.5 text-zinc-400">
                   {match.durationSeconds ? `${Math.round(match.durationSeconds / 60)} min` : "--"}
                 </td>
-                <td className="px-3 py-2.5 text-right">
+                <td className="px-3 py-3.5 text-right">
                   <Link
                     href={`/matches/${match.matchId}`}
                     className="inline-flex size-7 items-center justify-center rounded-lg border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-white"

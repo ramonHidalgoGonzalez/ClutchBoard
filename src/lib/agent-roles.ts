@@ -38,6 +38,19 @@ const AGENT_ROLES: Record<string, RoleLabel> = {
   vyse: "Centinela",
 }
 
+const ROLE_RING: Record<RoleLabel, string> = {
+  Duelista: "border-rose-400/60",
+  Iniciador: "border-cyan-400/60",
+  Controlador: "border-violet-400/60",
+  Centinela: "border-emerald-400/60",
+}
+
+/** Tailwind border class tinted by the agent's role (subtle accent). */
+export function roleRingClass(agentName?: string | null, contentRole?: string | null) {
+  const role = resolveAgentRole(agentName, contentRole)
+  return role ? ROLE_RING[role] : "border-white/15"
+}
+
 /** Resolve a Spanish role label for an agent, preferring live content role. */
 export function resolveAgentRole(agentName?: string | null, contentRole?: string | null): RoleLabel | null {
   const normalized = (contentRole ?? "").toLowerCase()

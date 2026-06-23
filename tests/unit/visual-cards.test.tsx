@@ -67,6 +67,8 @@ describe("visual cards", () => {
   it("renders map fallback card when no image exists", () => {
     render(<MapHeroCard map={{ ...map, mapImageUrl: null, mapIconUrl: null }} />)
 
-    expect(screen.getByText("Foxtrot")).toBeInTheDocument()
+    // Name appears as the card title and inside the thumbnail fallback.
+    expect(screen.getAllByText("Foxtrot").length).toBeGreaterThan(0)
+    expect(screen.queryByText("/Game/Maps/Foxtrot/Foxtrot")).not.toBeInTheDocument()
   })
 })

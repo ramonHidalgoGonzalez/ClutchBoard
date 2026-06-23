@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 
 import {
   BarChart3,
@@ -65,14 +66,19 @@ export function NavSidebar({ pathname, mobile = false, profile }: NavSidebarProp
       )}
     >
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-1">
-        <div className="flex size-9 items-center justify-center rounded-xl bg-rose-600 text-lg font-black text-white shadow-[0_8px_24px_rgba(244,63,94,0.4)]">
-          C
-        </div>
+      <Link href="/dashboard" className="flex items-center gap-2.5 px-1">
+        <Image
+          src="/brand/clutchboard-mark.svg"
+          alt="ClutchBoard"
+          width={36}
+          height={36}
+          priority
+          className="rounded-xl shadow-[0_8px_24px_rgba(244,63,94,0.35)]"
+        />
         <span className="text-lg font-extrabold tracking-tight text-white">
           CLUTCH<span className="text-rose-500">BOARD</span>
         </span>
-      </div>
+      </Link>
 
       {/* Profile */}
       <div className="mt-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">

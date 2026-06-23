@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, Crosshair, Search, Star, Target, Trophy } from "lucide-react"
 
 import { AgentAvatar } from "@/components/dashboard/agent-avatar"
 import { MapThumbnail } from "@/components/dashboard/map-thumbnail"
 import { WinrateDonut } from "@/components/stats/winrate-donut"
+import { roleRingClass } from "@/lib/agent-roles"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -199,10 +200,14 @@ export function MatchHistory({
     return rows
   }, [matches, query, result, queue, agent, map, sort])
 
-  // Reset to first page whenever the result set or page size changes.
-  useEffect(() => {
+  // Reset to first page whenever the result set or page size changes, without
+  // an effect (adjust state during render — React's recommended pattern).
+  const filterKey = `${query}|${result}|${queue}|${agent}|${map}|${sort}|${pageSize}`
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey)
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey)
     setPage(1)
-  }, [query, result, queue, agent, map, sort, pageSize])
+  }
 
   const total = filtered.length
   const size = pageSize === 0 ? Math.max(1, total) : pageSize
@@ -337,52 +342,58 @@ export function MatchHistory({
               const meta = resultMeta(match.outcome)
               const when = formatDateTime(match.startedAt)
               return (
-                <tr key={match.matchId} className="border-b border-white/5 hover:bg-white/5">
-                  <td className="px-4 py-3">
+                <tr key={match.matchId} className="border-b border-white/[0.06] transition-colors hover:bg-white/[0.07]">
+                  <td className="py-4 pl-4 pr-3">
                     <div className="flex items-center gap-3">
-                      <span className={cn("h-9 w-1 rounded-full", meta.bar)} />
+                      <span className={cn("h-12 w-1.5 rounded-full", meta.bar)} />
                       <div>
                         <p className={cn("text-xs font-bold", meta.tone)}>{meta.label}</p>
-                        <p className="font-semibold text-white">
+                        <p className="text-base font-semibold text-white">
                           {match.roundsWon ?? 0} - {match.roundsLost ?? 0}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-zinc-300">
+                  <td className="px-4 py-4 text-zinc-300">
                     <p>{when.date}</p>
                     <p className="text-xs text-zinc-500">{when.time}</p>
                   </td>
-                  <td className="px-4 py-3 text-zinc-300">{match.queueName || match.queueId}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
+                  <td className="px-4 py-4 text-zinc-300">{match.queueName || match.queueId}</td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-3">
                       <MapThumbnail name={match.mapName} imageUrl={match.mapImageUrl} iconUrl={match.mapIconUrl} size="md" />
-                      <span className="text-white">{match.mapName}</span>
+                      <span className="font-medium text-white">{match.mapName}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <AgentAvatar name={match.agentName} imageUrl={match.agentImageUrl} iconUrl={match.agentIconUrl} size="sm" />
-                      <span className="text-white">{match.agentName}</span>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-3">
+                      <AgentAvatar
+                        name={match.agentName}
+                        imageUrl={match.agentImageUrl}
+                        iconUrl={match.agentIconUrl}
+                        size="md"
+                        ringClassName={roleRingClass(match.agentName)}
+                      />
+                      <span className="font-medium text-white">{match.agentName}</span>
                     </div>
                   </td>
-                  <td className={cn("px-4 py-3 font-semibold", meta.tone)}>
+                  <td className={cn("px-4 py-4 font-semibold", meta.tone)}>
                     {match.roundsWon ?? 0} - {match.roundsLost ?? 0}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-4">
                     <p className="text-white">
                       {match.kills} / {match.deaths} / {match.assists}
                     </p>
                     <p className="text-xs text-zinc-500">{kdaRatio(match)}</p>
                   </td>
-                  <td className="px-4 py-3 font-semibold text-white">{match.acsEstimate ?? "--"}</td>
-                  <td className="px-4 py-3 text-zinc-300">
+                  <td className="px-4 py-4 font-semibold text-white">{match.acsEstimate ?? "--"}</td>
+                  <td className="px-4 py-4 text-zinc-300">
                     {Number.isFinite(match.headshotPct) ? `${match.headshotPct.toFixed(1)}%` : "--"}
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">
+                  <td className="px-4 py-4 text-zinc-400">
                     {match.durationSeconds ? `${Math.round(match.durationSeconds / 60)} min` : "--"}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-4 text-right">
                     <Link
                       href={`/matches/${match.matchId}`}
                       className="inline-flex size-8 items-center justify-center rounded-lg border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-white"
@@ -398,7 +409,7 @@ export function MatchHistory({
       </div>
 
       {/* Mobile cards */}
-      <div className="space-y-3 lg:hidden">
+      <div className="space-y-4 lg:hidden">
         {paged.map((match) => {
           const meta = resultMeta(match.outcome)
           const when = formatDateTime(match.startedAt)
@@ -406,44 +417,60 @@ export function MatchHistory({
             <Link
               key={match.matchId}
               href={`/matches/${match.matchId}`}
-              className="relative block overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4"
+              className="relative block overflow-hidden rounded-2xl border border-white/10 bg-white/5"
             >
-              <span className={cn("absolute inset-y-0 left-0 w-1", meta.bar)} />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={cn("text-xs font-bold", meta.tone)}>{meta.label}</p>
-                  <p className="text-lg font-semibold text-white">
-                    {match.roundsWon ?? 0} - {match.roundsLost ?? 0}
-                  </p>
-                </div>
-                <div className="text-right text-xs text-zinc-400">
-                  <p>{when.date}</p>
-                  <p>{when.time}</p>
+              {/* Map banner */}
+              <div className="relative h-28 w-full">
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={match.mapImageUrl ? { backgroundImage: `url(${match.mapImageUrl})` } : undefined}
+                  aria-hidden="true"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,9,11,0.2),rgba(9,9,11,0.85))]" />
+                <span className={cn("absolute inset-y-0 left-0 w-1.5", meta.bar)} />
+                <div className="absolute inset-0 flex items-end justify-between p-3">
+                  <div>
+                    <p className={cn("text-xs font-bold", meta.tone)}>{meta.label}</p>
+                    <p className="text-2xl font-extrabold text-white">
+                      {match.roundsWon ?? 0} - {match.roundsLost ?? 0}
+                    </p>
+                  </div>
+                  <div className="text-right text-xs text-zinc-300">
+                    <p className="font-semibold text-white">{match.mapName}</p>
+                    <p>{when.date}</p>
+                    <p>{when.time}</p>
+                  </div>
                 </div>
               </div>
-              <div className="mt-3 flex items-center gap-3">
-                <MapThumbnail name={match.mapName} imageUrl={match.mapImageUrl} iconUrl={match.mapIconUrl} size="sm" />
-                <AgentAvatar name={match.agentName} imageUrl={match.agentImageUrl} iconUrl={match.agentIconUrl} size="sm" />
-                <div className="text-sm text-zinc-200">
-                  {match.mapName} · {match.agentName}
+
+              <div className="p-4">
+                <div className="flex items-center gap-3">
+                  <AgentAvatar
+                    name={match.agentName}
+                    imageUrl={match.agentImageUrl}
+                    iconUrl={match.agentIconUrl}
+                    size="lg"
+                    ringClassName={roleRingClass(match.agentName)}
+                  />
+                  <div>
+                    <p className="text-base font-semibold text-white">{match.agentName}</p>
+                    <p className="text-xs text-zinc-400">{match.queueName || match.queueId}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
-                <div>
-                  <p className="text-xs text-zinc-500">KDA</p>
-                  <p className="text-white">
-                    {match.kills}/{match.deaths}/{match.assists}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500">ACS</p>
-                  <p className="text-white">{match.acsEstimate ?? "--"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500">HS%</p>
-                  <p className="text-white">
-                    {Number.isFinite(match.headshotPct) ? `${match.headshotPct.toFixed(1)}%` : "--"}
-                  </p>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {[
+                    { k: "KDA", v: `${match.kills}/${match.deaths}/${match.assists}` },
+                    { k: "ACS", v: String(match.acsEstimate ?? "--") },
+                    {
+                      k: "HS%",
+                      v: Number.isFinite(match.headshotPct) ? `${match.headshotPct.toFixed(1)}%` : "--",
+                    },
+                  ].map((stat) => (
+                    <div key={stat.k} className="rounded-xl border border-white/10 bg-black/25 p-2 text-center">
+                      <p className="text-[10px] uppercase tracking-wide text-zinc-500">{stat.k}</p>
+                      <p className="text-sm font-semibold text-white">{stat.v}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </Link>

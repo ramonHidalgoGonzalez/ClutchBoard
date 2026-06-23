@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 
 import { UserRound } from "lucide-react"
 
@@ -11,31 +10,34 @@ type AgentAvatarProps = {
   name?: string
   imageUrl?: string | null
   iconUrl?: string | null
-  size?: "sm" | "md" | "lg" | "xl"
+  size?: "xs" | "sm" | "md" | "lg" | "xl"
   className?: string
+  /** Tailwind border class (e.g. role-tinted) applied to the container. */
+  ringClassName?: string
   /** "bust" zooms onto head/torso (avatars); "full" shows the whole portrait. */
   framing?: "bust" | "full"
 }
 
 const SIZE_CLASS = {
-  sm: "size-8",
-  md: "size-10",
-  lg: "size-16",
-  xl: "size-24",
+  xs: "size-7", // 28
+  sm: "size-9", // 36
+  md: "size-12", // 48
+  lg: "size-[72px]", // 72
+  xl: "size-24", // 96
 }
 
-const SIZE_HINT = {
-  sm: "32px",
-  md: "40px",
-  lg: "64px",
-  xl: "96px",
+const TEXT_CLASS = {
+  xs: "text-[10px]",
+  sm: "text-xs",
+  md: "text-sm",
+  lg: "text-lg",
+  xl: "text-2xl",
 }
 
 function initials(value?: string) {
   if (!value) {
     return "UA"
   }
-
   return value
     .split(" ")
     .map((part) => part[0])
@@ -50,6 +52,7 @@ export function AgentAvatar({
   iconUrl,
   size = "md",
   className,
+  ringClassName,
   framing = "bust",
 }: AgentAvatarProps) {
   const [failed, setFailed] = useState(false)
@@ -65,15 +68,14 @@ export function AgentAvatar({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-white/15 bg-[radial-gradient(circle_at_top,#fb718566,transparent_55%),linear-gradient(135deg,rgba(15,23,42,0.95),rgba(56,189,248,0.22))] shadow-[0_10px_30px_rgba(15,23,42,0.28)]",
+        "relative shrink-0 overflow-hidden rounded-xl border bg-[radial-gradient(circle_at_top,#fb718566,transparent_55%),linear-gradient(135deg,rgba(15,23,42,0.95),rgba(56,189,248,0.22))] shadow-[0_6px_20px_rgba(15,23,42,0.3)]",
+        ringClassName ?? "border-white/15",
         SIZE_CLASS[size],
         className,
       )}
       aria-label={label}
     >
       {src ? (
-        // Use native <img> for all agent media to avoid Next/Image domain and SVG issues
-        // eslint-disable-next-line jsx-a11y/alt-text
         <img
           src={src}
           alt={label}
@@ -86,7 +88,12 @@ export function AgentAvatar({
           onError={() => setFailed(true)}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-black/10 text-xs font-semibold text-white">
+        <div
+          className={cn(
+            "flex h-full w-full items-center justify-center bg-black/10 font-semibold text-white",
+            TEXT_CLASS[size],
+          )}
+        >
           {name ? initials(name) : <UserRound className="size-4" />}
         </div>
       )}
