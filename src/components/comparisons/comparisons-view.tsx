@@ -89,8 +89,10 @@ function metric(metrics: ComparisonMetric[], key: string) {
 }
 
 export function ComparisonsView({ matches, allMatches, agents, maps, acts, now }: Props) {
-  // Only acts with synced games are comparable.
-  const actOptions = acts.filter((a) => a.games > 0)
+  const [includeEmptyActs, setIncludeEmptyActs] = useState(false)
+  // Default: only acts with synced games are comparable. Toggle to include empties.
+  const realActs = acts.filter((a) => a.actId !== "__no_act__")
+  const actOptions = includeEmptyActs ? realActs : realActs.filter((a) => a.games > 0)
   const [active, setActive] = useState("period")
   const [periodMode, setPeriodMode] = useState<PeriodMode>("last20")
   const [agentA, setAgentA] = useState(agents[0] ?? "")
@@ -191,22 +193,33 @@ export function ComparisonsView({ matches, allMatches, agents, maps, acts, now }
               {actLabel(actA)} <span className="text-rose-400">VS</span> {actLabel(actB)}
             </p>
           </div>
-          {actOptions.length >= 2 ? (
-            <div className="flex items-center gap-2">
-              <PlainSelect
-                value={actA}
-                onChange={setActA}
-                options={actOptions.map((a) => ({ value: a.actId, label: a.label }))}
-                className="w-48 border-white/15 bg-black/30 text-zinc-100"
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-zinc-400">
+              <input
+                type="checkbox"
+                checked={includeEmptyActs}
+                onChange={(e) => setIncludeEmptyActs(e.target.checked)}
+                className="size-3.5 accent-rose-500"
               />
-              <PlainSelect
-                value={actB}
-                onChange={setActB}
-                options={actOptions.map((a) => ({ value: a.actId, label: a.label }))}
-                className="w-48 border-white/15 bg-black/30 text-zinc-100"
-              />
-            </div>
-          ) : null}
+              Incluir actos sin partidas sincronizadas
+            </label>
+            {actOptions.length >= 2 ? (
+              <div className="flex items-center gap-2">
+                <PlainSelect
+                  value={actA}
+                  onChange={setActA}
+                  options={actOptions.map((a) => ({ value: a.actId, label: a.label }))}
+                  className="w-48 border-white/15 bg-black/30 text-zinc-100"
+                />
+                <PlainSelect
+                  value={actB}
+                  onChange={setActB}
+                  options={actOptions.map((a) => ({ value: a.actId, label: a.label }))}
+                  className="w-48 border-white/15 bg-black/30 text-zinc-100"
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
         {actOptions.length < 2 ? (
           <EmptyState

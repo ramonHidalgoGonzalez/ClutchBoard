@@ -225,7 +225,8 @@ function recencyRank(act: ValorantAct): number {
 export function buildActScopeOptions({
   acts,
   matchCountsByAct,
-  includeActsWithoutMatches = true,
+  includeActsWithoutMatches = false,
+  includeCurrentActEvenIfEmpty = true,
   locale = "es",
   currentDate,
   detectedLabels,
@@ -233,6 +234,7 @@ export function buildActScopeOptions({
   acts: ValorantAct[]
   matchCountsByAct: Map<string, number>
   includeActsWithoutMatches?: boolean
+  includeCurrentActEvenIfEmpty?: boolean
   locale?: Locale
   currentDate?: number
   detectedLabels?: Map<string, string>
@@ -244,7 +246,10 @@ export function buildActScopeOptions({
       isCurrent: isActCurrent(act, currentDate),
       games: matchCountsByAct.get(normalizeRiotId(act.id) ?? "") ?? 0,
     }))
-    .filter((opt) => includeActsWithoutMatches || opt.games > 0)
+    // By default hide acts with no synced matches, but always keep the current act.
+    .filter(
+      (opt) => includeActsWithoutMatches || opt.games > 0 || (includeCurrentActEvenIfEmpty && opt.isCurrent),
+    )
 
   options.sort((a, b) => {
     const actA = acts.find((x) => x.id === a.actId)

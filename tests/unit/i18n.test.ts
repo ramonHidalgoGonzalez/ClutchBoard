@@ -58,7 +58,16 @@ describe("translate", () => {
         expect(t(key)).not.toBe(key)
       }
       expect(t("scope.syncedTotal", { n: 42 })).toContain("42")
+      for (const key of ["scope.withMatches", "scope.withoutMatches", "scope.showEmpty", "scope.zeroSynced"]) {
+        expect(t(key)).not.toBe(key)
+      }
     }
+  })
+
+  it("uses 'sincronizadas' (not 'jugadas') for empty acts", () => {
+    expect(makeT(es)("scope.zeroSynced")).toBe("0 partidas sincronizadas")
+    expect(makeT(es)("scope.zeroSynced")).not.toContain("jugadas")
+    expect(makeT(es)("scope.withoutMatches")).toContain("sin partidas sincronizadas")
   })
 })
 
