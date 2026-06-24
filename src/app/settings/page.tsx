@@ -1,18 +1,24 @@
 import { AppShell } from "@/components/app-shell"
 import { getTranslations } from "@/i18n/get-dictionary"
 import { LanguageSelector } from "@/components/settings/language-selector"
+import { HistoryDiagnosticCard } from "@/components/settings/history-diagnostic-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { env } from "@/lib/env"
 import { requireSession } from "@/server/auth/session"
+import { getHistoryCoverage } from "@/server/services/analytics-service"
 
 export default async function SettingsPage() {
   const session = await requireSession()
   const t = await getTranslations()
+  const coverage =
+    process.env.NODE_ENV === "development" ? await getHistoryCoverage(session.puuid).catch(() => null) : null
 
   return (
     <AppShell title={t("settings.title")} subtitle={t("settings.subtitle")} connected>
       <div className="grid gap-6 xl:grid-cols-2">
+        {coverage ? <HistoryDiagnosticCard coverage={coverage} /> : null}
+
         <Card className="border-white/10 bg-white/5 text-white xl:col-span-2">
           <CardHeader>
             <CardTitle>{t("settings.language")}</CardTitle>

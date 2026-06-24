@@ -4,6 +4,7 @@ import {
   buildActScopeOptions,
   buildActsFromContent,
   classifyMatchAct,
+  computeHistoryCoverage,
   countMatchesByAct,
   debugValorantHistoryCoverage,
   formatActLabel,
@@ -222,6 +223,38 @@ describe("debugValorantHistoryCoverage", () => {
     const acts = buildActsFromContent(RAW, "es")
     const matches = [mk("a1", true), mk("a2", false), { ...mk("x", true), actId: null }]
     expect(() => debugValorantHistoryCoverage({ normalizedMatches: matches, acts, rawMatchlistCount: 3 })).not.toThrow()
+  })
+})
+
+describe("computeHistoryCoverage", () => {
+  const acts = buildActsFromContent(RAW, "es") // a1, a2 (a2 active)
+  const matches = [
+    { ...mk("a1", true), seasonId: "a1", queueId: "competitive", startedAt: "2026-01-10T00:00:00Z" },
+    { ...mk("a1", false), seasonId: "a1", queueId: "unrated", startedAt: "2026-01-20T00:00:00Z" },
+    { ...mk("a2", true), seasonId: "A2", queueId: "competitive", startedAt: "2026-01-05T00:00:00Z" },
+    { ...mk("x", true), actId: null, seasonId: null, startedAt: "2026-01-01T00:00:00Z" },
+  ]
+
+  it("reports counts, date range and per-act coverage", () => {
+    const c = computeHistoryCoverage({ normalizedMatches: matches, acts })
+    expect(c.normalizedMatchesCount).toBe(4)
+    expect(c.oldestMatchDate?.slice(0, 10)).toBe("2026-01-01")
+    expect(c.newestMatchDate?.slice(0, 10)).toBe("2026-01-20")
+    expect(c.matchesWithNormalizedSeasonId).toBe(3)
+    expect(c.matchesMatchedToKnownAct).toBe(3) // a1,a1,a2 (A2 normalized)
+    expect(c.matchesWithoutAct).toBe(1)
+
+    const a1 = c.actCoverage.find((a) => a.actId === "a1")
+    expect(a1).toMatchObject({ syncedMatches: 2, rankedMatches: 1 })
+    const a2 = c.actCoverage.find((a) => a.actId === "a2")
+    expect(a2?.syncedMatches).toBe(1) // case-insensitive seasonId A2 -> a2
+  })
+
+  it("links unique seasonIds to act labels", () => {
+    const c = computeHistoryCoverage({ normalizedMatches: matches, acts })
+    const a1 = c.uniqueSeasonIds.find((s) => s.seasonId === "a1")
+    expect(a1?.count).toBe(2)
+    expect(a1?.actLabel).toBeTruthy()
   })
 })
 

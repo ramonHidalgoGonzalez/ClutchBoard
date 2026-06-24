@@ -19,7 +19,18 @@ import type {
   RecentComparison,
 } from "@/types/domain"
 import { getContentCatalog, resolveAgentContent, resolveMapContent } from "@/server/services/content-service"
-import { classifyMatchAct, formatActLabel, getActsById, getValorantActs, type ValorantAct } from "@/server/valorant/content/acts"
+import {
+  classifyMatchAct,
+  computeHistoryCoverage,
+  formatActLabel,
+  getActsById,
+  getAllValorantActs,
+  getValorantActs,
+  type HistoryCoverage,
+  type ValorantAct,
+} from "@/server/valorant/content/acts"
+import { filterMatchesByScope, type AnalyticsScope } from "@/server/valorant/analytics/scope-filter"
+import { recentFirst } from "@/analytics/entity-stats"
 import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
 import { getMapAssets } from "@/server/valorant/assets/map-assets"
 
@@ -278,4 +289,28 @@ export async function getAnalyticsPayload(puuid?: string, filter?: MatchFilter):
   const enriched = await getEnrichedMatches(puuid)
   const filteredMatches = applyMatchFilters(enriched, filter)
   return buildScopedAnalytics(filteredMatches, filter?.periodDays ?? 60)
+}
+
+/**
+ * All synced matches for analytics/act counters — never the paginated visible
+ * page. Alias of getEnrichedMatches to make the intent explicit at call sites.
+ */
+export const getAllSyncedMatchesForAnalytics = getEnrichedMatches
+
+/** Paginated, scoped slice for the /matches UI (does not drive analytics). */
+export async function getVisibleMatchesPage(
+  puuid: string | undefined,
+  { page = 1, pageSize = 20, scope }: { page?: number; pageSize?: number; scope?: AnalyticsScope },
+): Promise<{ matches: MatchPerformance[]; total: number; page: number; pageSize: number }> {
+  const enriched = await getEnrichedMatches(puuid)
+  const scoped = scope ? filterMatchesByScope(enriched, scope) : enriched
+  const ordered = recentFirst(scoped)
+  const start = Math.max(0, (page - 1) * pageSize)
+  return { matches: ordered.slice(start, start + pageSize), total: ordered.length, page, pageSize }
+}
+
+/** Dev/diagnostics: structured synced-history coverage report (no secrets). */
+export async function getHistoryCoverage(puuid?: string): Promise<HistoryCoverage> {
+  const [enriched, acts] = await Promise.all([getEnrichedMatches(puuid), getAllValorantActs()])
+  return computeHistoryCoverage({ normalizedMatches: enriched, acts })
 }
