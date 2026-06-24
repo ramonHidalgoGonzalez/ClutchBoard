@@ -16,6 +16,16 @@ export const de: Dictionary = {
     seeFullHistory: "Vollständigen Verlauf ansehen",
     noData: "Nicht genügend Daten.",
   },
+  scope: {
+    currentAct: "Aktueller Akt",
+    allSynced: "Alle synchronisierten Spiele",
+    previousActs: "Vorherige Akte",
+    noAct: "Kein Akt erkannt",
+    lastN: "Letzte {n}",
+    current: "aktuell",
+    noSync: "keine Spiele",
+    syncedTotal: "{n} synchronisiert",
+  },
   nav: {
     dashboard: "Dashboard",
     matches: "Spiele",

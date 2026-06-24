@@ -46,6 +46,20 @@ describe("translate", () => {
   it("interpolates variables", () => {
     expect(makeT(es)("dashboard.welcomeBack", { name: "RRumu" })).toContain("RRumu")
   })
+
+  it("localizes scope selector strings (no raw keys)", () => {
+    expect(makeT(es)("scope.currentAct")).toBe("Acto actual")
+    expect(makeT(en)("scope.currentAct")).toBe("Current act")
+    expect(makeT(es)("scope.lastN", { n: 20 })).toBe("Últimas 20")
+    expect(makeT(en)("scope.lastN", { n: 20 })).toBe("Last 20")
+    for (const locale of supportedLocales) {
+      const t = makeT(getDictionaryFor(locale))
+      for (const key of ["scope.allSynced", "scope.previousActs", "scope.noAct", "scope.current", "scope.noSync"]) {
+        expect(t(key)).not.toBe(key)
+      }
+      expect(t("scope.syncedTotal", { n: 42 })).toContain("42")
+    }
+  })
 })
 
 describe("format", () => {

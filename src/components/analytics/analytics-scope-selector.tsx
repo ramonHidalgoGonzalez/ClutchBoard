@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { CalendarRange, Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useTranslations } from "@/i18n/provider"
 
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -45,6 +46,7 @@ export function AnalyticsScopeSelector({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const t = useTranslations()
   const applied = useRef(false)
   const [isPending, startTransition] = useTransition()
 
@@ -91,24 +93,25 @@ export function AnalyticsScopeSelector({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="current_act">Acto actual</SelectItem>
-          <SelectItem value="all">Todas las partidas sincronizadas</SelectItem>
-          <SelectItem value="previous_acts">Actos anteriores</SelectItem>
+          <SelectItem value="current_act">{t("scope.currentAct")}</SelectItem>
+          <SelectItem value="all">{t("scope.allSynced")}</SelectItem>
+          <SelectItem value="previous_acts">{t("scope.previousActs")}</SelectItem>
           <SelectSeparator />
-          <SelectItem value="last:10">Últimas 10</SelectItem>
-          <SelectItem value="last:20">Últimas 20</SelectItem>
-          <SelectItem value="last:50">Últimas 50</SelectItem>
-          <SelectItem value="last:100">Últimas 100</SelectItem>
+          <SelectItem value="last:10">{t("scope.lastN", { n: 10 })}</SelectItem>
+          <SelectItem value="last:20">{t("scope.lastN", { n: 20 })}</SelectItem>
+          <SelectItem value="last:50">{t("scope.lastN", { n: 50 })}</SelectItem>
+          <SelectItem value="last:100">{t("scope.lastN", { n: 100 })}</SelectItem>
           {acts.length ? <SelectSeparator /> : null}
           {acts.map((a) => (
             <SelectItem key={a.actId} value={actOptionKey(a.actId)}>
               {a.label}
-              {a.isCurrent ? " · actual" : ""} ({a.games})
+              {a.isCurrent ? ` · ${t("scope.current")}` : ""}
+              {a.actId === NO_ACT_ID ? ` (${a.games})` : a.games > 0 ? ` (${a.games})` : ` · ${t("scope.noSync")}`}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      <span className="hidden text-xs text-zinc-500 sm:inline">{syncedTotal} sincronizadas</span>
+      <span className="hidden text-xs text-zinc-500 sm:inline">{t("scope.syncedTotal", { n: syncedTotal })}</span>
     </div>
   )
 }
