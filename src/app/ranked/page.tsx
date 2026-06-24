@@ -48,12 +48,12 @@ export default async function RankedPage({
       {scoped.length === 0 ? (
         <EmptyState
           title="No hay partidas sincronizadas para este acto"
-          description="Sincroniza más partidas o selecciona otro acto."
+          description="Puede que Clutchboard todavía no tenga histórico de ese acto. Sincroniza más historial o selecciona otro acto."
         />
       ) : competitive.length === 0 ? (
         <EmptyState
           title="Sin partidas competitive en este acto"
-          description="Hay partidas sincronizadas en este acto, pero no hay partidas competitive."
+          description="Hay partidas sincronizadas en este acto, pero ninguna es competitive."
         />
       ) : (
         <RankedView matches={scoped} now={new Date().getTime()} rankLabel={rankLabel} />
