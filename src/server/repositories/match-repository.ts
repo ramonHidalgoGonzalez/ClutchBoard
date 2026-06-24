@@ -43,6 +43,7 @@ export async function listStoredMatches(_puuid: string): Promise<MatchPerformanc
       outcome: participant.outcome,
       roundsWon: team?.roundsWon ?? 0,
       roundsLost: team?.roundsLost ?? 0,
+      seasonId: participant.match.seasonId ?? null,
       kills: participant.kills,
       deaths: participant.deaths,
       assists: participant.assists,

@@ -2,6 +2,7 @@ import { AppShell } from "@/components/app-shell"
 import { getTranslations } from "@/i18n/get-dictionary"
 import { LanguageSelector } from "@/components/settings/language-selector"
 import { HistoryDiagnosticCard } from "@/components/settings/history-diagnostic-card"
+import { HistorySyncCard } from "@/components/settings/history-sync-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { env } from "@/lib/env"
@@ -11,13 +12,14 @@ import { getHistoryCoverage } from "@/server/services/analytics-service"
 export default async function SettingsPage() {
   const session = await requireSession()
   const t = await getTranslations()
-  const coverage =
-    process.env.NODE_ENV === "development" ? await getHistoryCoverage(session.puuid).catch(() => null) : null
+  const coverage = await getHistoryCoverage(session.puuid).catch(() => null)
+  const isDev = process.env.NODE_ENV === "development"
 
   return (
     <AppShell title={t("settings.title")} subtitle={t("settings.subtitle")} connected>
       <div className="grid gap-6 xl:grid-cols-2">
-        {coverage ? <HistoryDiagnosticCard coverage={coverage} /> : null}
+        {coverage ? <HistorySyncCard coverage={coverage} /> : null}
+        {coverage && isDev ? <HistoryDiagnosticCard coverage={coverage} /> : null}
 
         <Card className="border-white/10 bg-white/5 text-white xl:col-span-2">
           <CardHeader>
