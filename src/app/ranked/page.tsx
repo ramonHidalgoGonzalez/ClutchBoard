@@ -32,6 +32,9 @@ export default async function RankedPage({
         ? "Último rango detectado"
         : "Rango detectado en este periodo"
 
+  const scoped = analytics.filteredMatches
+  const competitive = scoped.filter((m) => (m.queueId || m.queueName || "").toLowerCase().includes("competitive"))
+
   return (
     <AppShell
       title={t("ranked.title")}
@@ -42,13 +45,18 @@ export default async function RankedPage({
       <div className="mb-5 flex justify-end">
         <AnalyticsScopeSelector scope={scope} acts={acts} syncedTotal={syncedTotal} />
       </div>
-      {analytics.filteredMatches.length === 0 ? (
+      {scoped.length === 0 ? (
         <EmptyState
-          title="No hay partidas competitivas sincronizadas para este acto"
+          title="No hay partidas sincronizadas para este acto"
           description="Sincroniza más partidas o selecciona otro acto."
         />
+      ) : competitive.length === 0 ? (
+        <EmptyState
+          title="Sin partidas competitive en este acto"
+          description="Hay partidas sincronizadas en este acto, pero no hay partidas competitive."
+        />
       ) : (
-        <RankedView matches={analytics.filteredMatches} now={new Date().getTime()} rankLabel={rankLabel} />
+        <RankedView matches={scoped} now={new Date().getTime()} rankLabel={rankLabel} />
       )}
     </AppShell>
   )

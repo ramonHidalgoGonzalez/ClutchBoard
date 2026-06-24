@@ -262,20 +262,56 @@ export function buildActScopeOptions({
   return options
 }
 
-/** Dev-only diagnostics for the match<->act linking. No-op in production. */
-export function debugActLinking(matches: MatchPerformance[], acts: ValorantAct[]): void {
+/**
+ * Dev-only coverage diagnostics for the synced-history <-> act linking.
+ * No-op in production. Answers "are old acts 0 because unplayed or unsynced?"
+ */
+export function debugValorantHistoryCoverage({
+  normalizedMatches,
+  acts,
+  rawMatchlistCount,
+}: {
+  normalizedMatches: MatchPerformance[]
+  acts: ValorantAct[]
+  rawMatchlistCount?: number
+}): void {
   if (process.env.NODE_ENV === "production") return
-  const counts = countMatchesByAct(matches)
+
+  const matches = normalizedMatches
   const known = new Set(acts.map((a) => normalizeRiotId(a.id)))
   const withSeason = matches.filter((m) => normalizeRiotId(m.seasonId)).length
   const withAct = matches.filter((m) => normalizeRiotId(m.actId)).length
-  const matched = matches.filter((m) => known.has(normalizeRiotId(m.actId))).length
+  const matchedById = matches.filter((m) => known.has(normalizeRiotId(m.actId))).length
+  const dates = matches.map((m) => new Date(m.startedAt).getTime()).filter((t) => Number.isFinite(t))
+  const oldest = dates.length ? new Date(Math.min(...dates)).toISOString() : "—"
+  const newest = dates.length ? new Date(Math.max(...dates)).toISOString() : "—"
+
+  const seasonCounts = new Map<string, number>()
+  for (const m of matches) {
+    const id = normalizeRiotId(m.seasonId)
+    if (id) seasonCounts.set(id, (seasonCounts.get(id) ?? 0) + 1)
+  }
+  const counts = countMatchesByAct(matches)
+
   const lines = [
-    `[act-linking] synced=${matches.length} seasonId=${withSeason} actId=${withAct} matchedToKnownAct=${matched} noAct=${unresolvedActCount(matches)} knownActs=${acts.length}`,
+    "=== Valorant history coverage ===",
+    `Raw matchlist entries: ${rawMatchlistCount ?? "?"}`,
+    `Normalized matches: ${matches.length}`,
+    `Oldest match date: ${oldest}`,
+    `Newest match date: ${newest}`,
+    `Matches with normalized seasonId: ${withSeason}`,
+    `Matches with normalized actId: ${withAct}`,
+    `Matches matched to content act by ID: ${matchedById}`,
+    `Matches without act: ${unresolvedActCount(matches)}`,
+    `Content acts: ${acts.length}`,
+    "Unique raw seasonIds:",
+    ...Array.from(seasonCounts.entries()).map(([id, n]) => `  - ${id} count ${n}`),
+    "Counts by normalized act:",
     ...Array.from(counts.entries()).map(([id, n]) => {
-      const label = acts.find((a) => normalizeRiotId(a.id) === id)
-      return `  - ${label ? formatActLabel(label, "es") : id}: ${n}`
+      const a = acts.find((x) => normalizeRiotId(x.id) === id)
+      return `  - ${a ? formatActLabel(a, "es") : id}: ${n}`
     }),
+    `  - Sin acto detectado: ${unresolvedActCount(matches)}`,
   ]
   // eslint-disable-next-line no-console
   console.info(lines.join("\n"))

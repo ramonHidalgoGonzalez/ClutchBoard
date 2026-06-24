@@ -164,6 +164,15 @@ export async function getMatchById(matchId: string) {
 // per puuid so navigating between pages doesn't refetch every time. Busted on
 // explicit sync.
 const MATCHES_CACHE_TTL_MS = 3 * 60 * 1000
+
+// Bump when the normalization shape changes (e.g. new actId/seasonId fields) so
+// any cached entry from an older shape is treated as a miss.
+export const MATCH_NORMALIZATION_VERSION = 2
+
+// How many match details to fetch for analytics/act coverage. Riot's matchlist
+// is itself capped, so this is the upper bound of what we can sync per request.
+// Higher = more act history but more match-detail calls (rate-limit pressure).
+const ANALYTICS_MATCH_CAP = Number(process.env.RIOT_MATCH_HISTORY_LIMIT) || 100
 const matchesCache = new Map<string, { expiresAt: number; value: MatchPerformance[] }>()
 
 export function bustMatchesCache(puuid?: string) {
@@ -178,12 +187,12 @@ export function bustMatchesCache(puuid?: string) {
   }
 }
 
-export async function getNormalizedMatches(puuid?: string, maxMatches = 50): Promise<MatchPerformance[]> {
+export async function getNormalizedMatches(puuid?: string, maxMatches = ANALYTICS_MATCH_CAP): Promise<MatchPerformance[]> {
   if (!puuid) {
     throw new Error("A PUUID is required to request Riot match history.")
   }
 
-  const cacheKey = `${puuid}:${maxMatches}`
+  const cacheKey = `${puuid}:${maxMatches}:v${MATCH_NORMALIZATION_VERSION}`
   const cached = matchesCache.get(cacheKey)
   if (cached && cached.expiresAt > Date.now()) {
     return cached.value
@@ -192,6 +201,13 @@ export async function getNormalizedMatches(puuid?: string, maxMatches = 50): Pro
   const matchList = await getMatchListByPuuid(puuid)
   const ids = matchList.history.map(extractMatchId).slice(0, maxMatches)
   const matches = await Promise.all(ids.map((id) => getMatchById(id)))
+
+  if (process.env.NODE_ENV !== "production") {
+    // eslint-disable-next-line no-console
+    console.info(
+      `[history-coverage] matchlist=${matchList.history.length} requested=${maxMatches} fetched=${ids.length}`,
+    )
+  }
   const contentLookups = await getCachedContentLookups()
 
   const normalized = matches
