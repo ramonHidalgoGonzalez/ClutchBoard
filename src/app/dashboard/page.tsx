@@ -4,6 +4,7 @@ import { Crosshair, Shield, Star, Swords, Target, Trophy } from "lucide-react"
 
 import { AppShell } from "@/components/app-shell"
 import { getLocale, getTranslations } from "@/i18n/get-dictionary"
+import { AutoSync } from "@/components/sync/auto-sync"
 import { LazyResultsDonut, LazyTrendChart } from "@/components/dashboard/lazy-charts"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { EntityHeroMini } from "@/components/dashboard/entity-hero-mini"
@@ -142,6 +143,7 @@ export default async function DashboardPage({
       connected
       lastSyncedAt={new Date().toISOString()}
     >
+      <AutoSync />
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-zinc-400">
           <span className="font-semibold text-zinc-200">{getScopeLabel(scope, locale, acts)}</span> ·{" "}

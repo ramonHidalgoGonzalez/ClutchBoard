@@ -2,6 +2,7 @@ import { getPrisma } from "@/database/prisma"
 import type { MatchOutcome } from "@prisma/client"
 import type { MatchPerformance } from "@/types/domain"
 import {
+  computeRepoCoverage,
   paginate,
   type MatchHistoryRepository,
   type MatchPageParams,
@@ -75,6 +76,10 @@ export class PrismaMatchHistoryRepository implements MatchHistoryRepository {
 
   async getMatchesPage(puuid: string, params: MatchPageParams): Promise<PaginatedMatches> {
     return paginate(await this.getAllSyncedMatches(puuid), params)
+  }
+
+  async getCoverage(puuid: string) {
+    return computeRepoCoverage(await this.getAllSyncedMatches(puuid))
   }
 
   async saveMatches(_userId: string, puuid: string, matches: NormalizedMatch[]): Promise<number> {

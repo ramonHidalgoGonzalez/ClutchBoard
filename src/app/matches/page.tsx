@@ -4,6 +4,7 @@ import { AppShell } from "@/components/app-shell"
 import { getTranslations } from "@/i18n/get-dictionary"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MatchHistory } from "@/components/matches/match-history"
+import { AutoSync } from "@/components/sync/auto-sync"
 import { AnalyticsScopeSelector } from "@/components/analytics/analytics-scope-selector"
 import { resolveScopeFromSearchParams } from "@/server/valorant/analytics/scope-filter"
 import { env } from "@/lib/env"
@@ -38,6 +39,7 @@ export default async function MatchesPage({
       connected
       lastSyncedAt={lastSyncedAt}
     >
+      <AutoSync />
       <div className="mb-5 flex justify-end">
         <AnalyticsScopeSelector scope={scope} acts={acts} syncedTotal={syncedTotal} />
       </div>
@@ -53,7 +55,7 @@ export default async function MatchesPage({
       ) : (
         <EmptyState
           title="No hay partidas sincronizadas para este acto"
-          description="Cambia el filtro de acto o sincroniza más partidas para ver tu historial."
+          description="Clutchboard solo puede analizar partidas que Riot devuelva en el matchlist disponible o que la app haya guardado previamente. Si jugaste en este acto pero aparece vacío, probablemente esas partidas no estaban sincronizadas todavía."
         />
       )}
     </AppShell>
