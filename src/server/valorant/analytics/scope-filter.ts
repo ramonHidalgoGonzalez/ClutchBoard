@@ -53,11 +53,18 @@ export function serializeScope(scope: AnalyticsScope): Record<string, string> {
   }
 }
 
+/** Canonical id for comparisons: trimmed + lowercased (UUID-safe), null if empty. */
+export function normalizeRiotId(id?: string | null): string | null {
+  if (!id) return null
+  const trimmed = id.trim()
+  return trimmed ? trimmed.toLowerCase() : null
+}
+
 function currentActId(matches: MatchPerformance[]): string | null {
   const flagged = matches.find((m) => m.isCurrentAct && m.actId)
-  if (flagged?.actId) return flagged.actId
+  if (flagged?.actId) return normalizeRiotId(flagged.actId)
   // Fallback: the act of the most recent match counts as "current".
-  return recentFirst(matches).find((m) => m.actId)?.actId ?? null
+  return normalizeRiotId(recentFirst(matches).find((m) => m.actId)?.actId ?? null)
 }
 
 export function filterMatchesByScope(matches: MatchPerformance[], scope: AnalyticsScope): MatchPerformance[] {
@@ -66,14 +73,16 @@ export function filterMatchesByScope(matches: MatchPerformance[], scope: Analyti
       return matches
     case "current_act": {
       const cur = currentActId(matches)
-      return cur ? matches.filter((m) => m.actId === cur) : matches
+      return cur ? matches.filter((m) => normalizeRiotId(m.actId) === cur) : matches
     }
     case "previous_acts": {
       const cur = currentActId(matches)
-      return cur ? matches.filter((m) => m.actId && m.actId !== cur) : []
+      return cur ? matches.filter((m) => m.actId && normalizeRiotId(m.actId) !== cur) : []
     }
-    case "act":
-      return matches.filter((m) => m.actId === scope.actId)
+    case "act": {
+      const sel = normalizeRiotId(scope.actId)
+      return matches.filter((m) => normalizeRiotId(m.actId) === sel)
+    }
     case "no_act":
       return matches.filter((m) => !m.actId)
     case "last_matches":
@@ -107,7 +116,7 @@ export function getAvailableActScopes(matches: MatchPerformance[]): ScopeActOpti
     result.push({
       actId: m.actId,
       label: m.actLabel || m.actName || "Sin acto detectado",
-      isCurrent: m.actId === cur,
+      isCurrent: normalizeRiotId(m.actId) === cur,
       games: groups.get(m.actId)?.length ?? 0,
     })
   }

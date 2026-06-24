@@ -10,11 +10,13 @@ import { getContentCatalog } from "@/server/services/content-service"
 import {
   buildActScopeOptions,
   countMatchesByAct,
+  debugActLinking,
   getAllValorantActs,
 } from "@/server/valorant/content/acts"
 import {
   filterMatchesByScope,
   getAvailableActScopes,
+  normalizeRiotId,
   NO_ACT_ID,
   type AnalyticsScope,
   type ScopeActOption,
@@ -59,11 +61,14 @@ async function buildScopeActs(enriched: Awaited<ReturnType<typeof getEnrichedMat
   const allActs = await getAllValorantActs().catch(() => [])
   const counts = countMatchesByAct(enriched)
 
+  if (allActs.length) debugActLinking(enriched, allActs)
+
   let acts: ScopeActOption[]
   if (allActs.length) {
     const detectedLabels = new Map<string, string>()
     for (const m of enriched) {
-      if (m.actId && (m.actLabel || m.actName)) detectedLabels.set(m.actId, (m.actLabel || m.actName)!)
+      const key = normalizeRiotId(m.actId)
+      if (key && (m.actLabel || m.actName)) detectedLabels.set(key, (m.actLabel || m.actName)!)
     }
     acts = buildActScopeOptions({
       acts: allActs,

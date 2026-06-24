@@ -1,7 +1,7 @@
 import { riotAdapter } from "@/integrations/riot"
 import type { Locale } from "@/i18n/locales"
 import type { MatchPerformance } from "@/types/domain"
-import type { ScopeActOption } from "@/server/valorant/analytics/scope-filter"
+import { normalizeRiotId, type ScopeActOption } from "@/server/valorant/analytics/scope-filter"
 
 export type ValorantAct = {
   id: string
@@ -191,14 +191,23 @@ export function isActCurrent(act: ValorantAct, currentDate?: number): boolean {
   return false
 }
 
-/** Count synced matches per detected act id (matches with no act are ignored). */
+/**
+ * Count synced matches per detected act, keyed by normalized id so casing /
+ * formatting differences between match seasonId and content act id can't split
+ * the tally. Matches with no act are ignored (see unresolvedActCount).
+ */
 export function countMatchesByAct(matches: MatchPerformance[]): Map<string, number> {
   const counts = new Map<string, number>()
   for (const match of matches) {
-    if (!match.actId) continue
-    counts.set(match.actId, (counts.get(match.actId) ?? 0) + 1)
+    const key = normalizeRiotId(match.actId)
+    if (!key) continue
+    counts.set(key, (counts.get(key) ?? 0) + 1)
   }
   return counts
+}
+
+export function unresolvedActCount(matches: MatchPerformance[]): number {
+  return matches.filter((m) => !normalizeRiotId(m.actId)).length
 }
 
 function recencyRank(act: ValorantAct): number {
@@ -233,7 +242,7 @@ export function buildActScopeOptions({
       actId: act.id,
       label: formatActLabel(act, locale),
       isCurrent: isActCurrent(act, currentDate),
-      games: matchCountsByAct.get(act.id) ?? 0,
+      games: matchCountsByAct.get(normalizeRiotId(act.id) ?? "") ?? 0,
     }))
     .filter((opt) => includeActsWithoutMatches || opt.games > 0)
 
@@ -244,10 +253,30 @@ export function buildActScopeOptions({
   })
 
   // Detected acts that are missing from content metadata (keep, don't drop).
+  const knownIds = new Set(acts.map((a) => normalizeRiotId(a.id)))
   for (const [actId, games] of matchCountsByAct) {
-    if (options.some((opt) => opt.actId === actId)) continue
+    if (knownIds.has(actId)) continue
     options.push({ actId, label: detectedLabels?.get(actId) ?? actId, isCurrent: false, games })
   }
 
   return options
+}
+
+/** Dev-only diagnostics for the match<->act linking. No-op in production. */
+export function debugActLinking(matches: MatchPerformance[], acts: ValorantAct[]): void {
+  if (process.env.NODE_ENV === "production") return
+  const counts = countMatchesByAct(matches)
+  const known = new Set(acts.map((a) => normalizeRiotId(a.id)))
+  const withSeason = matches.filter((m) => normalizeRiotId(m.seasonId)).length
+  const withAct = matches.filter((m) => normalizeRiotId(m.actId)).length
+  const matched = matches.filter((m) => known.has(normalizeRiotId(m.actId))).length
+  const lines = [
+    `[act-linking] synced=${matches.length} seasonId=${withSeason} actId=${withAct} matchedToKnownAct=${matched} noAct=${unresolvedActCount(matches)} knownActs=${acts.length}`,
+    ...Array.from(counts.entries()).map(([id, n]) => {
+      const label = acts.find((a) => normalizeRiotId(a.id) === id)
+      return `  - ${label ? formatActLabel(label, "es") : id}: ${n}`
+    }),
+  ]
+  // eslint-disable-next-line no-console
+  console.info(lines.join("\n"))
 }

@@ -6,6 +6,7 @@ import {
   getAvailableActScopes,
   getScopeLabel,
   groupMatchesByAct,
+  normalizeRiotId,
   resolveScopeFromSearchParams,
 } from "@/server/valorant/analytics/scope-filter"
 
@@ -108,6 +109,27 @@ describe("getAvailableActScopes", () => {
     const acts = getAvailableActScopes(withUnknown)
     const noAct = acts.find((a) => a.label === "Sin acto detectado")
     expect(noAct?.games).toBe(1)
+  })
+})
+
+describe("normalizeRiotId", () => {
+  it("matches UUIDs that differ only in casing/whitespace", () => {
+    expect(normalizeRiotId("  ABC-123-DEF  ")).toBe("abc-123-def")
+    expect(normalizeRiotId("abc-123-def")).toBe("abc-123-def")
+    expect(normalizeRiotId(null)).toBeNull()
+    expect(normalizeRiotId("")).toBeNull()
+  })
+})
+
+describe("filterMatchesByScope act is case-insensitive", () => {
+  const mixed = [
+    { ...mk(5, "AAAA-1111", false, "Acto X"), actId: "AAAA-1111" },
+    { ...mk(4, "aaaa-1111", false, "Acto X"), actId: "aaaa-1111" },
+    { ...mk(3, "bbbb-2222", false, "Acto Y"), actId: "bbbb-2222" },
+  ]
+  it("filters by actId regardless of casing", () => {
+    expect(filterMatchesByScope(mixed, { type: "act", actId: "aaaa-1111" }).length).toBe(2)
+    expect(filterMatchesByScope(mixed, { type: "act", actId: "AAAA-1111" }).length).toBe(2)
   })
 })
 

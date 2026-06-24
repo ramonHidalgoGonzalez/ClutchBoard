@@ -174,6 +174,25 @@ describe("countMatchesByAct", () => {
     expect(counts.get("a1")).toBe(2)
     expect(counts.get("a2")).toBe(1)
   })
+
+  it("groups acts whose ids differ only in casing under one normalized key", () => {
+    const counts = countMatchesByAct([
+      { ...mk("X", true), actId: "ABC-1" },
+      { ...mk("X", false), actId: "abc-1" },
+    ])
+    expect(counts.get("abc-1")).toBe(2)
+  })
+})
+
+describe("buildActScopeOptions counter survives casing mismatch", () => {
+  it("links an uppercase content act id to lowercase-keyed match counts", () => {
+    const acts: ValorantAct[] = [
+      { id: "ABC-1", name: "ACT 1", episodeNumber: 9, actNumber: 1, isActive: false },
+    ]
+    const counts = new Map<string, number>([["abc-1", 24]]) // keyed normalized (match side)
+    const opts = buildActScopeOptions({ acts, matchCountsByAct: counts })
+    expect(opts.find((o) => o.actId === "ABC-1")?.games).toBe(24)
+  })
 })
 
 describe("getActsById", () => {
