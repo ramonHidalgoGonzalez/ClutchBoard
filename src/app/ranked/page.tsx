@@ -48,7 +48,7 @@ export default async function RankedPage({
       {scoped.length === 0 ? (
         <EmptyState
           title="No hay partidas sincronizadas para este acto"
-          description="Puede que Clutchboard todavía no tenga histórico de ese acto. Sincroniza más historial o selecciona otro acto."
+          description="Clutchboard solo puede analizar partidas que Riot devuelva en el matchlist disponible o que la app haya guardado previamente. Si jugaste en este acto pero aparece vacío, probablemente esas partidas no estaban sincronizadas todavía."
         />
       ) : competitive.length === 0 ? (
         <EmptyState

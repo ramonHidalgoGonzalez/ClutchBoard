@@ -3,6 +3,13 @@ import type { MatchPerformance } from "@/types/domain"
 import { recentFirst } from "@/analytics/entity-stats"
 import { getPrisma } from "@/database/prisma"
 import { PrismaMatchHistoryRepository } from "@/server/valorant/matches/db-match-history-repository"
+import {
+  classifyMatchAct,
+  computeHistoryCoverage,
+  getActsById,
+  getAllValorantActs,
+  type HistoryCoverage,
+} from "@/server/valorant/content/acts"
 
 export type NormalizedMatch = MatchPerformance
 
@@ -22,6 +29,20 @@ export interface MatchHistoryRepository {
   getAllSyncedMatches(puuid: string): Promise<NormalizedMatch[]>
   getMatchesPage(puuid: string, params: MatchPageParams): Promise<PaginatedMatches>
   saveMatches(userId: string, puuid: string, matches: NormalizedMatch[]): Promise<number>
+  getCoverage(puuid: string): Promise<HistoryCoverage>
+}
+
+/**
+ * Coverage from persisted matches. Resolves actId from seasonId first (raw
+ * persisted matches don't carry actId) so per-act counts are accurate.
+ */
+export async function computeRepoCoverage(matches: NormalizedMatch[]): Promise<HistoryCoverage> {
+  const [actsById, acts] = await Promise.all([getActsById(), getAllValorantActs()])
+  const enriched = matches.map((m) => {
+    const act = classifyMatchAct(m.seasonId, m.startedAt, actsById, acts)
+    return { ...m, actId: act?.id ?? m.actId ?? m.seasonId ?? null }
+  })
+  return computeHistoryCoverage({ normalizedMatches: enriched, acts })
 }
 
 export function paginate(matches: NormalizedMatch[], { page = 1, pageSize = 20 }: MatchPageParams): PaginatedMatches {
@@ -64,6 +85,10 @@ export class InMemoryMatchHistoryRepository implements MatchHistoryRepository {
 
   async getMatchesPage(puuid: string, params: MatchPageParams): Promise<PaginatedMatches> {
     return paginate(await this.getAllSyncedMatches(puuid), params)
+  }
+
+  async getCoverage(puuid: string): Promise<HistoryCoverage> {
+    return computeRepoCoverage(await this.getAllSyncedMatches(puuid))
   }
 
   async saveMatches(_userId: string, puuid: string, matches: NormalizedMatch[]): Promise<number> {

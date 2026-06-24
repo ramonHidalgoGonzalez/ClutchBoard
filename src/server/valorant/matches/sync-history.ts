@@ -34,6 +34,14 @@ const MODE_CAP: Record<SyncMode, number> = {
   all_available: Number.POSITIVE_INFINITY,
 }
 
+/** Don't auto-sync more than once per AUTO_SYNC_COOLDOWN_MS per user. */
+export const AUTO_SYNC_COOLDOWN_MS = 15 * 60 * 1000
+
+export function shouldAutoSync(lastSyncMs: number | undefined, nowMs: number, cooldownMs = AUTO_SYNC_COOLDOWN_MS): boolean {
+  if (!lastSyncMs) return true
+  return nowMs - lastSyncMs >= cooldownMs
+}
+
 function isCompetitive(m: NormalizedMatch): boolean {
   return (m.queueId || m.queueName || "").toLowerCase().includes("competitive")
 }

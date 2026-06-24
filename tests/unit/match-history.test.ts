@@ -5,7 +5,7 @@ import {
   InMemoryMatchHistoryRepository,
   paginate,
 } from "@/server/valorant/matches/match-history-repository"
-import { syncValorantMatchHistory } from "@/server/valorant/matches/sync-history"
+import { AUTO_SYNC_COOLDOWN_MS, shouldAutoSync, syncValorantMatchHistory } from "@/server/valorant/matches/sync-history"
 
 function mk(id: string, seasonId: string | null, daysAgo: number, queue = "competitive"): MatchPerformance {
   return {
@@ -99,6 +99,27 @@ describe("syncValorantMatchHistory", () => {
       { repo, fetchNormalized: async () => available },
     )
     expect(r.savedMatches).toBe(3)
+  })
+})
+
+describe("shouldAutoSync (cooldown)", () => {
+  it("allows when never synced, blocks within the window, allows after", () => {
+    const now = 1_000_000_000
+    expect(shouldAutoSync(undefined, now)).toBe(true)
+    expect(shouldAutoSync(now - 1000, now)).toBe(false)
+    expect(shouldAutoSync(now - AUTO_SYNC_COOLDOWN_MS - 1, now)).toBe(true)
+  })
+})
+
+describe("repository getCoverage", () => {
+  it("reports synced count and date range from persisted matches", async () => {
+    const repo = new InMemoryMatchHistoryRepository()
+    await repo.saveMatches("u", "p", [mk("a", "s1", 1), mk("b", "s1", 30)])
+    const c = await repo.getCoverage("p")
+    expect(c.normalizedMatchesCount).toBe(2)
+    expect(c.oldestMatchDate).toBeTruthy()
+    expect(c.newestMatchDate).toBeTruthy()
+    expect(c.uniqueSeasonIds.find((s) => s.seasonId === "s1")?.count).toBe(2)
   })
 })
 
