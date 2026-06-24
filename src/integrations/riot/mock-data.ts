@@ -54,8 +54,9 @@ export function createMockMatches(count = 60, puuid?: string): MatchPerformance[
       roundsPlayed: (isWin ? 13 : 8 + (index % 4)) + (isWin ? 7 + (index % 4) : 13),
       // Platinum 1 .. Diamond 3 (15..20), only on competitive matches.
       competitiveTier: queueName === "Competitive" ? 15 + ((index * 2) % 6) : 0,
-      // index 0 = most recent → current act; older blocks = previous acts.
-      seasonId: index < 20 ? "act-ep9a1" : index < 40 ? "act-ep8a3" : "act-ep8a2",
+      // index 0 = most recent. Matches only cover a few acts; the content
+      // catalog exposes more (incl. the active ep10a1 with 0 synced matches).
+      seasonId: index < 20 ? "ep9a1" : index < 40 ? "ep8a3" : "ep8a2",
       abilityCasts: {
         grenadeCasts: 5 + (index % 4),
         ability1Casts: 8 + (index % 6),

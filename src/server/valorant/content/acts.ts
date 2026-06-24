@@ -1,5 +1,7 @@
 import { riotAdapter } from "@/integrations/riot"
 import type { Locale } from "@/i18n/locales"
+import type { MatchPerformance } from "@/types/domain"
+import type { ScopeActOption } from "@/server/valorant/analytics/scope-filter"
 
 export type ValorantAct = {
   id: string
@@ -174,4 +176,78 @@ export async function getActsById(locale: Locale = "es"): Promise<Map<string, Va
     map.set(act.id.trim().toLowerCase(), act)
   }
   return map
+}
+
+/** Alias: every act Riot returns, not just the active one. */
+export const getAllValorantActs = getValorantActs
+
+export function isActCurrent(act: ValorantAct, currentDate?: number): boolean {
+  if (act.isActive) return true
+  if (currentDate !== undefined && act.startTime && act.endTime) {
+    const start = new Date(act.startTime).getTime()
+    const end = new Date(act.endTime).getTime()
+    return Number.isFinite(start) && Number.isFinite(end) && currentDate >= start && currentDate <= end
+  }
+  return false
+}
+
+/** Count synced matches per detected act id (matches with no act are ignored). */
+export function countMatchesByAct(matches: MatchPerformance[]): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const match of matches) {
+    if (!match.actId) continue
+    counts.set(match.actId, (counts.get(match.actId) ?? 0) + 1)
+  }
+  return counts
+}
+
+function recencyRank(act: ValorantAct): number {
+  // Sort newest-first using episode/act numbers; undetected numbers sink last.
+  const ep = act.episodeNumber ?? -1
+  const ac = act.actNumber ?? -1
+  return ep * 100 + ac
+}
+
+/**
+ * Build selector options from ALL available acts (content) merged with synced
+ * match counts. Acts with zero synced matches are kept by default so the user
+ * can still pick them (the page then shows a per-act empty state).
+ */
+export function buildActScopeOptions({
+  acts,
+  matchCountsByAct,
+  includeActsWithoutMatches = true,
+  locale = "es",
+  currentDate,
+  detectedLabels,
+}: {
+  acts: ValorantAct[]
+  matchCountsByAct: Map<string, number>
+  includeActsWithoutMatches?: boolean
+  locale?: Locale
+  currentDate?: number
+  detectedLabels?: Map<string, string>
+}): ScopeActOption[] {
+  const options: ScopeActOption[] = acts
+    .map((act) => ({
+      actId: act.id,
+      label: formatActLabel(act, locale),
+      isCurrent: isActCurrent(act, currentDate),
+      games: matchCountsByAct.get(act.id) ?? 0,
+    }))
+    .filter((opt) => includeActsWithoutMatches || opt.games > 0)
+
+  options.sort((a, b) => {
+    const actA = acts.find((x) => x.id === a.actId)
+    const actB = acts.find((x) => x.id === b.actId)
+    return recencyRank(actB!) - recencyRank(actA!)
+  })
+
+  // Detected acts that are missing from content metadata (keep, don't drop).
+  for (const [actId, games] of matchCountsByAct) {
+    if (options.some((opt) => opt.actId === actId)) continue
+    options.push({ actId, label: detectedLabels?.get(actId) ?? actId, isCurrent: false, games })
+  }
+
+  return options
 }

@@ -44,8 +44,8 @@ export default async function RankedPage({
       </div>
       {analytics.filteredMatches.length === 0 ? (
         <EmptyState
-          title="No se han detectado actos en estas partidas"
-          description="No hay partidas sincronizadas para este filtro. Cambia de acto o sincroniza más partidas."
+          title="No hay partidas competitivas sincronizadas para este acto"
+          description="Sincroniza más partidas o selecciona otro acto."
         />
       ) : (
         <RankedView matches={analytics.filteredMatches} now={new Date().getTime()} rankLabel={rankLabel} />

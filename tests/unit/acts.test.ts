@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  buildActScopeOptions,
   buildActsFromContent,
   classifyMatchAct,
+  countMatchesByAct,
   formatActLabel,
   getActsById,
   type ValorantAct,
@@ -123,6 +125,54 @@ describe("buildActComparison", () => {
 
   it("is unavailable when one act has no ranked matches", () => {
     expect(buildActComparison(matches, "a1", "zzz").available).toBe(false)
+  })
+})
+
+describe("buildActScopeOptions", () => {
+  const acts = buildActsFromContent(RAW, "es") // a1 (ep9), a2 (ep8, active)
+
+  it("lists ALL acts including ones with zero synced matches", () => {
+    const counts = new Map<string, number>([["a1", 3]])
+    const opts = buildActScopeOptions({ acts, matchCountsByAct: counts, includeActsWithoutMatches: true })
+    expect(opts.map((o) => o.actId).sort()).toEqual(["a1", "a2"])
+    expect(opts.find((o) => o.actId === "a1")?.games).toBe(3)
+    expect(opts.find((o) => o.actId === "a2")?.games).toBe(0)
+  })
+
+  it("marks the active act as current without dropping the others", () => {
+    const opts = buildActScopeOptions({ acts, matchCountsByAct: new Map() })
+    expect(opts).toHaveLength(2)
+    expect(opts.find((o) => o.actId === "a2")?.isCurrent).toBe(true)
+    expect(opts.find((o) => o.actId === "a1")?.isCurrent).toBe(false)
+  })
+
+  it("can drop zero-match acts when includeActsWithoutMatches is false", () => {
+    const counts = new Map<string, number>([["a1", 2]])
+    const opts = buildActScopeOptions({ acts, matchCountsByAct: counts, includeActsWithoutMatches: false })
+    expect(opts.map((o) => o.actId)).toEqual(["a1"])
+  })
+
+  it("keeps detected acts that content metadata is missing", () => {
+    const counts = new Map<string, number>([["orphan", 4]])
+    const opts = buildActScopeOptions({
+      acts,
+      matchCountsByAct: counts,
+      detectedLabels: new Map([["orphan", "Acto X"]]),
+    })
+    expect(opts.find((o) => o.actId === "orphan")).toMatchObject({ games: 4, label: "Acto X" })
+  })
+})
+
+describe("countMatchesByAct", () => {
+  it("tallies matches per act and ignores undetected acts", () => {
+    const counts = countMatchesByAct([
+      mk("a1", true),
+      mk("a1", false),
+      mk("a2", true),
+      { ...mk("a1", true), actId: null },
+    ])
+    expect(counts.get("a1")).toBe(2)
+    expect(counts.get("a2")).toBe(1)
   })
 })
 

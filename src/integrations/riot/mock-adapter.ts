@@ -35,10 +35,19 @@ export async function getContent(): Promise<RiotContentDto> {
     version: "mock-1.0",
     characters: MOCK_AGENT_CATALOG,
     maps: MOCK_MAP_CATALOG,
+    // Episodes + acts (VAL-CONTENT-V1 shape). Includes acts with no synced
+    // matches so the selector can prove it lists all acts, not just played ones.
     acts: [
-      { id: "act-ep9a1", name: "Episodio 9 // Acto 1", type: "act", isActive: true },
-      { id: "act-ep8a3", name: "Episodio 8 // Acto 3", type: "act", isActive: false },
-      { id: "act-ep8a2", name: "Episodio 8 // Acto 2", type: "act", isActive: false },
+      { id: "ep8", name: "EPISODE 8", type: "episode", isActive: false },
+      { id: "ep8a1", name: "ACT 1", type: "act", isActive: false },
+      { id: "ep8a2", name: "ACT 2", type: "act", isActive: false },
+      { id: "ep8a3", name: "ACT 3", type: "act", isActive: false },
+      { id: "ep9", name: "EPISODE 9", type: "episode", isActive: false },
+      { id: "ep9a1", name: "ACT 1", type: "act", isActive: false },
+      { id: "ep9a2", name: "ACT 2", type: "act", isActive: false },
+      { id: "ep9a3", name: "ACT 3", type: "act", isActive: false },
+      { id: "ep10", name: "EPISODE 10", type: "episode", isActive: false },
+      { id: "ep10a1", name: "ACT 1", type: "act", isActive: true },
     ],
   }
 }
