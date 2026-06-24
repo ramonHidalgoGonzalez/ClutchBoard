@@ -16,6 +16,16 @@ export const en: Dictionary = {
     seeFullHistory: "View full history",
     noData: "Not enough data.",
   },
+  scope: {
+    currentAct: "Current act",
+    allSynced: "All synced matches",
+    previousActs: "Previous acts",
+    noAct: "No act detected",
+    lastN: "Last {n}",
+    current: "current",
+    noSync: "no matches",
+    syncedTotal: "{n} synced",
+  },
   nav: {
     dashboard: "Dashboard",
     matches: "Matches",

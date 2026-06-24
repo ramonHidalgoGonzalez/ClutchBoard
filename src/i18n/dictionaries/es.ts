@@ -14,6 +14,16 @@ export const es = {
     seeFullHistory: "Ver historial completo",
     noData: "Sin datos suficientes.",
   },
+  scope: {
+    currentAct: "Acto actual",
+    allSynced: "Todas las partidas sincronizadas",
+    previousActs: "Actos anteriores",
+    noAct: "Sin acto detectado",
+    lastN: "Últimas {n}",
+    current: "actual",
+    noSync: "sin partidas",
+    syncedTotal: "{n} sincronizadas",
+  },
   nav: {
     dashboard: "Dashboard",
     matches: "Partidas",

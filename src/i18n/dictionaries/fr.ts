@@ -16,6 +16,16 @@ export const fr: Dictionary = {
     seeFullHistory: "Voir l'historique complet",
     noData: "Données insuffisantes.",
   },
+  scope: {
+    currentAct: "Acte actuel",
+    allSynced: "Toutes les parties synchronisées",
+    previousActs: "Actes précédents",
+    noAct: "Aucun acte détecté",
+    lastN: "{n} dernières",
+    current: "actuel",
+    noSync: "aucune partie",
+    syncedTotal: "{n} synchronisées",
+  },
   nav: {
     dashboard: "Tableau de bord",
     matches: "Parties",
