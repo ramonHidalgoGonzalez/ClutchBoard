@@ -1,15 +1,25 @@
 "use client"
 
-import { useEffect, useRef, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { CalendarRange, Loader2 } from "lucide-react"
+import { CalendarRange, Eye, EyeOff, Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { useTranslations } from "@/i18n/provider"
 
-import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   serializeScope,
+  normalizeRiotId,
   NO_ACT_ID,
   type AnalyticsScope,
   type ScopeActOption,
@@ -49,6 +59,7 @@ export function AnalyticsScopeSelector({
   const t = useTranslations()
   const applied = useRef(false)
   const [isPending, startTransition] = useTransition()
+  const [showEmpty, setShowEmpty] = useState(false)
 
   // Restore the last chosen scope when arriving without an explicit one.
   useEffect(() => {
@@ -76,6 +87,33 @@ export function AnalyticsScopeSelector({
     startTransition(() => router.push(`${pathname}?${params.toString()}`))
   }
 
+  // The currently selected act stays visible even if it has 0 matches, so the
+  // trigger never goes blank when you've navigated to an (empty) act.
+  const selectedActId = scope.type === "act" ? normalizeRiotId(scope.actId) : null
+  const isVisible = (a: ScopeActOption) =>
+    a.games > 0 || a.isCurrent || normalizeRiotId(a.actId) === selectedActId
+
+  const noActOpt = acts.find((a) => a.actId === NO_ACT_ID)
+  const realActs = acts.filter((a) => a.actId !== NO_ACT_ID)
+  const withGames = realActs.filter(isVisible)
+  const withoutGames = realActs.filter((a) => !isVisible(a))
+
+  function countSuffix(a: ScopeActOption) {
+    if (a.actId === NO_ACT_ID) return ` · ${t("scope.matchesCount", { n: a.games })}`
+    if (a.games > 0) return ` · ${t("scope.matchesCount", { n: a.games })}`
+    return ` · ${t("scope.zeroSynced")}`
+  }
+
+  function actItem(a: ScopeActOption) {
+    return (
+      <SelectItem key={a.actId} value={actOptionKey(a.actId)}>
+        {a.label}
+        {a.isCurrent ? ` · ${t("scope.current")}` : ""}
+        {countSuffix(a)}
+      </SelectItem>
+    )
+  }
+
   return (
     <div className="flex items-center gap-2">
       {isPending ? (
@@ -93,24 +131,55 @@ export function AnalyticsScopeSelector({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="current_act">{t("scope.currentAct")}</SelectItem>
-          <SelectItem value="all">{t("scope.allSynced")}</SelectItem>
-          <SelectItem value="previous_acts">{t("scope.previousActs")}</SelectItem>
-          <SelectSeparator />
-          <SelectItem value="last:10">{t("scope.lastN", { n: 10 })}</SelectItem>
-          <SelectItem value="last:20">{t("scope.lastN", { n: 20 })}</SelectItem>
-          <SelectItem value="last:50">{t("scope.lastN", { n: 50 })}</SelectItem>
-          <SelectItem value="last:100">{t("scope.lastN", { n: 100 })}</SelectItem>
-          {acts.length ? <SelectSeparator /> : null}
-          {acts.map((a) => (
-            <SelectItem key={a.actId} value={actOptionKey(a.actId)}>
-              {a.label}
-              {a.isCurrent ? ` · ${t("scope.current")}` : ""}
-              {a.actId === NO_ACT_ID ? ` (${a.games})` : a.games > 0 ? ` (${a.games})` : ` · ${t("scope.noSync")}`}
-            </SelectItem>
-          ))}
+          <SelectGroup>
+            <SelectLabel>{t("scope.quick")}</SelectLabel>
+            <SelectItem value="current_act">{t("scope.currentAct")}</SelectItem>
+            <SelectItem value="all">{t("scope.allSynced")}</SelectItem>
+            <SelectItem value="previous_acts">{t("scope.previousActs")}</SelectItem>
+            <SelectItem value="last:10">{t("scope.lastN", { n: 10 })}</SelectItem>
+            <SelectItem value="last:20">{t("scope.lastN", { n: 20 })}</SelectItem>
+            <SelectItem value="last:50">{t("scope.lastN", { n: 50 })}</SelectItem>
+            <SelectItem value="last:100">{t("scope.lastN", { n: 100 })}</SelectItem>
+          </SelectGroup>
+
+          {withGames.length || noActOpt ? (
+            <>
+              <SelectSeparator />
+              <SelectGroup>
+                <SelectLabel>{t("scope.withMatches")}</SelectLabel>
+                {withGames.map(actItem)}
+                {noActOpt ? actItem(noActOpt) : null}
+              </SelectGroup>
+            </>
+          ) : null}
+
+          {showEmpty && withoutGames.length ? (
+            <>
+              <SelectSeparator />
+              <SelectGroup>
+                <SelectLabel>{t("scope.withoutMatches")}</SelectLabel>
+                {withoutGames.map(actItem)}
+                <p className="px-2 py-1.5 text-[11px] leading-snug text-zinc-500">
+                  {t("scope.syncHint", { n: syncedTotal })}
+                </p>
+              </SelectGroup>
+            </>
+          ) : null}
         </SelectContent>
       </Select>
+
+      {withoutGames.length ? (
+        <button
+          type="button"
+          onClick={() => setShowEmpty((v) => !v)}
+          className="flex items-center gap-1 rounded-lg border border-white/10 bg-black/20 px-2 py-1.5 text-xs text-zinc-400 transition hover:text-zinc-200"
+          title={showEmpty ? t("scope.hideEmpty") : t("scope.showEmpty")}
+        >
+          {showEmpty ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+          <span className="hidden lg:inline">{showEmpty ? t("scope.hideEmpty") : t("scope.showEmpty")}</span>
+        </button>
+      ) : null}
+
       <span className="hidden text-xs text-zinc-500 sm:inline">{t("scope.syncedTotal", { n: syncedTotal })}</span>
     </div>
   )

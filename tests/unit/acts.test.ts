@@ -131,26 +131,38 @@ describe("buildActComparison", () => {
 })
 
 describe("buildActScopeOptions", () => {
-  const acts = buildActsFromContent(RAW, "es") // a1 (ep9), a2 (ep8, active)
+  const acts = buildActsFromContent(RAW, "es") // a1 (ep9), a2 (ep8, active/current)
+  const plainActs = acts.map((a) => ({ ...a, isActive: false })) // none current
 
-  it("lists ALL acts including ones with zero synced matches", () => {
-    const counts = new Map<string, number>([["a1", 3]])
-    const opts = buildActScopeOptions({ acts, matchCountsByAct: counts, includeActsWithoutMatches: true })
-    expect(opts.map((o) => o.actId).sort()).toEqual(["a1", "a2"])
+  it("hides acts without synced matches by default", () => {
+    const opts = buildActScopeOptions({ acts: plainActs, matchCountsByAct: new Map([["a1", 2]]) })
+    expect(opts.map((o) => o.actId)).toEqual(["a1"])
+  })
+
+  it("keeps the current act even when it has 0 synced matches", () => {
+    const opts = buildActScopeOptions({ acts, matchCountsByAct: new Map([["a1", 3]]) })
     expect(opts.find((o) => o.actId === "a1")?.games).toBe(3)
+    const a2 = opts.find((o) => o.actId === "a2")
+    expect(a2?.isCurrent).toBe(true)
+    expect(a2?.games).toBe(0)
+  })
+
+  it("shows all acts when includeActsWithoutMatches is true", () => {
+    const opts = buildActScopeOptions({
+      acts: plainActs,
+      matchCountsByAct: new Map([["a1", 3]]),
+      includeActsWithoutMatches: true,
+    })
+    expect(opts.map((o) => o.actId).sort()).toEqual(["a1", "a2"])
     expect(opts.find((o) => o.actId === "a2")?.games).toBe(0)
   })
 
-  it("marks the active act as current without dropping the others", () => {
-    const opts = buildActScopeOptions({ acts, matchCountsByAct: new Map() })
-    expect(opts).toHaveLength(2)
-    expect(opts.find((o) => o.actId === "a2")?.isCurrent).toBe(true)
-    expect(opts.find((o) => o.actId === "a1")?.isCurrent).toBe(false)
-  })
-
-  it("can drop zero-match acts when includeActsWithoutMatches is false", () => {
-    const counts = new Map<string, number>([["a1", 2]])
-    const opts = buildActScopeOptions({ acts, matchCountsByAct: counts, includeActsWithoutMatches: false })
+  it("can also drop the current act when includeCurrentActEvenIfEmpty is false", () => {
+    const opts = buildActScopeOptions({
+      acts,
+      matchCountsByAct: new Map([["a1", 2]]),
+      includeCurrentActEvenIfEmpty: false,
+    })
     expect(opts.map((o) => o.actId)).toEqual(["a1"])
   })
 
@@ -159,6 +171,7 @@ describe("buildActScopeOptions", () => {
     const opts = buildActScopeOptions({
       acts,
       matchCountsByAct: counts,
+      includeActsWithoutMatches: true,
       detectedLabels: new Map([["orphan", "Acto X"]]),
     })
     expect(opts.find((o) => o.actId === "orphan")).toMatchObject({ games: 4, label: "Acto X" })
