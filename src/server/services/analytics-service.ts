@@ -7,7 +7,6 @@ import {
   calculateWinRate,
 } from "@/analytics/formulas"
 import { buildTrendPoints } from "@/analytics/metrics"
-import { riotAdapter } from "@/integrations/riot"
 import { env } from "@/lib/env"
 import type {
   AgentBreakdown,
@@ -31,6 +30,7 @@ import {
 } from "@/server/valorant/content/acts"
 import { filterMatchesByScope, type AnalyticsScope } from "@/server/valorant/analytics/scope-filter"
 import { recentFirst } from "@/analytics/entity-stats"
+import { fetchFromAdapter, getMatchHistoryRepository } from "@/server/valorant/matches/match-history-repository"
 import { getAgentAssets } from "@/server/valorant/assets/agent-assets"
 import { getMapAssets } from "@/server/valorant/assets/map-assets"
 
@@ -261,13 +261,23 @@ function enrichMatchesWithContent(
  * insights + acts) share one fetch+enrich instead of recomputing per caller.
  */
 export const getEnrichedMatches = cache(async (puuid?: string): Promise<MatchPerformance[]> => {
-  const rawMatches = env.enableMockRiot
-    ? await riotAdapter.getNormalizedMatches()
-    : await riotAdapter.getNormalizedMatches(puuid)
+  const rawMatches = await getAllSyncedRaw(puuid)
   const catalog = await getContentCatalog()
   const [actsById, actsList] = await Promise.all([getActsById(), getValorantActs()])
   return enrichMatchesWithContent(rawMatches, catalog, actsById, actsList)
 })
+
+/**
+ * Raw (un-enriched) synced matches. Prefers the persisted history repository so
+ * old acts survive reloads/deploys; falls back to a live adapter fetch when the
+ * repository has nothing yet (so analytics is never empty pre-sync).
+ */
+async function getAllSyncedRaw(puuid?: string): Promise<MatchPerformance[]> {
+  const repo = getMatchHistoryRepository()
+  const stored = await repo.getAllSyncedMatches(puuid ?? "")
+  if (stored.length) return stored
+  return fetchFromAdapter(puuid)
+}
 
 /** Build the analytics payload from an already-enriched (and scoped) match set. */
 export function buildScopedAnalytics(filteredMatches: MatchPerformance[], periodDays = 60): AnalyticsPayload {
