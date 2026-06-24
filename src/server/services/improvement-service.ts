@@ -10,7 +10,7 @@ import { getContentCatalog } from "@/server/services/content-service"
 import {
   buildActScopeOptions,
   countMatchesByAct,
-  debugActLinking,
+  debugValorantHistoryCoverage,
   getAllValorantActs,
 } from "@/server/valorant/content/acts"
 import {
@@ -61,7 +61,7 @@ async function buildScopeActs(enriched: Awaited<ReturnType<typeof getEnrichedMat
   const allActs = await getAllValorantActs().catch(() => [])
   const counts = countMatchesByAct(enriched)
 
-  if (allActs.length) debugActLinking(enriched, allActs)
+  if (allActs.length) debugValorantHistoryCoverage({ normalizedMatches: enriched, acts: allActs })
 
   let acts: ScopeActOption[]
   if (allActs.length) {

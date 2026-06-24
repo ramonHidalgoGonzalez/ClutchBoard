@@ -5,8 +5,10 @@ import {
   buildActsFromContent,
   classifyMatchAct,
   countMatchesByAct,
+  debugValorantHistoryCoverage,
   formatActLabel,
   getActsById,
+  unresolvedActCount,
   type ValorantAct,
 } from "@/server/valorant/content/acts"
 import { buildActComparison } from "@/server/valorant/analytics/comparisons"
@@ -192,6 +194,21 @@ describe("buildActScopeOptions counter survives casing mismatch", () => {
     const counts = new Map<string, number>([["abc-1", 24]]) // keyed normalized (match side)
     const opts = buildActScopeOptions({ acts, matchCountsByAct: counts })
     expect(opts.find((o) => o.actId === "ABC-1")?.games).toBe(24)
+  })
+})
+
+describe("unresolvedActCount", () => {
+  it("counts only matches with no detectable act", () => {
+    const matches = [mk("a1", true), { ...mk("a2", true), actId: null }, { ...mk("a3", false), actId: "  " }]
+    expect(unresolvedActCount(matches)).toBe(2)
+  })
+})
+
+describe("debugValorantHistoryCoverage", () => {
+  it("does not throw and stays silent in production", () => {
+    const acts = buildActsFromContent(RAW, "es")
+    const matches = [mk("a1", true), mk("a2", false), { ...mk("x", true), actId: null }]
+    expect(() => debugValorantHistoryCoverage({ normalizedMatches: matches, acts, rawMatchlistCount: 3 })).not.toThrow()
   })
 })
 
