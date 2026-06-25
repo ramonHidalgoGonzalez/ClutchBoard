@@ -27,20 +27,38 @@ export async function checkSession(): Promise<SessionState> {
   }
 }
 
-export type SyncOutcome = { ok: boolean; savedMatches: number; matchlistReturned: number; error?: string }
+export type SyncOutcome = {
+  ok: boolean
+  savedMatches: number
+  matchlistReturned: number
+  rateLimited: boolean
+  error?: "unauthenticated" | "rate_limited" | "network" | string
+}
 
 export async function syncRecent(): Promise<SyncOutcome> {
+  const base = { ok: false, savedMatches: 0, matchlistReturned: 0, rateLimited: false }
   try {
     const res = await apiFetch("/api/valorant/sync-history", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ mode: "recent" }),
     })
-    if (res.status === 401) return { ok: false, savedMatches: 0, matchlistReturned: 0, error: "unauthenticated" }
-    if (!res.ok) return { ok: false, savedMatches: 0, matchlistReturned: 0, error: `http_${res.status}` }
-    const data = (await res.json().catch(() => ({}))) as { savedMatches?: number; matchlistReturned?: number }
-    return { ok: true, savedMatches: data.savedMatches ?? 0, matchlistReturned: data.matchlistReturned ?? 0 }
+    if (res.status === 401) return { ...base, error: "unauthenticated" }
+    if (res.status === 429) return { ...base, rateLimited: true, error: "rate_limited" }
+    if (!res.ok) return { ...base, error: `http_${res.status}` }
+    const data = (await res.json().catch(() => ({}))) as {
+      savedMatches?: number
+      matchlistReturned?: number
+      warnings?: string[]
+    }
+    const rateLimited = (data.warnings ?? []).some((w) => /429|rate.?limit/i.test(w))
+    return {
+      ok: true,
+      savedMatches: data.savedMatches ?? 0,
+      matchlistReturned: data.matchlistReturned ?? 0,
+      rateLimited,
+    }
   } catch {
-    return { ok: false, savedMatches: 0, matchlistReturned: 0, error: "network" }
+    return { ...base, error: "network" }
   }
 }
