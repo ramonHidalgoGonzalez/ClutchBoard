@@ -16,7 +16,7 @@ import {
   updateExternalActSummary,
   upsertExternalActSummary,
 } from "@/server/repositories/external-act-summary-repository"
-import { buildActProgressionRows } from "@/server/valorant/analytics/act-progression"
+import { buildActProgressionRows, compareActProgression, type ActProgressionRow } from "@/server/valorant/analytics/act-progression"
 
 describe("validateExternalActInput", () => {
   it("accepts a valid summary", () => {
@@ -138,6 +138,44 @@ describe("buildActProgressionRows", () => {
     expect(real?.games).toBe(2)
     expect(ext?.badge).toBe("Manual")
     expect(ext?.finalRank).toBe("Platino 2")
+  })
+})
+
+describe("compareActProgression", () => {
+  const row = (over: Partial<ActProgressionRow>): ActProgressionRow => ({
+    key: "k",
+    actLabel: "Act",
+    source: "riot",
+    badge: "Riot sincronizado",
+    isReal: true,
+    games: 50,
+    winRate: 50,
+    kda: 1.1,
+    acs: 200,
+    hsPct: 20,
+    finalRank: null,
+    peakRank: null,
+    finalRankTier: null,
+    peakRankTier: null,
+    mainAgent: "Jett",
+    ...over,
+  })
+
+  it("computes B - A deltas and rank direction from tiers", () => {
+    const a = row({ key: "a", winRate: 50, kda: 1.0, acs: 200, finalRank: "Platino 2", finalRankTier: 14 })
+    const b = row({ key: "b", source: "manual", isReal: false, winRate: 56, kda: 1.18, acs: 218, finalRank: "Diamante 1", finalRankTier: 16 })
+    const c = compareActProgression(a, b)
+    expect(c.metrics.find((m) => m.key === "winRate")?.delta).toBeCloseTo(6)
+    expect(c.metrics.find((m) => m.key === "acs")?.delta).toBe(18)
+    expect(c.finalRank.direction).toBe("up")
+  })
+
+  it("returns null delta when a metric is missing (Sin dato)", () => {
+    const a = row({ kda: 1.0 })
+    const b = row({ kda: null })
+    const c = compareActProgression(a, b)
+    expect(c.metrics.find((m) => m.key === "kda")?.delta).toBeNull()
+    expect(c.finalRank.direction).toBeNull() // no tiers
   })
 })
 

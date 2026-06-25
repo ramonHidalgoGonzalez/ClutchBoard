@@ -16,6 +16,8 @@ export type ActProgressionRow = {
   hsPct: number | null
   finalRank: string | null
   peakRank: string | null
+  finalRankTier: number | null
+  peakRankTier: number | null
   mainAgent: string | null
 }
 
@@ -60,6 +62,8 @@ export function buildActProgressionRows(
       hsPct: agg.hsPct,
       finalRank: null,
       peakRank: null,
+      finalRankTier: null,
+      peakRankTier: null,
       mainAgent: topAgent(list),
     })
   }
@@ -79,9 +83,64 @@ export function buildActProgressionRows(
       hsPct: s.headshotPercent ?? null,
       finalRank: s.finalRank ?? null,
       peakRank: s.peakRank ?? null,
+      finalRankTier: s.finalRankTier ?? null,
+      peakRankTier: s.peakRankTier ?? null,
       mainAgent: s.mainAgent ?? null,
     })
   }
 
   return rows.sort((a, b) => a.actLabel.localeCompare(b.actLabel))
+}
+
+export type ActMetricDelta = {
+  key: string
+  label: string
+  format: "percent" | "ratio" | "number"
+  a: number | null
+  b: number | null
+  delta: number | null // b - a; null when either side has no data
+  neutral: boolean // games count: more/less, not better/worse
+}
+
+export type ActRankDelta = {
+  a: string | null
+  b: string | null
+  direction: "up" | "down" | "same" | null // requires both tiers
+}
+
+export type ActComparison = {
+  a: ActProgressionRow
+  b: ActProgressionRow
+  metrics: ActMetricDelta[]
+  finalRank: ActRankDelta
+  peakRank: ActRankDelta
+}
+
+function delta(a: number | null, b: number | null): number | null {
+  return a !== null && a !== undefined && b !== null && b !== undefined ? b - a : null
+}
+
+function rankDelta(aStr: string | null, bStr: string | null, aTier: number | null, bTier: number | null): ActRankDelta {
+  let direction: ActRankDelta["direction"] = null
+  if (aTier !== null && aTier !== undefined && bTier !== null && bTier !== undefined) {
+    direction = bTier > aTier ? "up" : bTier < aTier ? "down" : "same"
+  }
+  return { a: aStr ?? null, b: bStr ?? null, direction }
+}
+
+/** Compare two acts (real and/or external). delta = B - A. Missing -> null. */
+export function compareActProgression(a: ActProgressionRow, b: ActProgressionRow): ActComparison {
+  return {
+    a,
+    b,
+    metrics: [
+      { key: "winRate", label: "Winrate", format: "percent", a: a.winRate, b: b.winRate, delta: delta(a.winRate, b.winRate), neutral: false },
+      { key: "kda", label: "KDA", format: "ratio", a: a.kda, b: b.kda, delta: delta(a.kda, b.kda), neutral: false },
+      { key: "acs", label: "ACS", format: "number", a: a.acs, b: b.acs, delta: delta(a.acs, b.acs), neutral: false },
+      { key: "hsPct", label: "HS%", format: "percent", a: a.hsPct, b: b.hsPct, delta: delta(a.hsPct, b.hsPct), neutral: false },
+      { key: "games", label: "Partidas", format: "number", a: a.games, b: b.games, delta: delta(a.games, b.games), neutral: true },
+    ],
+    finalRank: rankDelta(a.finalRank, b.finalRank, a.finalRankTier, b.finalRankTier),
+    peakRank: rankDelta(a.peakRank, b.peakRank, a.peakRankTier, b.peakRankTier),
+  }
 }
