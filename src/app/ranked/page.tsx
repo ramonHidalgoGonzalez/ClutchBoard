@@ -3,9 +3,12 @@ import { redirect } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
 import { getTranslations } from "@/i18n/get-dictionary"
 import { RankedView } from "@/components/ranked/ranked-view"
+import { ActProgression } from "@/components/ranked/act-progression"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { AnalyticsScopeSelector } from "@/components/analytics/analytics-scope-selector"
 import { resolveScopeFromSearchParams } from "@/server/valorant/analytics/scope-filter"
+import { buildActProgressionRows } from "@/server/valorant/analytics/act-progression"
+import { listExternalActSummaries } from "@/server/repositories/external-act-summary-repository"
 import { env } from "@/lib/env"
 import { getCurrentSession } from "@/server/auth/session"
 import { getImprovementData } from "@/server/services/improvement-service"
@@ -21,7 +24,9 @@ export default async function RankedPage({
   }
 
   const scope = resolveScopeFromSearchParams(await searchParams)
-  const { analytics, acts, syncedTotal } = await getImprovementData(session?.puuid, scope)
+  const { analytics, acts, syncedTotal, allMatches } = await getImprovementData(session?.puuid, scope)
+  const externalActs = session ? await listExternalActSummaries(session.userId).catch(() => []) : []
+  const progressionRows = buildActProgressionRows(allMatches, externalActs)
   const t = await getTranslations()
 
   // Don't call an old act's rank "current rank".
@@ -58,6 +63,7 @@ export default async function RankedPage({
       ) : (
         <RankedView matches={scoped} now={new Date().getTime()} rankLabel={rankLabel} />
       )}
+      <ActProgression rows={progressionRows} />
     </AppShell>
   )
 }
