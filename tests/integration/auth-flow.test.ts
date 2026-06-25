@@ -76,7 +76,9 @@ describe("riot callback route", () => {
 
     vi.doMock("@/lib/logger", () => ({
       getLogger: () => ({
+        info: vi.fn(),
         warn: vi.fn(),
+        error: vi.fn(),
       }),
     }))
 

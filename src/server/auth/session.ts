@@ -5,6 +5,7 @@ import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { env, getSessionSecret } from "@/lib/env"
+import { getLogger } from "@/lib/logger"
 import { createSessionRecord, findSessionRecord, revokeSessionRecord } from "@/server/repositories/session-repository"
 
 const COOKIE_NAME = "valorant_tracker_session"
@@ -38,13 +39,22 @@ export async function createAppSession(payload: SessionPayload) {
     .setExpirationTime(`${SESSION_MAX_AGE_SECONDS}s`)
     .sign(getSecretKey())
 
-  await createSessionRecord({
-    id: payload.sessionId,
-    userId: payload.userId,
-    sessionTokenHash: hashToken(rawToken),
-    expiresAt,
-    userAgent: (await headers()).get("user-agent") ?? undefined,
-  })
+  // Best-effort server-side record. The signed cookie is self-contained, so a
+  // DB hiccup (tables missing, connection error) must not break login.
+  try {
+    await createSessionRecord({
+      id: payload.sessionId,
+      userId: payload.userId,
+      sessionTokenHash: hashToken(rawToken),
+      expiresAt,
+      userAgent: (await headers()).get("user-agent") ?? undefined,
+    })
+  } catch (error) {
+    getLogger().warn(
+      { flow: "session", stage: "session_record_failed", error: error instanceof Error ? error.message : "unknown" },
+      "Session record persistence failed; continuing with the signed cookie",
+    )
+  }
 
   const cookieStore = await cookies()
   cookieStore.set(COOKIE_NAME, signedToken, {
@@ -70,22 +80,27 @@ export async function getCurrentSession() {
     const verified = await jwtVerify(token, getSecretKey())
     const payload = verified.payload as unknown as SessionPayload & { rawToken: string }
 
-    // In local demo mode without PostgreSQL, the signed JWT is the only reliable session source.
+    // The signed JWT (with its own expiry, enforced by jwtVerify above) is the
+    // source of truth. The DB record is a best-effort enhancement for
+    // revocation: only reject when we positively find an expired record. A
+    // missing record or a DB error must not lock the user out.
     if (!env.databaseUrl) {
       return payload
     }
 
-    const session = await findSessionRecord(hashToken(payload.rawToken))
-
-    if (!session) {
-      return null
+    try {
+      const session = await findSessionRecord(hashToken(payload.rawToken))
+      if (session && new Date(session.expiresAt).getTime() < Date.now()) {
+        return null
+      }
+      return payload
+    } catch (error) {
+      getLogger().warn(
+        { flow: "session", stage: "session_lookup_failed", error: error instanceof Error ? error.message : "unknown" },
+        "Session lookup failed; trusting the signed cookie",
+      )
+      return payload
     }
-
-    if (new Date(session.expiresAt).getTime() < Date.now()) {
-      return null
-    }
-
-    return payload
   } catch {
     return null
   }

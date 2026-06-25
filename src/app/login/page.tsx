@@ -20,6 +20,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   rso_unavailable: "No se pudo iniciar Riot Sign On en este momento.",
   rso_exchange: "No se pudo completar el intercambio de codigo con Riot.",
   rso_account: "Riot inicio sesion, pero no se pudo recuperar tu cuenta en /accounts/me.",
+  session: "No se pudo guardar la sesion. Revisa la conexion de base de datos.",
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
