@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'" />
+    <title>Clutchboard Companion</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 16px; font-family: Segoe UI, system-ui, sans-serif;
+        background: #0b1020; color: #e7e9ee;
+      }
+      h1 { font-size: 16px; margin: 0 0 12px; }
+      .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #ffffff14; font-size: 13px; }
+      .label { color: #9aa3b2; }
+      .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+      .ok { background: #10b98126; color: #34d399; }
+      .bad { background: #ef444426; color: #f87171; }
+      button {
+        width: 100%; margin-top: 8px; padding: 10px; border: 1px solid #ffffff1f; border-radius: 10px;
+        background: #ff4655; color: white; font-size: 13px; font-weight: 600; cursor: pointer;
+      }
+      button.secondary { background: #ffffff0d; color: #e7e9ee; }
+      label.toggle { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 8px 0; }
+      .muted { color: #6b7280; font-size: 11px; margin-top: 12px; }
+    </style>
+  </head>
+  <body>
+    <h1>Clutchboard Companion</h1>
+
+    <div class="row"><span class="label">Sesión</span><span id="conn" class="pill bad">No conectado</span></div>
+    <div class="row"><span class="label">Cuenta</span><span id="account">—</span></div>
+    <div class="row"><span class="label">VALORANT</span><span id="val" class="pill bad">No detectado</span></div>
+    <div class="row"><span class="label">Última sincronización</span><span id="lastSync">Nunca</span></div>
+    <div class="row"><span class="label">Nuevas partidas</span><span id="newMatches">0</span></div>
+
+    <button id="login">Iniciar sesión en Clutchboard</button>
+    <button id="dashboard" class="secondary">Abrir dashboard</button>
+    <button id="sync" class="secondary">Sincronizar ahora</button>
+
+    <label class="toggle"><span>Auto-sync (cada 15 min jugando)</span><input id="autosync" type="checkbox" /></label>
+    <label class="toggle"><span>Iniciar con Windows</span><input id="startup" type="checkbox" /></label>
+
+    <p class="muted">
+      No lee memoria del juego, no inyecta DLLs, no usa overlay ni APIs privadas. Solo detecta si VALORANT está
+      abierto y sincroniza tus partidas a través de Clutchboard.
+    </p>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "clutchboard-companion",
+  "version": "0.1.0",
+  "description": "Clutchboard Companion — auto-syncs future VALORANT matches so Clutchboard builds per-act history.",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "bundle": "node build.mjs",
+    "build": "npm run typecheck && npm run bundle",
+    "dev": "npm run bundle && electron .",
+    "start": "electron .",
+    "dist": "npm run build && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.clutchboard.companion",
+    "productName": "Clutchboard Companion",
+    "files": ["dist/**", "assets/**"],
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.0"
+  }
+}
