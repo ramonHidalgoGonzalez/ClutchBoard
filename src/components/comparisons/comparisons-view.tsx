@@ -28,6 +28,11 @@ import {
   type PeriodMode,
 } from "@/server/valorant/analytics/comparisons"
 import type { ScopeActOption } from "@/server/valorant/analytics/scope-filter"
+import {
+  compareActProgression,
+  type ActMetricDelta,
+  type ActProgressionRow,
+} from "@/server/valorant/analytics/act-progression"
 import type { MatchPerformance } from "@/types/domain"
 
 type Props = {
@@ -37,6 +42,7 @@ type Props = {
   agents: string[]
   maps: string[]
   acts: ScopeActOption[]
+  actSources: ActProgressionRow[]
   now: number
 }
 
@@ -51,11 +57,35 @@ const PERIOD_OPTIONS: Array<{ value: PeriodMode; label: string }> = [
 const TABS = [
   { id: "period", label: "Periodo", icon: BarChart3 },
   { id: "acts", label: "Acto vs Acto", icon: Layers },
+  { id: "actsources", label: "Comparativa por actos", icon: Layers },
   { id: "agents", label: "Agentes", icon: Swords },
   { id: "maps", label: "Mapas", icon: MapIcon },
   { id: "winloss", label: "Victorias vs Derrotas", icon: GitCompare },
   { id: "trend", label: "Evolución", icon: Activity },
 ]
+
+function badgeClass(source: string): string {
+  if (source === "riot") return "bg-emerald-500/15 text-emerald-300"
+  if (source === "manual") return "bg-sky-500/15 text-sky-300"
+  return "bg-amber-500/15 text-amber-300"
+}
+
+function fmtMetric(value: number | null, format: ActMetricDelta["format"]): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "Sin dato"
+  if (format === "percent") return `${value.toFixed(1)}%`
+  if (format === "ratio") return value.toFixed(2)
+  return Math.round(value).toString()
+}
+
+function fmtDelta(d: ActMetricDelta): { text: string; tone: string } {
+  if (d.delta === null) return { text: "—", tone: "text-zinc-500" }
+  const sign = d.delta > 0 ? "+" : d.delta < 0 ? "−" : ""
+  const abs = Math.abs(d.delta)
+  const body = d.format === "percent" ? `${abs.toFixed(1)}%` : d.format === "ratio" ? abs.toFixed(2) : Math.round(abs).toString()
+  if (d.neutral) return { text: `${sign}${body}`, tone: "text-zinc-300" }
+  const tone = d.delta > 0 ? "text-emerald-400" : d.delta < 0 ? "text-rose-400" : "text-zinc-400"
+  return { text: `${sign}${body}`, tone }
+}
 
 function PlainSelect({
   value,
@@ -88,7 +118,7 @@ function metric(metrics: ComparisonMetric[], key: string) {
   return metrics.find((m) => m.key === key)
 }
 
-export function ComparisonsView({ matches, allMatches, agents, maps, acts, now }: Props) {
+export function ComparisonsView({ matches, allMatches, agents, maps, acts, actSources, now }: Props) {
   const [includeEmptyActs, setIncludeEmptyActs] = useState(false)
   // Default: only acts with synced games are comparable. Toggle to include empties.
   const realActs = acts.filter((a) => a.actId !== "__no_act__")
@@ -101,10 +131,16 @@ export function ComparisonsView({ matches, allMatches, agents, maps, acts, now }
   const [mapB, setMapB] = useState(maps[1] ?? maps[0] ?? "")
   const [actA, setActA] = useState(actOptions[0]?.actId ?? "")
   const [actB, setActB] = useState(actOptions[1]?.actId ?? actOptions[0]?.actId ?? "")
+  const [srcA, setSrcA] = useState(actSources[0]?.key ?? "")
+  const [srcB, setSrcB] = useState(actSources[1]?.key ?? actSources[0]?.key ?? "")
   const [trendWindow, setTrendWindow] = useState("10")
 
   const actCmp = useMemo(() => buildActComparison(allMatches, actA, actB), [allMatches, actA, actB])
   const actLabel = (id: string) => actOptions.find((a) => a.actId === id)?.label ?? "—"
+
+  const rowA = actSources.find((r) => r.key === srcA) ?? null
+  const rowB = actSources.find((r) => r.key === srcB) ?? null
+  const srcCmp = useMemo(() => (rowA && rowB ? compareActProgression(rowA, rowB) : null), [rowA, rowB])
 
   const period = useMemo(() => buildPeriodComparison(matches, periodMode, now), [matches, periodMode, now])
   const agentCmp = useMemo(() => buildAgentComparison(matches, agentA, agentB), [matches, agentA, agentB])
@@ -237,6 +273,104 @@ export function ComparisonsView({ matches, allMatches, agents, maps, acts, now }
             title="Sin partidas competitive en ambos actos"
             description="Elige dos actos con partidas ranked sincronizadas."
           />
+        )}
+      </section>
+
+      {/* Comparativa por actos (real + externo/manual) */}
+      <section id="cmp-actsources" className="premium-card p-5">
+        <div className="mb-4">
+          <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-zinc-300">Comparativa por actos</h3>
+          <p className="text-xs text-zinc-500">
+            Compara cualquier acto, real sincronizado o externo/manual. Los datos no se mezclan: cada lado mantiene su
+            fuente.
+          </p>
+        </div>
+        {actSources.length < 2 ? (
+          <EmptyState
+            title="Necesitas dos actos"
+            description="Añade resúmenes externos en Ajustes o sincroniza más actos para comparar."
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {([
+                [srcA, setSrcA, rowA],
+                [srcB, setSrcB, rowB],
+              ] as const).map(([value, setter, row], i) => (
+                <div key={i} className="space-y-1">
+                  <PlainSelect
+                    value={value}
+                    onChange={setter}
+                    options={actSources.map((r) => ({ value: r.key, label: r.actLabel }))}
+                    className="w-full border-white/15 bg-black/30 text-zinc-100"
+                  />
+                  {row ? (
+                    <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${badgeClass(row.source)}`}>
+                      {row.badge}
+                    </span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+
+            {srcCmp ? (
+              <>
+                <div className="overflow-hidden rounded-lg border border-white/10">
+                  <table className="w-full text-left text-sm">
+                    <thead className="text-[11px] uppercase tracking-wide text-zinc-500">
+                      <tr className="border-b border-white/10">
+                        <th className="px-3 py-2">Métrica</th>
+                        <th className="px-3">{srcCmp.a.actLabel}</th>
+                        <th className="px-3">{srcCmp.b.actLabel}</th>
+                        <th className="px-3">Δ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-white/5">
+                        <td className="px-3 py-2 text-zinc-300">Rango final</td>
+                        <td className="px-3 text-zinc-300">{srcCmp.finalRank.a ?? "Sin dato"}</td>
+                        <td className="px-3 text-zinc-300">{srcCmp.finalRank.b ?? "Sin dato"}</td>
+                        <td className="px-3 text-zinc-300">
+                          {srcCmp.finalRank.direction === "up" ? "subió ▲" : srcCmp.finalRank.direction === "down" ? "bajó ▼" : srcCmp.finalRank.direction === "same" ? "igual" : "—"}
+                        </td>
+                      </tr>
+                      <tr className="border-b border-white/5">
+                        <td className="px-3 py-2 text-zinc-300">Peak rank</td>
+                        <td className="px-3 text-zinc-300">{srcCmp.peakRank.a ?? "Sin dato"}</td>
+                        <td className="px-3 text-zinc-300">{srcCmp.peakRank.b ?? "Sin dato"}</td>
+                        <td className="px-3 text-zinc-300">
+                          {srcCmp.peakRank.direction === "up" ? "subió ▲" : srcCmp.peakRank.direction === "down" ? "bajó ▼" : srcCmp.peakRank.direction === "same" ? "igual" : "—"}
+                        </td>
+                      </tr>
+                      {srcCmp.metrics.map((m) => {
+                        const d = fmtDelta(m)
+                        return (
+                          <tr key={m.key} className="border-b border-white/5 last:border-0">
+                            <td className="px-3 py-2 text-zinc-300">{m.label}</td>
+                            <td className="px-3 text-zinc-300">{fmtMetric(m.a, m.format)}</td>
+                            <td className="px-3 text-zinc-300">{fmtMetric(m.b, m.format)}</td>
+                            <td className={`px-3 font-semibold ${d.tone}`}>{d.text}</td>
+                          </tr>
+                        )
+                      })}
+                      <tr>
+                        <td className="px-3 py-2 text-zinc-300">Agente principal</td>
+                        <td className="px-3 text-zinc-300">{srcCmp.a.mainAgent ?? "Sin dato"}</td>
+                        <td className="px-3 text-zinc-300">{srcCmp.b.mainAgent ?? "Sin dato"}</td>
+                        <td className="px-3 text-zinc-500">—</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                {!srcCmp.a.isReal || !srcCmp.b.isReal ? (
+                  <p className="text-xs text-amber-300/90">
+                    Al menos un lado proviene de un resumen externo/manual. Estos datos no sustituyen las partidas
+                    reales sincronizadas desde Riot.
+                  </p>
+                ) : null}
+              </>
+            ) : null}
+          </div>
         )}
       </section>
 

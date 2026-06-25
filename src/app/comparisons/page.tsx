@@ -5,6 +5,8 @@ import { getTranslations } from "@/i18n/get-dictionary"
 import { ComparisonsView } from "@/components/comparisons/comparisons-view"
 import { AnalyticsScopeSelector } from "@/components/analytics/analytics-scope-selector"
 import { resolveScopeFromSearchParams } from "@/server/valorant/analytics/scope-filter"
+import { buildActProgressionRows } from "@/server/valorant/analytics/act-progression"
+import { listExternalActSummaries } from "@/server/repositories/external-act-summary-repository"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { env } from "@/lib/env"
 import { getCurrentSession } from "@/server/auth/session"
@@ -25,6 +27,8 @@ export default async function ComparisonsPage({
   const matches = analytics.filteredMatches
   const agents = analytics.agentStats.map((a) => a.agentName).filter(Boolean)
   const maps = analytics.mapStats.map((m) => m.mapName).filter(Boolean)
+  const externalActs = session ? await listExternalActSummaries(session.userId).catch(() => []) : []
+  const actSources = buildActProgressionRows(allMatches, externalActs)
   const t = await getTranslations()
 
   return (
@@ -49,6 +53,7 @@ export default async function ComparisonsPage({
           agents={agents}
           maps={maps}
           acts={acts}
+          actSources={actSources}
           now={new Date().getTime()}
         />
       )}
