@@ -30,6 +30,15 @@ export async function getMatchById(matchId: string) {
   return createMockMatches(undefined, mockAccountProfile.puuid).find((match) => match.matchId === matchId) ?? null
 }
 
+// Mock has no platform-wide recent feed; deep sync finds nothing (not an error).
+export async function getRecentMatchIdsByQueue(_queue: string): Promise<string[]> {
+  return []
+}
+
+export async function normalizeMatchForPuuid(matchId: string, puuid: string) {
+  return createMockMatches(undefined, puuid).find((match) => match.matchId === matchId) ?? null
+}
+
 export async function getContent(): Promise<RiotContentDto> {
   return {
     version: "mock-1.0",

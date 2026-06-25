@@ -3,6 +3,7 @@ import { getTranslations } from "@/i18n/get-dictionary"
 import { LanguageSelector } from "@/components/settings/language-selector"
 import { HistoryDiagnosticCard } from "@/components/settings/history-diagnostic-card"
 import { HistorySyncCard } from "@/components/settings/history-sync-card"
+import { AdvancedSyncCard } from "@/components/settings/advanced-sync-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { env } from "@/lib/env"
@@ -19,6 +20,7 @@ export default async function SettingsPage() {
     <AppShell title={t("settings.title")} subtitle={t("settings.subtitle")} connected>
       <div className="grid gap-6 xl:grid-cols-2">
         {coverage ? <HistorySyncCard coverage={coverage} /> : null}
+        <AdvancedSyncCard />
         {coverage && isDev ? <HistoryDiagnosticCard coverage={coverage} /> : null}
 
         <Card className="border-white/10 bg-white/5 text-white xl:col-span-2">
