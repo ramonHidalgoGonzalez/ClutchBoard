@@ -160,6 +160,34 @@ export async function getMatchById(matchId: string) {
   return riotMatchSchema.parse(await client.platformRequest(platform, `/val/match/v1/matches/${matchId}`))
 }
 
+async function contentMapperOptions() {
+  const contentLookups = await getCachedContentLookups()
+  return {
+    resolveAgentName: (characterId: string) => contentLookups.agentById.get(normalizeContentKey(characterId))?.name,
+    resolveMapName: (mapId: string) => contentLookups.mapById.get(normalizeContentKey(mapId))?.name,
+    resolveAgentImageUrl: (characterId: string) => contentLookups.agentById.get(normalizeContentKey(characterId))?.imageUrl,
+    resolveAgentIconUrl: (characterId: string) => contentLookups.agentById.get(normalizeContentKey(characterId))?.iconUrl,
+    resolveMapImageUrl: (mapId: string) => contentLookups.mapById.get(normalizeContentKey(mapId))?.imageUrl,
+    resolveMapIconUrl: (mapId: string) => contentLookups.mapById.get(normalizeContentKey(mapId))?.iconUrl,
+  }
+}
+
+/** Normalize a single match for a puuid. Returns null if the player isn't in it. */
+export async function normalizeMatchForPuuid(matchId: string, puuid: string): Promise<MatchPerformance | null> {
+  const raw = await getMatchById(matchId)
+  return mapRiotMatchToPerformance(raw, puuid, await contentMapperOptions())
+}
+
+/** Official VAL-MATCH-V1 recent matches by queue (platform-wide recent ids). */
+export async function getRecentMatchIdsByQueue(queue: string): Promise<string[]> {
+  const platform = resolvePlatform()
+  const data = await client.platformRequest<{ matchIds?: string[] }>(
+    platform,
+    `/val/match/v1/recent-matches/by-queue/${queue}`,
+  )
+  return Array.isArray(data?.matchIds) ? data.matchIds : []
+}
+
 // Normalized matches are expensive (matchlist + N match fetches). Cache them
 // per puuid so navigating between pages doesn't refetch every time. Busted on
 // explicit sync.

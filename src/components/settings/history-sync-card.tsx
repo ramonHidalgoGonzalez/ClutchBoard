@@ -89,7 +89,14 @@ export function HistorySyncCard({ coverage }: { coverage: HistoryCoverage }) {
         {error ? <p className="text-sm text-rose-400">{error}</p> : null}
         {result ? (
           <div className="space-y-1 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.05] px-3 py-2">
-            <p className="text-emerald-300">Se han sincronizado {result.savedMatches} nuevas partidas.</p>
+            {result.savedMatches > 0 ? (
+              <p className="text-emerald-300">Se han sincronizado {result.savedMatches} nuevas partidas.</p>
+            ) : (
+              <p className="text-zinc-200">
+                No se han encontrado partidas nuevas. Riot devolvió {result.matchlistReturned} partidas disponibles y
+                todas ya estaban sincronizadas.
+              </p>
+            )}
             <p className="text-xs text-zinc-400">
               Matchlist de Riot: {result.matchlistReturned} · nuevas detectadas: {result.newMatchIds}
             </p>
