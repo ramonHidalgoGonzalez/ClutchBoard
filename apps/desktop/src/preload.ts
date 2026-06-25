@@ -4,11 +4,17 @@ export type CompanionState = {
   connected: boolean
   accountName: string | null
   valorantRunning: boolean
+  riotClientRunning: boolean
   autoSyncEnabled: boolean
   startWithWindows: boolean
-  lastSyncAt: string | null
-  lastNewMatches: number
   syncing: boolean
+  lastSync: {
+    at: string | null
+    savedMatches: number
+    matchlistReturned: number
+    error: string | null
+    rateLimited: boolean
+  }
 }
 
 contextBridge.exposeInMainWorld("companion", {

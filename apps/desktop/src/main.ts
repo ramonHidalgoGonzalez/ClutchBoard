@@ -17,36 +17,47 @@ import {
   CLUTCHBOARD_URL,
   POLL_MS,
   POST_CLOSE_DELAY_MS,
+  SYNC_COOLDOWN_MS,
   TRAY_ICON_DATA_URL,
 } from "./config"
-import { isValorantRunning } from "./valorant"
+import { log } from "./logger"
+import { detectValorant } from "./valorant"
+
+type LastSync = {
+  at: string | null
+  savedMatches: number
+  matchlistReturned: number
+  error: string | null
+  rateLimited: boolean
+}
 
 type CompanionState = {
   connected: boolean
   accountName: string | null
   valorantRunning: boolean
+  riotClientRunning: boolean
   autoSyncEnabled: boolean
   startWithWindows: boolean
-  lastSyncAt: string | null
-  lastNewMatches: number
   syncing: boolean
+  lastSync: LastSync
 }
 
 const state: CompanionState = {
   connected: false,
   accountName: null,
   valorantRunning: false,
+  riotClientRunning: false,
   autoSyncEnabled: true,
   startWithWindows: app.getLoginItemSettings().openAtLogin,
-  lastSyncAt: null,
-  lastNewMatches: 0,
   syncing: false,
+  lastSync: { at: null, savedMatches: 0, matchlistReturned: 0, error: null, rateLimited: false },
 }
 
 let win: BrowserWindow | null = null
 let tray: Tray | null = null
-let wasValorantRunning = false
+let wasGameRunning = false
 let pendingCloseSync: NodeJS.Timeout | null = null
+let lastSyncMs = 0
 
 function broadcast() {
   win?.webContents.send("state", state)
@@ -60,7 +71,7 @@ function broadcast() {
 function createWindow() {
   win = new BrowserWindow({
     width: 360,
-    height: 520,
+    height: 560,
     resizable: false,
     show: false,
     title: "Clutchboard Companion",
@@ -68,7 +79,6 @@ function createWindow() {
   })
   win.removeMenu()
   void win.loadFile(join(__dirname, "renderer", "index.html"))
-  // Hide to tray instead of quitting.
   win.on("close", (event) => {
     if (!(app as unknown as { isQuitting?: boolean }).isQuitting) {
       event.preventDefault()
@@ -84,36 +94,35 @@ function showWindow() {
 }
 
 function createTray() {
-  const icon = nativeImage.createFromDataURL(TRAY_ICON_DATA_URL)
-  tray = new Tray(icon)
-  const menu = Menu.buildFromTemplate([
-    { label: "Abrir Clutchboard Companion", click: showWindow },
-    { label: "Abrir dashboard", click: openDashboard },
-    { label: "Sincronizar ahora", click: () => void doSync("manual") },
-    { type: "separator" },
-    { label: "Salir", click: () => {
-        ;(app as unknown as { isQuitting?: boolean }).isQuitting = true
-        app.quit()
-      } },
-  ])
-  tray.setContextMenu(menu)
+  tray = new Tray(nativeImage.createFromDataURL(TRAY_ICON_DATA_URL))
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: "Abrir Clutchboard Companion", click: showWindow },
+      { label: "Abrir dashboard", click: openDashboard },
+      { label: "Sincronizar ahora", click: () => void doSync("manual") },
+      { type: "separator" },
+      {
+        label: "Salir",
+        click: () => {
+          ;(app as unknown as { isQuitting?: boolean }).isQuitting = true
+          app.quit()
+        },
+      },
+    ]),
+  )
   tray.on("click", showWindow)
   broadcast()
 }
 
 function openDashboard() {
+  log("open_dashboard")
   void shell.openExternal(`${CLUTCHBOARD_URL}/dashboard`)
 }
 
 function openLogin() {
-  const loginWin = new BrowserWindow({
-    width: 480,
-    height: 720,
-    title: "Iniciar sesión en Clutchboard",
-    autoHideMenuBar: true,
-  })
+  log("login_opened")
+  const loginWin = new BrowserWindow({ width: 480, height: 720, title: "Iniciar sesión en Clutchboard", autoHideMenuBar: true })
   void loginWin.loadURL(`${CLUTCHBOARD_URL}/login`)
-  // Re-check session when the login window is closed.
   loginWin.on("closed", () => void refreshSession())
 }
 
@@ -124,47 +133,73 @@ async function refreshSession() {
   broadcast()
 }
 
-async function doSync(_reason: "manual" | "auto" | "post-close") {
-  if (state.syncing || !state.connected) {
-    if (!state.connected) await refreshSession()
-    if (!state.connected) return
+async function doSync(reason: "manual" | "auto" | "post-close") {
+  if (state.syncing) return
+
+  // Cooldown applies to automatic syncs; manual is always allowed.
+  if (reason !== "manual" && Date.now() - lastSyncMs < SYNC_COOLDOWN_MS) {
+    log("sync_skipped_cooldown", { reason })
+    return
   }
+
+  if (!state.connected) {
+    await refreshSession()
+    if (!state.connected) {
+      state.lastSync = { ...state.lastSync, error: "unauthenticated" }
+      broadcast()
+      return
+    }
+  }
+
   state.syncing = true
   broadcast()
+  log("sync_started", { reason })
+
   const result = await syncRecent()
+  lastSyncMs = Date.now()
   state.syncing = false
+
   if (result.error === "unauthenticated") {
     state.connected = false
+    state.lastSync = { ...state.lastSync, error: "unauthenticated" }
+    log("sync_failed", { error: "unauthenticated" })
   } else if (result.ok) {
-    state.lastSyncAt = new Date().toISOString()
-    state.lastNewMatches = result.savedMatches
-    if (result.savedMatches > 0) {
-      new Notification({
-        title: "Clutchboard",
-        body: `Se han sincronizado ${result.savedMatches} nuevas partidas.`,
-      }).show()
+    state.lastSync = {
+      at: new Date().toISOString(),
+      savedMatches: result.savedMatches,
+      matchlistReturned: result.matchlistReturned,
+      error: null,
+      rateLimited: result.rateLimited,
     }
+    log("sync_success", { savedMatches: result.savedMatches, matchlistReturned: result.matchlistReturned })
+    if (result.savedMatches > 0) {
+      new Notification({ title: "Clutchboard", body: `Se han sincronizado ${result.savedMatches} nuevas partidas.` }).show()
+    }
+  } else {
+    state.lastSync = { ...state.lastSync, at: new Date().toISOString(), error: result.error ?? "error", rateLimited: result.rateLimited }
+    log("sync_failed", { error: result.error })
   }
   broadcast()
 }
 
 async function pollValorant() {
-  const running = await isValorantRunning()
-  state.valorantRunning = running
+  const { gameRunning, clientRunning } = await detectValorant()
+  state.valorantRunning = gameRunning
+  state.riotClientRunning = clientRunning
 
-  if (wasValorantRunning && !running) {
-    // VALORANT just closed — sync once after a short delay (let Riot publish it).
+  if (!wasGameRunning && gameRunning) log("valorant_detected")
+  if (wasGameRunning && !gameRunning) {
+    log("valorant_closed")
     if (pendingCloseSync) clearTimeout(pendingCloseSync)
     pendingCloseSync = setTimeout(() => void doSync("post-close"), POST_CLOSE_DELAY_MS)
   }
-  wasValorantRunning = running
+  wasGameRunning = gameRunning
   broadcast()
 }
 
 function startTimers() {
   void pollValorant()
   setInterval(() => void pollValorant(), POLL_MS)
-  // Auto-sync while playing.
   setInterval(() => {
     if (state.autoSyncEnabled && state.valorantRunning) void doSync("auto")
   }, AUTO_SYNC_INTERVAL_MS)
@@ -194,6 +229,7 @@ if (!gotLock) {
 } else {
   app.on("second-instance", showWindow)
   app.whenReady().then(async () => {
+    log("app_started")
     createWindow()
     createTray()
     registerIpc()
@@ -201,6 +237,5 @@ if (!gotLock) {
     startTimers()
     showWindow()
   })
-  // Keep running in the tray when all windows are closed.
   app.on("window-all-closed", () => {})
 }
