@@ -17,4 +17,8 @@ await build({
 // Renderer is plain HTML/JS (no bundling needed for v0.1).
 cpSync("src/renderer", "dist/renderer", { recursive: true })
 
+// Runtime brand icons for the windows/taskbar and the tray.
+cpSync("build/icon.png", "dist/icon.png")
+cpSync("build/tray.png", "dist/tray.png")
+
 console.log("clutchboard-companion: build ok")
