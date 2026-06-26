@@ -1,5 +1,26 @@
 export const CLUTCHBOARD_URL = process.env.CLUTCHBOARD_URL ?? "https://clutchboard-alpha-ten.vercel.app"
 
+export const CLUTCHBOARD_HOST = (() => {
+  try {
+    return new URL(CLUTCHBOARD_URL).hostname
+  } catch {
+    return "clutchboard-alpha-ten.vercel.app"
+  }
+})()
+
+// In-app navigation allow-list: Clutchboard + Riot login. Everything else
+// opens in the external browser.
+export const ALLOWED_NAV_HOSTS = [CLUTCHBOARD_HOST, "auth.riotgames.com", "account.riotgames.com"]
+
+export function isAllowedNavUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname
+    return ALLOWED_NAV_HOSTS.includes(host) || host.endsWith(".riotgames.com")
+  } catch {
+    return false
+  }
+}
+
 // Primary signal that a match is/was running. RiotClientServices is only a
 // secondary hint (launcher open) and never the main game signal.
 export const VALORANT_GAME_PROCESSES = ["VALORANT-Win64-Shipping.exe", "VALORANT.exe"]
