@@ -19,6 +19,7 @@ const MAP_CODENAMES: Record<string, string> = {
   juliett: "Sunset",
   juliette: "Sunset",
   infinity: "Abyss",
+  plummet: "Summit",
 }
 
 // Resolve a map value (display name, codename, or "/Game/Maps/<code>/<code>"

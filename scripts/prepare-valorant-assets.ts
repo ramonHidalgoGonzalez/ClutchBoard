@@ -67,6 +67,7 @@ const MAPS: Array<{ name: string; file: string }> = [
   { name: "Lotus", file: "lotus.png" },
   { name: "Pearl", file: "pearl.png" },
   { name: "Split", file: "split.png" },
+  { name: "Summit", file: "summit.png" },
   { name: "Sunset", file: "sunset.png" },
 ]
 
