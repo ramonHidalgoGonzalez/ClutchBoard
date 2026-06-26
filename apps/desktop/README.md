@@ -61,7 +61,13 @@ npm run dev            # bundle + launch Electron
 npm run typecheck      # tsc --noEmit
 npm run build          # typecheck + esbuild bundle -> dist/
 npm run dist           # electron-builder -> Windows installer + portable .exe
+npm run package:portable  # @electron/packager -> release/ folder (no Developer Mode)
 ```
+
+Both build paths use the Clutchboard icon: `dist` via electron-builder
+`win.icon`, `package:portable` via the packager `--icon build/icon.ico` flag.
+The window/taskbar and tray icons are set at runtime, so they show regardless
+of which builder produced the exe.
 
 Point at a local web server during development:
 

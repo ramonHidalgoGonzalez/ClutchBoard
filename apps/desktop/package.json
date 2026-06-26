@@ -11,7 +11,8 @@
     "build": "npm run typecheck && npm run bundle",
     "dev": "npm run bundle && electron .",
     "start": "electron .",
-    "dist": "npm run build && electron-builder --win"
+    "dist": "npm run build && electron-builder --win",
+    "package:portable": "npm run build && npx --yes @electron/packager . \"Clutchboard Companion\" --platform=win32 --arch=x64 --out=release --overwrite --icon=build/icon.ico --app-version=0.1.0"
   },
   "build": {
     "appId": "com.clutchboard.companion",
