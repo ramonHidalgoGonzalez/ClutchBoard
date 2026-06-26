@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld("companion", {
   },
   syncNow: () => ipcRenderer.invoke("sync-now"),
   openDashboard: () => ipcRenderer.invoke("open-dashboard"),
+  openDashboardExternal: () => ipcRenderer.invoke("open-dashboard-external"),
   login: () => ipcRenderer.invoke("login"),
   toggleAutoSync: (value: boolean) => ipcRenderer.invoke("toggle-autosync", value),
   toggleStartup: (value: boolean) => ipcRenderer.invoke("toggle-startup", value),

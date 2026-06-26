@@ -15,6 +15,7 @@ import { checkSession, syncRecent } from "./api"
 import {
   AUTO_SYNC_INTERVAL_MS,
   CLUTCHBOARD_URL,
+  isAllowedNavUrl,
   POLL_MS,
   POST_CLOSE_DELAY_MS,
   SYNC_COOLDOWN_MS,
@@ -54,6 +55,7 @@ const state: CompanionState = {
 }
 
 let win: BrowserWindow | null = null
+let dashboardWin: BrowserWindow | null = null
 let tray: Tray | null = null
 let wasGameRunning = false
 let pendingCloseSync: NodeJS.Timeout | null = null
@@ -98,7 +100,8 @@ function createTray() {
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: "Abrir Clutchboard Companion", click: showWindow },
-      { label: "Abrir dashboard", click: openDashboard },
+      { label: "Abrir dashboard", click: openDashboardWindow },
+      { label: "Abrir dashboard en navegador", click: openDashboardExternal },
       { label: "Sincronizar ahora", click: () => void doSync("manual") },
       { type: "separator" },
       {
@@ -114,7 +117,52 @@ function createTray() {
   broadcast()
 }
 
-function openDashboard() {
+// Keep in-app navigation on the allow-list; send anything else to the browser.
+function guardNavigation(target: BrowserWindow) {
+  target.webContents.on("will-navigate", (event, url) => {
+    if (!isAllowedNavUrl(url)) {
+      event.preventDefault()
+      void shell.openExternal(url)
+    }
+  })
+  target.webContents.setWindowOpenHandler(({ url }) => {
+    if (isAllowedNavUrl(url)) return { action: "allow" }
+    void shell.openExternal(url)
+    return { action: "deny" }
+  })
+}
+
+// Opens the dashboard inside Electron (feels like a real desktop app). Falls
+// back to /login inside the same window when not authenticated.
+function openDashboardWindow() {
+  log("open_dashboard")
+  if (dashboardWin && !dashboardWin.isDestroyed()) {
+    dashboardWin.show()
+    dashboardWin.focus()
+    return
+  }
+  dashboardWin = new BrowserWindow({
+    width: 1280,
+    height: 820,
+    title: "Clutchboard",
+    autoHideMenuBar: true,
+    backgroundColor: "#0b1020",
+    webPreferences: {
+      // No companion preload here — this window only renders the web app.
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+    },
+  })
+  guardNavigation(dashboardWin)
+  void dashboardWin.loadURL(`${CLUTCHBOARD_URL}/dashboard`)
+  dashboardWin.on("closed", () => {
+    dashboardWin = null
+    void refreshSession()
+  })
+}
+
+function openDashboardExternal() {
   log("open_dashboard")
   void shell.openExternal(`${CLUTCHBOARD_URL}/dashboard`)
 }
@@ -208,7 +256,8 @@ function startTimers() {
 function registerIpc() {
   ipcMain.handle("get-state", () => state)
   ipcMain.handle("sync-now", () => doSync("manual"))
-  ipcMain.handle("open-dashboard", () => openDashboard())
+  ipcMain.handle("open-dashboard", () => openDashboardWindow())
+  ipcMain.handle("open-dashboard-external", () => openDashboardExternal())
   ipcMain.handle("login", () => openLogin())
   ipcMain.handle("toggle-autosync", (_e, value: boolean) => {
     state.autoSyncEnabled = Boolean(value)

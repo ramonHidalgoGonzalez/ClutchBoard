@@ -13,6 +13,7 @@ const els = {
   error: document.getElementById("error"),
   login: document.getElementById("login"),
   dashboard: document.getElementById("dashboard"),
+  dashboardExternal: document.getElementById("dashboardExternal"),
   sync: document.getElementById("sync"),
   autosync: document.getElementById("autosync"),
   startup: document.getElementById("startup"),
@@ -55,6 +56,7 @@ function render(s) {
 
 els.login.addEventListener("click", () => api.login())
 els.dashboard.addEventListener("click", () => api.openDashboard())
+els.dashboardExternal.addEventListener("click", () => api.openDashboardExternal())
 els.sync.addEventListener("click", () => api.syncNow())
 els.autosync.addEventListener("change", (e) => api.toggleAutoSync(e.target.checked))
 els.startup.addEventListener("change", (e) => api.toggleStartup(e.target.checked))
