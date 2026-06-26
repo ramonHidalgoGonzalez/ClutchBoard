@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react"
 import Link from "next/link"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { ChevronLeft, ChevronRight, Crosshair, Search, Star, Target, Trophy } from "lucide-react"
 
 import { AgentAvatar } from "@/components/dashboard/agent-avatar"
@@ -176,7 +176,6 @@ export function MatchHistory({
 }: MatchHistoryProps) {
   const locale = useLocale()
   const t = useTranslations()
-  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [query, setQuery] = useState("")
@@ -185,16 +184,19 @@ export function MatchHistory({
   const [agent, setAgent] = useState("all")
   const [map, setMap] = useState("all")
   const [sort, setSort] = useState("date-desc")
-  const [pageSize, setPageSize] = useState<MatchLimit>(() => parseMatchLimit(searchParams.get("limit")))
   const [page, setPage] = useState(1)
 
-  // Selecting a limit persists it to the URL (?limit=) without reloading,
-  // preserving other params (scope, actId, ...).
-  function selectLimit(value: MatchLimit) {
-    setPageSize(value)
+  // The page size lives in the URL (?limit=), so it survives reloads, is
+  // shareable, and — crucially — the selector keeps working as plain links
+  // even before React hydrates (a click before hydration was previously lost).
+  // The URL is the single source of truth; there is no mirrored state that
+  // could desync on back/forward or a re-render.
+  const pageSize = parseMatchLimit(searchParams.get("limit"))
+
+  function limitHref(value: MatchLimit) {
     const params = new URLSearchParams(searchParams.toString())
     params.set("limit", limitToParam(value))
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    return `${pathname}?${params.toString()}`
   }
 
   const queues = useMemo(() => uniqueBy(matches, (m) => m.queueName || m.queueId), [matches])
@@ -337,17 +339,20 @@ export function MatchHistory({
 
         <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-black/30 p-1">
           {PAGE_SIZES.map((value) => (
-            <button
+            <Link
               key={value}
-              type="button"
-              onClick={() => selectLimit(value)}
+              href={limitHref(value)}
+              replace
+              scroll={false}
+              prefetch={false}
+              aria-current={pageSize === value ? "true" : undefined}
               className={cn(
                 "rounded-lg px-3 py-1 text-xs font-semibold transition",
                 pageSize === value ? "bg-rose-600 text-white" : "text-zinc-400 hover:text-zinc-200",
               )}
             >
               {value === 0 ? "Todas" : value}
-            </button>
+            </Link>
           ))}
         </div>
       </div>
