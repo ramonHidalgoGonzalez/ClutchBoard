@@ -13,5 +13,6 @@ export const MAP_ASSET_MAP: Record<string, MapAssetEntry> = {
   "lotus": { name: "Lotus", thumb: "/valorant/maps/thumb/lotus.webp", banner: "/valorant/maps/banner/lotus.webp", card: "/valorant/maps/card/lotus.webp" },
   "pearl": { name: "Pearl", thumb: "/valorant/maps/thumb/pearl.webp", banner: "/valorant/maps/banner/pearl.webp", card: "/valorant/maps/card/pearl.webp" },
   "split": { name: "Split", thumb: "/valorant/maps/thumb/split.webp", banner: "/valorant/maps/banner/split.webp", card: "/valorant/maps/card/split.webp" },
+  "summit": { name: "Summit", thumb: "/valorant/maps/thumb/summit.webp", banner: "/valorant/maps/banner/summit.webp", card: "/valorant/maps/card/summit.webp" },
   "sunset": { name: "Sunset", thumb: "/valorant/maps/thumb/sunset.webp", banner: "/valorant/maps/banner/sunset.webp", card: "/valorant/maps/card/sunset.webp" },
 }

@@ -14,6 +14,12 @@ vi.mock("next/link", () => ({
   ),
 }))
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  usePathname: () => "/matches",
+  useSearchParams: () => new URLSearchParams(),
+}))
+
 const summary: AnalyticsSummary = {
   totalMatches: 1,
   winRate: 100,

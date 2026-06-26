@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react"
 import Link from "next/link"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { ChevronLeft, ChevronRight, Crosshair, Search, Star, Target, Trophy } from "lucide-react"
 
 import { AgentAvatar } from "@/components/dashboard/agent-avatar"
@@ -49,6 +50,23 @@ const SORT_OPTIONS = [
 ]
 
 const PAGE_SIZES = [10, 20, 50, 0] as const
+export type MatchLimit = (typeof PAGE_SIZES)[number]
+
+/** Parse the ?limit= query param. "all" -> 0; 10/20/50 kept; anything else -> 50. */
+export function parseMatchLimit(raw: string | null | undefined): MatchLimit {
+  if (raw === "all") return 0
+  const n = Number(raw)
+  return n === 10 || n === 20 || n === 50 ? n : 50
+}
+
+export function limitToParam(limit: MatchLimit): string {
+  return limit === 0 ? "all" : String(limit)
+}
+
+/** Page size actually applied: a real number ("all" expands to the full set). */
+export function effectivePageSize(limit: MatchLimit, total: number): number {
+  return limit === 0 ? Math.max(1, total) : limit
+}
 
 function formatDateTime(value: string) {
   const date = new Date(value)
@@ -158,14 +176,26 @@ export function MatchHistory({
 }: MatchHistoryProps) {
   const locale = useLocale()
   const t = useTranslations()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [query, setQuery] = useState("")
   const [result, setResult] = useState("all")
   const [queue, setQueue] = useState("all")
   const [agent, setAgent] = useState("all")
   const [map, setMap] = useState("all")
   const [sort, setSort] = useState("date-desc")
-  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(50)
+  const [pageSize, setPageSize] = useState<MatchLimit>(() => parseMatchLimit(searchParams.get("limit")))
   const [page, setPage] = useState(1)
+
+  // Selecting a limit persists it to the URL (?limit=) without reloading,
+  // preserving other params (scope, actId, ...).
+  function selectLimit(value: MatchLimit) {
+    setPageSize(value)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("limit", limitToParam(value))
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
 
   const queues = useMemo(() => uniqueBy(matches, (m) => m.queueName || m.queueId), [matches])
   const agents = useMemo(() => uniqueBy(matches, (m) => m.agentName), [matches])
@@ -213,7 +243,7 @@ export function MatchHistory({
   }
 
   const total = filtered.length
-  const size = pageSize === 0 ? Math.max(1, total) : pageSize
+  const size = effectivePageSize(pageSize, total)
   const pageCount = Math.max(1, Math.ceil(total / size))
   const safePage = Math.min(page, pageCount)
   const start = (safePage - 1) * size
@@ -310,7 +340,7 @@ export function MatchHistory({
             <button
               key={value}
               type="button"
-              onClick={() => setPageSize(value)}
+              onClick={() => selectLimit(value)}
               className={cn(
                 "rounded-lg px-3 py-1 text-xs font-semibold transition",
                 pageSize === value ? "bg-rose-600 text-white" : "text-zinc-400 hover:text-zinc-200",
@@ -411,7 +441,9 @@ export function MatchHistory({
       ) : (
         <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
           <p className="text-sm text-zinc-500">
-            Mostrando {start + 1} a {Math.min(total, start + size)} de {total} partidas
+            {pageSize === 0
+              ? `Mostrando todas las ${total} partidas`
+              : `Mostrando ${start + 1} a ${Math.min(total, start + size)} de ${total} partidas`}
           </p>
           {pageCount > 1 ? (
             <div className="flex items-center gap-1">

@@ -19,7 +19,14 @@ export function normalizeAgentSlug(name: string): string {
  *   "Haven" -> "haven", "Icebox" -> "icebox", "Pearl" -> "pearl"
  * Also handles internal paths/codenames defensively (last path segment).
  */
+// Map codenames -> canonical asset slug (the engine name differs from the
+// display name, e.g. Summit ships as "Plummet").
+const MAP_SLUG_ALIASES: Record<string, string> = {
+  plummet: "summit",
+}
+
 export function normalizeMapSlug(name: string): string {
   const last = name.includes("/") ? (name.split("/").filter(Boolean).at(-1) ?? name) : name
-  return normalize(last.replace(/\.(png|jpe?g|webp|gif|svg)$/i, ""))
+  const slug = normalize(last.replace(/\.(png|jpe?g|webp|gif|svg)$/i, ""))
+  return MAP_SLUG_ALIASES[slug] ?? slug
 }
