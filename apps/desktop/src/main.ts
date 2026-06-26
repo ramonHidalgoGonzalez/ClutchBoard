@@ -58,6 +58,15 @@ let win: BrowserWindow | null = null
 let dashboardWin: BrowserWindow | null = null
 let tray: Tray | null = null
 let wasGameRunning = false
+
+// Brand icons copied next to the bundle by build.mjs. Windows/taskbar use the
+// 256px mark; the tray uses a 32px mark, with the embedded data URL as a
+// last-resort fallback so the tray always has a valid icon.
+const WINDOW_ICON = join(__dirname, "icon.png")
+function trayIcon() {
+  const fromFile = nativeImage.createFromPath(join(__dirname, "tray.png"))
+  return fromFile.isEmpty() ? nativeImage.createFromDataURL(TRAY_ICON_DATA_URL) : fromFile
+}
 let pendingCloseSync: NodeJS.Timeout | null = null
 let lastSyncMs = 0
 
@@ -77,6 +86,7 @@ function createWindow() {
     resizable: false,
     show: false,
     title: "Clutchboard Companion",
+    icon: WINDOW_ICON,
     webPreferences: { preload: join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false },
   })
   win.removeMenu()
@@ -96,7 +106,7 @@ function showWindow() {
 }
 
 function createTray() {
-  tray = new Tray(nativeImage.createFromDataURL(TRAY_ICON_DATA_URL))
+  tray = new Tray(trayIcon())
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: "Abrir Clutchboard Companion", click: showWindow },
@@ -147,6 +157,7 @@ function openDashboardWindow() {
     title: "Clutchboard",
     autoHideMenuBar: true,
     backgroundColor: "#0b1020",
+    icon: WINDOW_ICON,
     webPreferences: {
       // No companion preload here — this window only renders the web app.
       nodeIntegration: false,
@@ -169,7 +180,7 @@ function openDashboardExternal() {
 
 function openLogin() {
   log("login_opened")
-  const loginWin = new BrowserWindow({ width: 480, height: 720, title: "Iniciar sesión en Clutchboard", autoHideMenuBar: true })
+  const loginWin = new BrowserWindow({ width: 480, height: 720, title: "Iniciar sesión en Clutchboard", autoHideMenuBar: true, icon: WINDOW_ICON })
   void loginWin.loadURL(`${CLUTCHBOARD_URL}/login`)
   loginWin.on("closed", () => void refreshSession())
 }

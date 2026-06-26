@@ -18,7 +18,8 @@
     "productName": "Clutchboard Companion",
     "files": ["dist/**"],
     "win": {
-      "target": ["nsis", "portable"]
+      "target": ["nsis", "portable"],
+      "icon": "build/icon.ico"
     }
   },
   "devDependencies": {
